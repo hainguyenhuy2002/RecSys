@@ -1,0 +1,68 @@
+from constants.network_constants import Chains
+
+
+class ArangoDBPrefix:
+    mapping = {
+        Chains.bsc: 'bsc',
+        Chains.ethereum: 'ethereum',
+        Chains.fantom: 'ftm',
+        Chains.polygon: 'polygon'
+    }
+
+
+class ArangoDBCollectionsByChain:
+    def __init__(self, prefix):
+        self.configs = f'{prefix}_configs'
+        self.transfers = f'{prefix}_transfers'
+        self.addresses = f'{prefix}_addresses'
+
+
+class ArangoDBGraphsByChain:
+    def __init__(self, prefix):
+        self.transfers_graph = f'{prefix}_transfers_graph'
+
+
+class KnowledgeGraphModelByChain:
+    def __init__(self, prefix):
+        self.edge_definitions = [
+            {
+                'edge_collection': f"{prefix}_{ArangoDBCollections.transfers}",
+                'from_vertex_collections': [
+                    f"{prefix}_{ArangoDBCollections.addresses}",
+                ],
+                'to_vertex_collections': [
+                    f"{prefix}_{ArangoDBCollections.addresses}",
+                ],
+            }
+        ]
+
+
+class ArangoDBCollections:
+    configs = 'configs'
+    transfers = 'transfers'
+    addresses = 'addresses'
+
+
+class ArangoDBGraphs:
+    transfers_graph = 'transfers_graph'
+
+
+class KnowledgeGraphModel:
+    edge_definitions = [
+        {
+            'edge_collection': ArangoDBCollections.transfers,
+            'from_vertex_collections': [
+                ArangoDBCollections.addresses,
+            ],
+            'to_vertex_collections': [
+                ArangoDBCollections.addresses,
+            ],
+        }
+    ]
+
+class ArangoDBKeys:
+    pass
+
+
+class ArangoDBIndex:
+    pass
