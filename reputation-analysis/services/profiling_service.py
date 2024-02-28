@@ -47,8 +47,6 @@ class GetTransactionInfo(BaseJob):
                     info_wallet = df_concat.groupby(['from_address', 'to_address']).agg({"block_timestamp":tuple, "valueInUSD": ['sum', 'median']})
                     info_wallet.columns = ['{}_{}'.format(col[0], col[1]) for col in info_wallet.columns]
                     info_wallet = info_wallet.reset_index().rename(columns={"from_address": "wallet","to_address":"sending_wallet"})
-                    info_wallet = info_wallet.merge(self.reputation_df[['wallet', 'NumberOfTokensBorrow',	'NumberOfTokensDeposit', 'NumberOfTokensHold', 'totalBorrowInUSD', 'totalDepositInUSD',	'totalHoldInUSD', 'score']], on='wallet', how='inner')
-                    self.transaction_info.append(info_wallet)
 
                 elif self.direction == 'to':
                     info_wallet = df_concat.groupby(['from_address', 'to_address']).agg({"block_timestamp":tuple, "valueInUSD": ['sum', 'median']})
