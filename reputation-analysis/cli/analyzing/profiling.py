@@ -11,6 +11,8 @@ from databases.mongodb_main import MongoDBMain
 @click.command(context_settings=dict(help_option_names=['-h', '--help']))
 @click.option('-c', '--chain', default='bsc', show_default=True, type=str,
               help='Network name example bsc or polygon')
+@click.option('-d', '--direction', default='sneding', show_default=True, type=str,
+              help='direction of transaction of an wallet (sending or receiving)')
 @click.option('-i', '--input_path', type=str,
               help='Path to input addresses')
 @click.option('-sv', '--saving_path', type=str,
@@ -24,13 +26,12 @@ from databases.mongodb_main import MongoDBMain
 @click.option('-w', '--max-workers', default=8, show_default=True, type=int,
               help='The number of workers')
 
-def profiling(chain, input_path, saving_path, start, end, batch_size, max_workers):
+def profiling(chain, direction, input_path, saving_path, start, end, batch_size, max_workers):
         
     logger = get_logger('User infromation exporter')
 
     input_df = pd.read_json(input_path)
-    addresses = input_df.wallet.unique().tolist()
-    logger.info(addresses[-1])
+    addresses = input_df.wallet.unique().tolist()[0:100]
     historical_token_price = get_historical_prices('ethereum')
     historical_token_round_price = dict()
     historical_token_round_price['ethereum'] = {(timestamp - (timestamp % 86400000)): value for timestamp, value in historical_token_price['ethereum'].items()}
@@ -42,6 +43,7 @@ def profiling(chain, input_path, saving_path, start, end, batch_size, max_worker
                              historical_token_price=historical_token_round_price,
                              wallets_list= addresses, 
                              reputation_df= input_df,
+                             direction=direction,
                              filename=saving_path, 
                              start_date=start, 
                              end_date= end, 
