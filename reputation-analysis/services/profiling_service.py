@@ -125,5 +125,5 @@ class GetTransactionInfo(BaseJob):
         transaction_df = pd.concat(self.transaction_info, ignore_index=True)
         transfer_df = pd.concat(self.transfer_info, ignore_index=True)
         #return df
-        transaction_df.to_csv(f'{self.filename}/test_sending_transaction.csv', index=False)
-        transfer_df.to_csv(f'{self.filename}/test_sending_transfer.csv', index=False)
+        transaction_df.to_csv(f'{self.filename}/{self.direction}_transaction.csv', index=False)
+        transfer_df.to_csv(f'{self.filename}/{self.direction}_transfer.csv', index=False)
