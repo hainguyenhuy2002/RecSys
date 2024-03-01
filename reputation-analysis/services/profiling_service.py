@@ -61,7 +61,7 @@ class GetTransactionInfo(BaseJob):
                     single_transaction_info['valueInUSD'] = (int(single_transaction_info['value']) * self.historical_token_price['ethereum'][round_timestamp]) /10**18
                     df_list.append(single_transaction_info)    
         except Exception as e:
-            log =get_logger("Not so fast -.-")
+            log =get_logger("Transaction not so fast -.-")
             log.info(e)
 
         if len(df_list) !=0:
@@ -82,7 +82,7 @@ class GetTransactionInfo(BaseJob):
                                                                     'NumberOfTokensHold', 'totalBorrowInUSD', 'totalDepositInUSD',	'totalHoldInUSD', 'score']], on='wallet', how='inner')
                 self.transaction_info.append(wallet_transaction_info)
             except Exception as e:
-                log =get_logger("Not so fast =.=' ")
+                log =get_logger("Transactinon not so fast =.=' ")
                 log.info(e)
 
     def _wallet_transfer_info(self, works): 
@@ -95,27 +95,29 @@ class GetTransactionInfo(BaseJob):
         for row in transfers_data:
             new_row = row[:1] + (self.block_timestamp_mappings[row[1]],) +row[2:]
             wallet_transfer.append(dict(zip(fields_to_select, new_row)))
-        transfer_concat = pd.DataFrame(wallet_transfer)
-        try: 
-            if self.direction=='from':
-                wallet_transfer_info = transfer_concat.groupby(['from_address', 'to_address', 'contract_address']).agg({"block_number":tuple, "value": tuple})
-                #wallet_transfer_info.columns = ['{}_{}'.format(col[0], col[1]) for col in wallet_transfer_info.columns]
-                wallet_transfer_info = wallet_transfer_info.reset_index().rename(columns={"from_address": "wallet","to_address":"sending_wallet",
-                                                                                           "block_number_tuple":"block_timestamp_history", "value_tuple":"values_history"})
+
+        if len(wallet_transfer)!=0:            
+            transfer_concat = pd.DataFrame(wallet_transfer)
+            try: 
+                if self.direction=='from':
+                    wallet_transfer_info = transfer_concat.groupby(['from_address', 'to_address', 'contract_address']).agg({"block_number":tuple, "value": tuple})
+                    #wallet_transfer_info.columns = ['{}_{}'.format(col[0], col[1]) for col in wallet_transfer_info.columns]
+                    wallet_transfer_info = wallet_transfer_info.reset_index().rename(columns={"from_address": "wallet","to_address":"sending_wallet",
+                                                                                            "block_number_tuple":"block_timestamp_history", "value_tuple":"values_history"})
+                    
+                elif self.direction=='to':
+                    wallet_transfer_info = transfer_concat.groupby(['to_address', 'from_address', 'contract_address']).agg({"block_number":tuple, "value": tuple})
+                    #wallet_transfer_info.columns = ['{}_{}'.format(col[0], col[1]) for col in wallet_transfer_info.columns]
+                    wallet_transfer_info = wallet_transfer_info.reset_index().rename(columns={"to_address": "wallet","from_address":"receiving_wallet", 
+                                                                                            "block_number_tuple":"block_timestamp_history", "value_tuple":"values_history"})
                 
-            elif self.direction=='to':
-                wallet_transfer_info = transfer_concat.groupby(['to_address', 'from_address', 'contract_address']).agg({"block_number":tuple, "value": tuple})
-                #wallet_transfer_info.columns = ['{}_{}'.format(col[0], col[1]) for col in wallet_transfer_info.columns]
-                wallet_transfer_info = wallet_transfer_info.reset_index().rename(columns={"to_address": "wallet","from_address":"receiving_wallet", 
-                                                                                          "block_number_tuple":"block_timestamp_history", "value_tuple":"values_history"})
+                wallet_transfer_info = wallet_transfer_info.merge(self.reputation_df[['wallet', 'NumberOfTokensBorrow',	'NumberOfTokensDeposit', 
+                                                                        'NumberOfTokensHold', 'totalBorrowInUSD', 'totalDepositInUSD',	'totalHoldInUSD', 'score']], on='wallet', how='inner')
+                self.transfer_info.append((wallet_transfer_info))
             
-            wallet_transfer_info = wallet_transfer_info.merge(self.reputation_df[['wallet', 'NumberOfTokensBorrow',	'NumberOfTokensDeposit', 
-                                                                    'NumberOfTokensHold', 'totalBorrowInUSD', 'totalDepositInUSD',	'totalHoldInUSD', 'score']], on='wallet', how='inner')
-            self.transfer_info.append((wallet_transfer_info))
-        
-        except Exception as e:
-                log =get_logger("Not so fast =.=' ")
-                log.info(e)
+            except Exception as e:
+                    log =get_logger("Transfer not so fast =.=' ")
+                    log.info(e)
 
 
     def _end(self):
