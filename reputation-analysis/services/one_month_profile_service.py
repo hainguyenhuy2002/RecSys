@@ -20,11 +20,11 @@ class GetWalletInfo(BaseJob):
         wallet_lst = []
         for wallet in wallets:
             wallet_lst.append(wallet)
-
-        wallet_df = pd.DataFrame(wallet_lst).rename(columns={"address": "wallet"})
-        wallet_df_info = wallet_df.merge(self.reputation_df[['wallet', 'NumberOfTokensBorrow',	'NumberOfTokensDeposit', 
-                                                                    'NumberOfTokensHold', 'totalBorrowInUSD', 'totalDepositInUSD',	'totalHoldInUSD', 'score']], on='wallet', how='inner')
-        self.wallet_info.append(wallet_df_info)
+        if len(wallet_lst)!=0:
+            wallet_df = pd.DataFrame(wallet_lst).rename(columns={"address": "wallet"})
+            wallet_df_info = wallet_df.merge(self.reputation_df[['wallet', 'NumberOfTokensBorrow',	'NumberOfTokensDeposit', 
+                                                                        'NumberOfTokensHold', 'totalBorrowInUSD', 'totalDepositInUSD',	'totalHoldInUSD', 'score']], on='wallet', how='inner')
+            self.wallet_info.append(wallet_df_info)
 
 
 
