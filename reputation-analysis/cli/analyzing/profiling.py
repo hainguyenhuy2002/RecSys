@@ -2,6 +2,7 @@ import os
 import click
 import requests
 import pandas as pd 
+from typing import List
 from dotenv import load_dotenv
 from utils.logger_utils import get_logger
 from services.profiling_service import GetTransactionInfo
@@ -28,13 +29,15 @@ from services.web3_service  import web3_service
               help='starting block to query')
 @click.option('-eb', '--end_block', type=int, default=None, show_default=True,
               help='ending block to query')
+@click.option('-so', '--sources', type=str, default=None, show_default=True,
+              help='ending block to query')
 
 @click.option('-b', '--batch-size', type=int, default=TimeConstants.AN_HOUR, show_default=True,
               help='Batch size - number of addresses each worker processes')
 @click.option('-w', '--max-workers', default=8, show_default=True, type=int,
               help='The number of workers')
 
-def profiling(chain, direction, input_path, saving_path, start, end, start_block, end_block, batch_size, max_workers):
+def profiling(chain, direction, input_path, saving_path, start, end, start_block, end_block, sources, batch_size, max_workers):
     logger = get_logger('User infromation exporter')
     if (start_block == None) | (end_block ==None):
         logger.info("Start map timestamp to block number")
@@ -64,16 +67,20 @@ def profiling(chain, direction, input_path, saving_path, start, end, start_block
     logger.info("Start to get the mapping timestamp dictonary and the mapping token history prices dictionary")
     try:
         input_df = pd.read_json(input_path)
-        addresses = input_df.wallet.unique().tolist()
+        addresses = input_df.wallet.unique().tolist()[0:100]
         historical_token_price = get_historical_prices('ethereum')
         historical_token_round_price = dict()
         historical_token_round_price['ethereum'] = {(timestamp - (timestamp % 86400000)): value for timestamp, value in historical_token_price['ethereum'].items()}
         block_timestamp_mappings = mongo.get_block_number_to_timestamp(start_block=start_block, end_block=end_block)
+        logger.info("Sucessful get mapping timestamp dictionary and the mapping token history")
+
 
     except Exception as e:
         logger.info(e)
 
-
+    if sources != None:
+        sources = [sources]
+        print(sources)
     job = GetTransactionInfo(chain=chain, 
                              mongo_transaction= mongo_transaction,
                              postgres= postgres,
@@ -88,7 +95,8 @@ def profiling(chain, direction, input_path, saving_path, start, end, start_block
                              start_block=start_block,
                              end_block=end_block,
                              max_workers=batch_size, 
-                             batch_size=max_workers)
+                             batch_size=max_workers,
+                             sources=sources)
     job.run()
 
 
