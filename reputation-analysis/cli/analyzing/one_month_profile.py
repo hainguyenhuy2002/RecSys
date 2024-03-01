@@ -38,7 +38,7 @@ def one_month_profile(chain, input_path, saving_path, batch_size, max_workers):
     input_address = input_df.wallet.unique().tolist()
     addresses = []
     for address in input_address:
-        addresses.append(f'{chain_id}_'+address)
+        addresses.append(f'{chain_id}_'+str(address))
 
     job = GetWalletInfo(mongo_klg_wallet=mongo_klg_wallet,
                              wallets_list= addresses, 
