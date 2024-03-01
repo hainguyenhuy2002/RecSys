@@ -1,7 +1,6 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from typing import List, Dict
-
+from sqlalchemy.sql import text
 from config import PostgresDBConfig
 from utils.logger_utils import get_logger
 
@@ -32,6 +31,6 @@ class PostgresDB:
             AND block_number BETWEEN {from_block} AND {to_block}
         """
         with Session.begin() as session:
-            event_transfer = session.execute(query).all()
+            event_transfer = session.execute(text(query)).all()
         return event_transfer
 
