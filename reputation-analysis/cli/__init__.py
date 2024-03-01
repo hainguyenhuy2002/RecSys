@@ -1,6 +1,7 @@
 import click
 
-from cli.analyzing.profiling import profiling
+from cli.analyzing.three_month_profile import three_month_profile
+from cli.analyzing.one_month_profile import one_month_profile
 @click.group()
 @click.version_option(version='1.0.0')
 @click.pass_context
@@ -9,4 +10,5 @@ def cli(ctx):
     pass
 
 
-cli.add_command(profiling, "profiling")
+cli.add_command(three_month_profile, "three_month_profile")
+cli.add_command(one_month_profile, "one_month_profile")

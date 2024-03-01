@@ -5,7 +5,7 @@ import pandas as pd
 from typing import List
 from dotenv import load_dotenv
 from utils.logger_utils import get_logger
-from services.profiling_service import GetTransactionInfo
+from services.three_month_profile_service import GetWalletTransactionTransfer
 from constants.network_constants import Chains
 from constants.time_constants import TimeConstants
 from databases.mongodb_main import MongoDBMain
@@ -37,7 +37,7 @@ from services.web3_service  import web3_service
 @click.option('-w', '--max-workers', default=8, show_default=True, type=int,
               help='The number of workers')
 
-def profiling(chain, direction, input_path, saving_path, start, end, start_block, end_block, sources, batch_size, max_workers):
+def three_month_profile(chain, direction, input_path, saving_path, start, end, start_block, end_block, sources, batch_size, max_workers):
     logger = get_logger('User infromation exporter')
     if (start_block == None) | (end_block ==None):
         logger.info("Start map timestamp to block number")
@@ -81,7 +81,7 @@ def profiling(chain, direction, input_path, saving_path, start, end, start_block
     if sources != None:
         sources = [sources]
         print(sources)
-    job = GetTransactionInfo(chain=chain, 
+    job = GetWalletTransactionTransfer(chain=chain, 
                              mongo_transaction= mongo_transaction,
                              postgres= postgres,
                              historical_token_price=historical_token_round_price,

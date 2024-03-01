@@ -1,7 +1,6 @@
 import numpy as np 
 import pandas as pd 
 from multithread_processing.base_job import BaseJob
-from databases.mongodb_main import MongoDBMain
 from utils.logger_utils import get_logger
 from typing import List
 from constants.network_constants import Chains
@@ -9,7 +8,7 @@ from constants.network_constants import Chains
 def tuple_of_values(x):
     return tuple(x)
 
-class GetTransactionInfo(BaseJob):
+class GetWalletTransactionTransfer(BaseJob):
     def __init__(self, chain, mongo_transaction, postgres, historical_token_price, block_timestamp_mappings, wallets_list: list, reputation_df: pd.DataFrame, direction, filename: str, start_date, end_date, start_block, end_block,
                  max_workers= 4, batch_size=500, sources: List[str] = None):
         self.transaction_info = list()

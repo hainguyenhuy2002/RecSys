@@ -19,7 +19,8 @@ class MongoDBEntity:
         self._config_col = self._db['configs']
         self._multichain_wallets_col = self._db['multichain_wallets']
         self._smart_contracts_col = self._db['smart_contracts']
-
+        self.wallets = self._db['wallets']
+    
     # def get_native_token_price_change_logs(self, chain_id) -> Dict:
     #     _filter = {'_id': f"{chain_id}_{NATIVE_TOKENS[chain_id]}"}
     #     _projection = ['priceChangeLogs']
