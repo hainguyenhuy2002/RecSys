@@ -1,6 +1,5 @@
 
 import click
-import requests
 import pandas as pd 
 from utils.logger_utils import get_logger
 from services.one_month_profile_service import GetWalletInfo
