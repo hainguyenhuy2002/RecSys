@@ -33,7 +33,7 @@ def get_token_price(chain, input_path, saving_path, batch_size, max_workers):
     except Exception as e:
         logger.info(e)
     addresses = []
-    for address in token_list:
+    for address in token_list[0:10]:
         addresses.append(f'{chain_id}_'+str(address))
     logger.info("Successful get addresses")
     logger.info(addresses)
