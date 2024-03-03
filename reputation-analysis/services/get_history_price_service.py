@@ -15,7 +15,6 @@ def format_prices(prices):
 def get_historical_prices(token_id, days=92, vs_currency='usd'):
     url = f'https://api.coingecko.com/api/v3/coins/{token_id}/market_chart?vs_currency={vs_currency}&days={days}'
     response = requests.get(url)
-    print(response.status_code)
     if response.status_code == 200:
         time.sleep(3)
     elif response.status_code == 429:

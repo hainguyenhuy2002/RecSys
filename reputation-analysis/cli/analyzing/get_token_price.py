@@ -36,6 +36,7 @@ def get_token_price(chain, input_path, saving_path, batch_size, max_workers):
     for address in token_list:
         addresses.append(f'{chain_id}_'+str(address))
     logger.info("Successful get addresses")
+    logger.info("Start to get tokens history")
 
     job = GetTokenPrice(mongo_klg_contract=mongo_klg_contract,token_addresses=addresses, filename=saving_path,batch_size=batch_size,max_workers=max_workers)
     job.run()
