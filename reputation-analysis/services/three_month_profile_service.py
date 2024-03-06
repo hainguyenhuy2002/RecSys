@@ -58,7 +58,7 @@ class GetWalletTransactionTransfer(BaseJob):
                 else:
                     round_timestamp = ((single_transaction_info['block_timestamp']  - single_transaction_info['block_timestamp']  % 86400) *1000)  #change to timestamp daily
                     single_transaction_info['valueInUSD'] = (int(single_transaction_info['value']) * self.historical_token_price['ethereum'][round_timestamp]) /10**18
-                    single_transaction_info['amount'] = single_transaction_info['value'].apply(eval) /10**18
+                    single_transaction_info['amount'] = int(single_transaction_info['value']) /10**18
                     df_list.append(single_transaction_info)    
         except Exception as e:
             log =get_logger("Transaction not so fast -.-")
