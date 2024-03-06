@@ -67,13 +67,13 @@ class GetWalletTransactionTransfer(BaseJob):
             df_concat = pd.DataFrame(df_list)
             try:
                 if self.direction == 'from':
-                    wallet_transaction_info = df_concat.groupby(['from_address', 'to_address']).agg({"block_timestamp":tuple, "valueInUSD": ['sum', 'median', tuple], 'value':tuple})
+                    wallet_transaction_info = df_concat.groupby(['from_address', 'to_address']).agg({"block_timestamp":tuple,  'value':tuple, "valueInUSD": ['sum', 'median', tuple]})
                     wallet_transaction_info.columns = ['{}_{}'.format(col[0], col[1]) for col in wallet_transaction_info.columns]
                     wallet_transaction_info = wallet_transaction_info.reset_index().rename(columns={"from_address": "wallet","to_address":"sending_wallet", 
                                                                                                     "block_timestamp_tuple":"block_timestamp_history", "valueInUSD_tuple":"valueInUSD_history"})
 
                 elif self.direction == 'to':
-                    wallet_transaction_info = df_concat.groupby(['to_address','from_address']).agg({"block_timestamp":tuple, "valueInUSD": ['sum', 'median', tuple]})
+                    wallet_transaction_info = df_concat.groupby(['to_address','from_address']).agg({"block_timestamp":tuple, 'value':tuple, "valueInUSD": ['sum', 'median', tuple]})
                     wallet_transaction_info.columns = ['{}_{}'.format(col[0], col[1]) for col in wallet_transaction_info.columns]
                     wallet_transaction_info = wallet_transaction_info.reset_index().rename(columns={"to_address": "wallet","from_address":"receiving_wallet", 
                                                                                                     "block_timestamp_tuple":"block_timestamp_history", "valueInUSD_tuple":"valueInUSD_history"})
