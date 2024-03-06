@@ -58,6 +58,7 @@ class GetWalletTransactionTransfer(BaseJob):
                 else:
                     round_timestamp = ((single_transaction_info['block_timestamp']  - single_transaction_info['block_timestamp']  % 86400) *1000)  #change to timestamp daily
                     single_transaction_info['valueInUSD'] = (int(single_transaction_info['value']) * self.historical_token_price['ethereum'][round_timestamp]) /10**18
+                    single_transaction_info['amount'] = single_transaction_info['value'] /10**18
                     df_list.append(single_transaction_info)    
         except Exception as e:
             log =get_logger("Transaction not so fast -.-")
@@ -67,16 +68,16 @@ class GetWalletTransactionTransfer(BaseJob):
             df_concat = pd.DataFrame(df_list)
             try:
                 if self.direction == 'from':
-                    wallet_transaction_info = df_concat.groupby(['from_address', 'to_address']).agg({"block_timestamp":tuple,  'value':tuple, "valueInUSD": ['sum', 'median', tuple]})
+                    wallet_transaction_info = df_concat.groupby(['from_address', 'to_address']).agg({"block_timestamp":tuple,  'amount':tuple, "valueInUSD": ['sum', 'median', tuple]})
                     wallet_transaction_info.columns = ['{}_{}'.format(col[0], col[1]) for col in wallet_transaction_info.columns]
                     wallet_transaction_info = wallet_transaction_info.reset_index().rename(columns={"from_address": "wallet","to_address":"sending_wallet", 
-                                                                                                    "block_timestamp_tuple":"block_timestamp_history", "valueInUSD_tuple":"valueInUSD_history"})
+                                                                                                    "block_timestamp_tuple":"block_timestamp_history", "valueInUSD_tuple":"valueInUSD_history", "amount_tuple":"amount_history"})
 
                 elif self.direction == 'to':
-                    wallet_transaction_info = df_concat.groupby(['to_address','from_address']).agg({"block_timestamp":tuple, 'value':tuple, "valueInUSD": ['sum', 'median', tuple]})
+                    wallet_transaction_info = df_concat.groupby(['to_address','from_address']).agg({"block_timestamp":tuple, 'amount':tuple, "valueInUSD": ['sum', 'median', tuple]})
                     wallet_transaction_info.columns = ['{}_{}'.format(col[0], col[1]) for col in wallet_transaction_info.columns]
                     wallet_transaction_info = wallet_transaction_info.reset_index().rename(columns={"to_address": "wallet","from_address":"receiving_wallet", 
-                                                                                                    "block_timestamp_tuple":"block_timestamp_history", "valueInUSD_tuple":"valueInUSD_history"})
+                                                                                                    "block_timestamp_tuple":"block_timestamp_history", "valueInUSD_tuple":"valueInUSD_history", "amount_tuple":"amount_history"})
                 wallet_transaction_info = wallet_transaction_info.merge(self.reputation_df[['wallet', 'NumberOfTokensBorrow',	'NumberOfTokensDeposit', 
                                                                     'NumberOfTokensHold', 'totalBorrowInUSD', 'totalDepositInUSD',	'totalHoldInUSD', 'score']], on='wallet', how='inner')
                 self.transaction_info.append(wallet_transaction_info)
