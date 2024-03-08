@@ -57,7 +57,7 @@ class GetWalletTransactionTransfer(BaseJob):
                     continue
                 else:
                     round_timestamp = ((single_transaction_info['block_timestamp']  - single_transaction_info['block_timestamp']  % 86400) *1000)  #change to timestamp daily
-                    single_transaction_info['valueInUSD'] = (int(single_transaction_info['value']) * self.historical_token_price['bsc'][round_timestamp]) /10**18
+                    single_transaction_info['valueInUSD'] = (int(single_transaction_info['value']) * self.historical_token_price['binancecoin'][round_timestamp]) /10**18
                     single_transaction_info['amount'] = int(single_transaction_info['value']) /10**18
                     df_list.append(single_transaction_info)    
         except Exception as e:
