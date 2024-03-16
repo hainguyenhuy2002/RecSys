@@ -6,6 +6,7 @@ import os
 
 if __name__ == '__main__':
     link = os.getenv('MONGODB_ENTITY_CONNECTION_URL')
+    print(link)
     client = MongoClient(link)  # Update the connection string as per # Select the database
     db = client["knowledge_graph"]  # Replace "your_database_name" with your actual database name
     collection = db["wallets"]
