@@ -1,4 +1,3 @@
-
 import click
 import pandas as pd 
 from utils.logger_utils import get_logger
@@ -11,7 +10,6 @@ from constants.network_constants import Chains
 @click.command(context_settings=dict(help_option_names=['-h', '--help']))
 @click.option('-c', '--chain', default='bsc', show_default=True, type=str,
               help='Network name example bsc or polygon')
-
 @click.option('-i', '--input_path', type=str,
               help='Path to input addresses')
 @click.option('-sv', '--saving_path', type=str,

@@ -1,4 +1,4 @@
-from pymongo import MongoClient, UpdateOne
+from pymongo import MongoClient, UpdateOne, InsertOne
 
 from config import MongoDBConfig
 
@@ -42,6 +42,17 @@ class MongoDB:
     #######################
     #   Deposit - Users   #
     #######################
+
+    def update_data(self, name, data):
+        bulk_updates = [
+            UpdateOne({'_id': datum['_id']}, {'$set': datum}, upsert=True
+            )
+            for datum in data
+       ]
+        self._db[f"{name}"].bulk_write(bulk_updates)
+
+
+    
     def get_deposit_number_of_users(self, skip: int=0, limit: int=1):
         pipeline =  [
             {
