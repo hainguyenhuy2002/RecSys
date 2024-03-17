@@ -19,21 +19,25 @@ class GetAddress(BaseJob):
     def _execute_batch(self, works):
         for work in works:
             wallet_lst: List[Dict] = list()
-            query =  {"flagged":work, "chainId":"0x1", "balanceChangeLogs":{"$exists":"True"},"type":"wallet", "balanceInUSD":{"$lte":50000}, "balanceInUSD":{"$gte":10}}
-            wallets = self.mongo_klg.find(query,{'_id':1,'flagged':1,'balanceChangeLogs':1,'address':1})
-            for wallet in wallets:
-              #  wallet_sent_receive = self.arangoDb.get_num_send_receive(wallet['address'])
-               # if (wallet_sent_receive['numberSent'] >300) |((wallet_sent_receive['numberReceived'] >300)):
-               #     continue
-               # else: 
-                wallet_lst.append({
-                            '_id':wallet['_id'],
-                            'address': wallet['address'],
-                            'flagged': wallet['flagged'],
-                            'balanceChangeLogs': wallet['balanceChangeLogs'],
-                        })
-            if len(wallet_lst) !=0:
-                self._export_users_available(wallet_lst= wallet_lst, name=self.name)
+            try:
+                query =  {"flagged":work, "chainId":"0x1", "balanceChangeLogs":{"$exists":"True"},"type":"wallet", "balanceInUSD":{"$lte":50000}, "balanceInUSD":{"$gte":10}}
+                wallets = self.mongo_klg.find(query,{'_id':1,'flagged':1,'balanceChangeLogs':1,'address':1})
+                for wallet in wallets:
+                #  wallet_sent_receive = self.arangoDb.get_num_send_receive(wallet['address'])
+                # if (wallet_sent_receive['numberSent'] >300) |((wallet_sent_receive['numberReceived'] >300)):
+                #     continue
+                # else: 
+                    wallet_lst.append({
+                                '_id':wallet['_id'],
+                                'address': wallet['address'],
+                                'flagged': wallet['flagged'],
+                                'balanceChangeLogs': wallet['balanceChangeLogs'],
+                            })
+                if len(wallet_lst) !=0:
+                    self._export_users_available(wallet_lst= wallet_lst, name=self.name)
+            except Exception as e:
+                get_logger(e)
+                continue
     def _export_users_available(self, wallet_lst,name):
         #self.exporter._db[f"{name}"].bulk_write(wallet_lst)
         self.exporter.update_data(name=name, data=wallet_lst)
