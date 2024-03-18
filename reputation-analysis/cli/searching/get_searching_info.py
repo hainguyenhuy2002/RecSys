@@ -55,8 +55,8 @@ def get_searching_info(chain, direction, input_path, saving_path, start, end, st
 
     logger.info("Start to connect MongoDB and PostgresDB Database")
     try:
-    #    mongo = MongoDBMain(chain=chain)
-     #   mongo_transaction = mongo._db['transactions']   
+        mongo = MongoDBMain(chain=chain)
+        mongo_transaction = mongo._db['transactions']   
         postgres = PostgresDB()
         mongo_clustering = MongoDB()
         mongo_available_addresses = mongo_clustering._db['available_addresses']
@@ -71,13 +71,13 @@ def get_searching_info(chain, direction, input_path, saving_path, start, end, st
     try:
         cursor = mongo_available_addresses.find({},{'address':1})
         addresses = []
-        for address in cursor:
+        for address in cursor[0:20]:
             addresses.append(address['address'])
-    #     historical_token_price = get_historical_prices('ethereum')
-    #     historical_token_round_price = dict()
-    #     historical_token_round_price['ethereum'] = {(timestamp - (timestamp % 86400000)): value for timestamp, value in historical_token_price['ethereum'].items()}
-    #     block_timestamp_mappings = mongo.get_block_number_to_timestamp(start_block=start_block, end_block=end_block)
-    #     logger.info("Sucessful get mapping timestamp dictionary and the mapping token history")
+        historical_token_price = get_historical_prices('ethereum')
+        historical_token_round_price = dict()
+        historical_token_round_price['ethereum'] = {(timestamp - (timestamp % 86400000)): value for timestamp, value in historical_token_price['ethereum'].items()}
+        block_timestamp_mappings = mongo.get_block_number_to_timestamp(start_block=start_block, end_block=end_block)
+        logger.info("Sucessful get mapping timestamp dictionary and the mapping token history")
 
 
     except Exception as e:
@@ -87,10 +87,10 @@ def get_searching_info(chain, direction, input_path, saving_path, start, end, st
         sources = [sources]
         print(sources)
     job = GetWalletTransactionTransfer(chain=chain, 
-                             mongo_transaction= 'mongo_transaction',
+                             mongo_transaction= mongo_transaction,
                              postgres= postgres,
-                             historical_token_price='historical_token_round_price',
-                             block_timestamp_mappings='block_timestamp_mappings',
+                             historical_token_price=historical_token_round_price,
+                             block_timestamp_mappings=block_timestamp_mappings,
                              wallets_list= addresses, 
                              direction=direction,
                              filename=saving_path, 

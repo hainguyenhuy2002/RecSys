@@ -9,8 +9,7 @@ class GetAddress(BaseJob):
     def __init__(self, importer, arangoDb, exporter, name,flagged_lst: list, max_workers= 4, batch_size=500):
         self.mongo_klg = importer
         self.exporter = exporter
-   #     self.arangoDb = arangoDb
-       # self.arango = arangodb
+        self.arangoDb = arangoDb
         self.name = name
         super().__init__(work_iterable=flagged_lst,
                          max_workers=max_workers,
@@ -23,20 +22,34 @@ class GetAddress(BaseJob):
                 query =  {"flagged":work, "chainId":"0x1", "balanceChangeLogs":{"$exists":"True"},"type":"wallet", "balanceInUSD":{"$lte":50000}, "balanceInUSD":{"$gte":10}}
                 wallets = self.mongo_klg.find(query,{'_id':1,'flagged':1,'balanceChangeLogs':1,'address':1,'tokenChangeLogs':1,'tags':1})
                 for wallet in wallets:
-                #  wallet_sent_receive = self.arangoDb.get_num_send_receive(wallet['address'])
-                # if (wallet_sent_receive['numberSent'] >300) |((wallet_sent_receive['numberReceived'] >300)):
-                #     continue
-                # else: 
-                    wallet_lst.append({
-                                '_id':wallet['_id'],
-                                'address': wallet['address'],
-                                'flagged': wallet['flagged'],
-                                'balanceChangeLogs': wallet['balanceChangeLogs'],
-                            })
-                if len(wallet_lst) !=0:
-                    self._export_users_available(wallet_lst= wallet_lst, name=self.name)
+                    try:
+                        wallet_sent_receive = self.arangoDb.get_num_send_receive(wallet['address'])
+                    except Exception as e:
+                        continue
+
+                    if 'numberSent' not in wallet_sent_receive:
+                        numSent = 0
+                    elif 'numberReceived' not in wallet_sent_receive:
+                        numReceived = 0
+                    else: 
+                        numSent = wallet_sent_receive['numberSent']
+                        numReceived = wallet_sent_receive['numberReceived']
+
+                    if (numSent >300) |((numReceived >300)):
+                        continue
+                    else: 
+                        wallet_lst.append({
+                                    '_id':wallet['_id'],
+                                    'address': wallet['address'],
+                                    'flagged': wallet['flagged'],
+                                    'balanceChangeLogs': wallet['balanceChangeLogs'],
+                                    'numberSent': numSent,
+                                    'numberReceived': numReceived
+                                })
+                    if len(wallet_lst) !=0:
+                        self._export_users_available(wallet_lst= wallet_lst, name=self.name)
             except Exception as e:
-                get_logger(e)
+                print(e)
                 continue
     def _export_users_available(self, wallet_lst,name):
         #self.exporter._db[f"{name}"].bulk_write(wallet_lst)
