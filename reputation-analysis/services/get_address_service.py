@@ -21,7 +21,7 @@ class GetAddress(BaseJob):
             try:
                 query =  {"flagged":work, "chainId":"0x1", "balanceChangeLogs":{"$exists":"True"},"type":"wallet", "balanceInUSD":{"$gte":10}}
                 wallets = self.mongo_klg.find(query,{'_id':1,'flagged':1,'balanceChangeLogs':1,'address':1,'tokenChangeLogs':1,'tags':1})
-                for wallet in wallets:
+                for wallet in wallets[0:20]:
                     try:
                         wallet_sent_receive = self.arangoDb.get_num_send_receive(wallet['address'])
                     except Exception as e:
