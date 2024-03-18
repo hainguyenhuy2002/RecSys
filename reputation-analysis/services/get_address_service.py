@@ -19,35 +19,35 @@ class GetAddress(BaseJob):
         for work in works:
             wallet_lst: List[Dict] = list()
             try:
-                query =  {"flagged":work, "chainId":"0x1", "balanceChangeLogs":{"$exists":"True"},"type":"wallet", "balanceInUSD":{"$gte":10}}
+                query =  {"flagged":work, "chainId":"0x1", "balanceChangeLogs":{"$exists":"True"}, "balanceInUSD":{"$gte":10}}
                 wallets = self.mongo_klg.find(query,{'_id':1,'flagged':1,'balanceChangeLogs':1,'address':1,'tokenChangeLogs':1,'tags':1})
-                for wallet in wallets[0:20]:
-                    try:
-                        wallet_sent_receive = self.arangoDb.get_num_send_receive(wallet['address'])
-                    except Exception as e:
-                        continue
+                for wallet in wallets:
+                    # try:
+                    #     wallet_sent_receive = self.arangoDb.get_num_send_receive(wallet['address'])
+                    # except Exception as e:
+                    #     continue
 
-                    if 'numberSent' not in wallet_sent_receive:
-                        numSent = 0
-                    elif 'numberReceived' not in wallet_sent_receive:
-                        numReceived = 0
-                    else: 
-                        numSent = wallet_sent_receive['numberSent']
-                        numReceived = wallet_sent_receive['numberReceived']
+                    # if 'numberSent' not in wallet_sent_receive:
+                    #     numSent = 0
+                    # elif 'numberReceived' not in wallet_sent_receive:
+                    #     numReceived = 0
+                    # else: 
+                    #     numSent = wallet_sent_receive['numberSent']
+                    #     numReceived = wallet_sent_receive['numberReceived']
 
-                    if (numSent >300) |((numReceived >300)):
-                        continue
-                    else: 
-                        wallet_lst.append({
-                                    '_id':wallet['_id'],
-                                    'address': wallet['address'],
-                                    'flagged': wallet['flagged'],
-                                    'balanceChangeLogs': wallet['balanceChangeLogs'],
-                                    'numberSent': numSent,
-                                    'numberReceived': numReceived
-                                })
-                    if len(wallet_lst) !=0:
-                        self._export_users_available(wallet_lst= wallet_lst, name=self.name)
+                    # if (numSent >300) |((numReceived >300)):
+                    #     continue
+                    # else: 
+                    wallet_lst.append({
+                                '_id':wallet['_id'],
+                                'address': wallet['address'],
+                                'flagged': wallet['flagged'],
+                                'balanceChangeLogs': wallet['balanceChangeLogs']
+                                # 'numberSent': numSent,
+                                # 'numberReceived': numReceived
+                            })
+                if len(wallet_lst) !=0:
+                    self._export_users_available(wallet_lst= wallet_lst, name=self.name)
             except Exception as e:
                 print(e)
                 continue

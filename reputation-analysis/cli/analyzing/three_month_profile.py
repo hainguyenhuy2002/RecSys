@@ -68,7 +68,7 @@ def three_month_profile(chain, direction, input_path, saving_path, start, end, s
     try:
         input_df = pd.read_json(input_path)
         input_df['wallet'] = input_df['_id'].apply(lambda x: x.split('_')[1])
-        addresses = input_df.wallet.unique().tolist()
+        addresses = input_df.wallet.unique().tolist()[0:100]
         historical_token_price = get_historical_prices('ethereum')
         historical_token_round_price = dict()
         historical_token_round_price['ethereum'] = {(timestamp - (timestamp % 86400000)): value for timestamp, value in historical_token_price['ethereum'].items()}
