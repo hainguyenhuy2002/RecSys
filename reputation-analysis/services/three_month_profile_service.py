@@ -9,7 +9,7 @@ def tuple_of_values(x):
     return tuple(x)
 
 class GetWalletTransactionTransfer(BaseJob):
-    def __init__(self, chain, mongo_transaction, postgres, historical_token_price, block_timestamp_mappings, wallets_list: list, reputation_df: pd.DataFrame, direction, filename: str, start_date, end_date, start_block, end_block,
+    def __init__(self, chain, mongo_transaction, postgres, historical_token_price, block_timestamp_mappings, wallets_list: list, direction, filename: str, start_date, end_date, start_block, end_block,
                  max_workers= 4, batch_size=500, sources: List[str] = None):
         self.transaction_info = list()
         self.transfer_info = list()
@@ -19,7 +19,7 @@ class GetWalletTransactionTransfer(BaseJob):
         self.postgres = postgres
         self.historical_token_price = historical_token_price
         self.block_timestamp_mappings = block_timestamp_mappings
-        self.reputation_df = reputation_df
+        # self.reputation_df = reputation_df
 
         self.start_date = start_date
         self.end_date = end_date
@@ -57,7 +57,7 @@ class GetWalletTransactionTransfer(BaseJob):
                     continue
                 else:
                     round_timestamp = ((single_transaction_info['block_timestamp']  - single_transaction_info['block_timestamp']  % 86400) *1000)  #change to timestamp daily
-                    single_transaction_info['valueInUSD'] = (int(single_transaction_info['value']) * self.historical_token_price['binancecoin'][round_timestamp]) /10**18
+                    single_transaction_info['valueInUSD'] = (int(single_transaction_info['value']) * self.historical_token_price['ethereum'][round_timestamp]) /10**18
                     single_transaction_info['amount'] = int(single_transaction_info['value']) /10**18
                     df_list.append(single_transaction_info)    
         except Exception as e:
@@ -78,8 +78,8 @@ class GetWalletTransactionTransfer(BaseJob):
                     wallet_transaction_info.columns = ['{}_{}'.format(col[0], col[1]) for col in wallet_transaction_info.columns]
                     wallet_transaction_info = wallet_transaction_info.reset_index().rename(columns={"to_address": "wallet","from_address":"receiving_wallet", 
                                                                                                     "block_timestamp_tuple":"block_timestamp_history", "valueInUSD_tuple":"valueInUSD_history", "amount_tuple":"amount_history"})
-                wallet_transaction_info = wallet_transaction_info.merge(self.reputation_df[['wallet', 'NumberOfTokensBorrow',	'NumberOfTokensDeposit', 
-                                                                    'NumberOfTokensHold', 'totalBorrowInUSD', 'totalDepositInUSD',	'totalHoldInUSD', 'score']], on='wallet', how='inner')
+                # wallet_transaction_info = wallet_transaction_info.merge(self.reputation_df[['wallet', 'NumberOfTokensBorrow',	'NumberOfTokensDeposit', 
+                #                                                     'NumberOfTokensHold', 'totalBorrowInUSD', 'totalDepositInUSD',	'totalHoldInUSD', 'score']], on='wallet', how='inner')
                 self.transaction_info.append(wallet_transaction_info)
             except Exception as e:
                 log =get_logger("Transactinon not so fast =.=' ")
@@ -111,8 +111,8 @@ class GetWalletTransactionTransfer(BaseJob):
                     wallet_transfer_info = wallet_transfer_info.reset_index().rename(columns={"to_address": "wallet","from_address":"receiving_wallet", 
                                                                                             "block_number_tuple":"block_timestamp_history", "value_tuple":"values_history"})
                 
-                wallet_transfer_info = wallet_transfer_info.merge(self.reputation_df[['wallet', 'NumberOfTokensBorrow',	'NumberOfTokensDeposit', 
-                                                                        'NumberOfTokensHold', 'totalBorrowInUSD', 'totalDepositInUSD',	'totalHoldInUSD', 'score']], on='wallet', how='inner')
+                # wallet_transfer_info = wallet_transfer_info.merge(self.reputation_df[['wallet', 'NumberOfTokensBorrow',	'NumberOfTokensDeposit', 
+                #                                                         'NumberOfTokensHold', 'totalBorrowInUSD', 'totalDepositInUSD',	'totalHoldInUSD', 'score']], on='wallet', how='inner')
                 self.transfer_info.append((wallet_transfer_info))
             
             except Exception as e:

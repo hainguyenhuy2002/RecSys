@@ -38,7 +38,7 @@ from services.web3_service  import web3_service
 @click.option('-w', '--max-workers', default=8, show_default=True, type=int,
               help='The number of workers')
 
-def three_month_profile(chain, direction, input_path, saving_path, start, end, start_block, end_block, sources, batch_size, max_workers):
+def get_searching_info(chain, direction, input_path, saving_path, start, end, start_block, end_block, sources, batch_size, max_workers):
     logger = get_logger('User infromation exporter')
     if (start_block == None) | (end_block ==None):
         logger.info("Start map timestamp to block number")
@@ -73,9 +73,7 @@ def three_month_profile(chain, direction, input_path, saving_path, start, end, s
         addresses = []
         for address in cursor:
             addresses.append(address['address'])
-
-        input_df = pd.read_json(input_path)
-        addresses = input_df.wallet.unique().tolist()
+        print(addresses)
         historical_token_price = get_historical_prices('ethereum')
         historical_token_round_price = dict()
         historical_token_round_price['ethereum'] = {(timestamp - (timestamp % 86400000)): value for timestamp, value in historical_token_price['ethereum'].items()}
@@ -95,7 +93,6 @@ def three_month_profile(chain, direction, input_path, saving_path, start, end, s
                              historical_token_price=historical_token_round_price,
                              block_timestamp_mappings=block_timestamp_mappings,
                              wallets_list= addresses, 
-                             reputation_df= input_df,
                              direction=direction,
                              filename=saving_path, 
                              start_date=start, 
