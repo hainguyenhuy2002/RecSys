@@ -49,18 +49,20 @@ class GetWalletTransactionTransfer(BaseJob):
 
     def _wallet_transaction_info(self, works): 
         df_list = list()
-
-        transactions_data =self.mongo_transaction.find({"block_timestamp" : {"$gte": self.start_date, "$lte": self.end_date},f'{self.direction}_address': {'$in': works}},{'from_address':1, 'to_address':1, 'value':1, 'block_timestamp':1})
-        for transaction in transactions_data:
-            single_transaction_info = dict(transaction) 
-            if single_transaction_info['value'] == '0':
-                continue
-            else:
-                round_timestamp = ((single_transaction_info['block_timestamp']  - single_transaction_info['block_timestamp']  % 86400) *1000)  #change to timestamp daily
-                single_transaction_info['valueInUSD'] = (int(single_transaction_info['value']) * self.historical_token_price['ethereum'][round_timestamp]) /10**18
-                single_transaction_info['amount'] = int(single_transaction_info['value']) /10**18
-                df_list.append(single_transaction_info)    
-
+        try:
+            transactions_data =self.mongo_transaction.find({"block_timestamp" : {"$gte": self.start_date, "$lte": self.end_date},f'{self.direction}_address': {'$in': works}},{'from_address':1, 'to_address':1, 'value':1, 'block_timestamp':1})
+            for transaction in transactions_data:
+                single_transaction_info = dict(transaction) 
+                if single_transaction_info['value'] == '0':
+                    continue
+                else:
+                    round_timestamp = ((single_transaction_info['block_timestamp']  - single_transaction_info['block_timestamp']  % 86400) *1000)  #change to timestamp daily
+                    single_transaction_info['valueInUSD'] = (int(single_transaction_info['value']) * self.historical_token_price['ethereum'][round_timestamp]) /10**18
+                    single_transaction_info['amount'] = int(single_transaction_info['value']) /10**18
+                    df_list.append(single_transaction_info)    
+        except Exception as e:
+            log =get_logger("Transaction not so fast -.-")
+            log.info(e)
 
         if len(df_list) !=0:
             df_concat = pd.DataFrame(df_list)
