@@ -88,7 +88,6 @@ def three_month_profile(chain, direction, input_path, saving_path, start, end, s
                              historical_token_price=historical_token_round_price,
                              block_timestamp_mappings=block_timestamp_mappings,
                              wallets_list= addresses, 
-                             reputation_df= input_df,
                              direction=direction,
                              filename=saving_path, 
                              start_date=start, 
