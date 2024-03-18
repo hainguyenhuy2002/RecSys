@@ -32,7 +32,9 @@ def one_month_profile(chain, input_path, saving_path, batch_size, max_workers):
         logger.info(e)
 
     input_df = pd.read_json(input_path)
+    input_df['wallet'] = input_df['_id'].apply(lambda x: x.split('_')[1])
     input_address = input_df.wallet.unique().tolist()
+
     addresses = []
     for address in input_address:
         addresses.append(f'{chain_id}_'+str(address))
