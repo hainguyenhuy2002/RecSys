@@ -71,7 +71,7 @@ def get_searching_info(chain, direction, input_path, saving_path, start, end, st
     try:
         cursor = mongo_available_addresses.find({},{'address':1})
         addresses = []
-        for address in cursor:
+        for address in cursor[0:20]:
             addresses.append(address['address'])
         historical_token_price = get_historical_prices('ethereum')
         historical_token_round_price = dict()

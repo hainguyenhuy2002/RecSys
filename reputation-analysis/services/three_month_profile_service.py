@@ -32,7 +32,8 @@ class GetWalletTransactionTransfer(BaseJob):
         self.filename = filename
     
         if not sources:
-            sources = ['mongo', 'postgres']
+            #sources = ['mongo', 'postgres']
+            sources = ['postgres']
         self.sources = sources
         self.chain_id = Chains.mapping[chain]
 
