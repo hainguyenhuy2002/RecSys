@@ -7,11 +7,12 @@ from multithread_processing.base_job import BaseJob
 from utils.logger_utils import get_logger
 
 class GetAddress(BaseJob):
-    def __init__(self, importer, arangoDb, exporter, name,flagged_lst: list, max_workers= 4, batch_size=500):
+    def __init__(self, importer, arangoDb, exporter, hot_wallets, name,flagged_lst: list, max_workers= 4, batch_size=500):
         self.mongo_klg = importer
         self.exporter = exporter
         self.arangoDb = arangoDb
         self.name = name
+        self.hot_wallets = hot_wallets
         super().__init__(work_iterable=flagged_lst,
                          max_workers=max_workers,
                          batch_size=batch_size)
@@ -24,16 +25,19 @@ class GetAddress(BaseJob):
                 query =  {"flagged":work, "chainId":"0x1", "balanceChangeLogs":{"$exists":"True"}, "balanceInUSD":{"$gte":10}}
                 wallets = self.mongo_klg.find(query,{'_id':1,'flagged':1,'balanceChangeLogs':1,'address':1,'tokenChangeLogs':1,'tags':1, 'balanceInUSD':1})
                 for wallet in wallets:
-                    wallet_lst.append({
-                                '_id':wallet['_id'],
-                                'address': wallet['address'],
-                                'flagged': wallet['flagged'],
-                                'balanceChangeLogs': wallet['balanceChangeLogs'],
-                                'tokenChangeLogs': wallet['tokenChangeLogs'],
-                                'balanceInUSD': wallet['balanceInUSD']
-                            })
-                    str = f'ethereum_addresses/0x1_'+wallet['address']
-                    wallets_name.append(str)
+                    if wallet in self.hot_wallets:
+                        continue
+                    else:
+                        wallet_lst.append({
+                                    '_id':wallet['_id'],
+                                    'address': wallet['address'],
+                                    'flagged': wallet['flagged'],
+                                    'balanceChangeLogs': wallet['balanceChangeLogs'],
+                                    'tokenChangeLogs': wallet['tokenChangeLogs'],
+                                    'balanceInUSD': wallet['balanceInUSD']
+                                })
+                        str = f'ethereum_addresses/0x1_'+wallet['address']
+                        wallets_name.append(str)
                 if len(wallet_lst) !=0:
                     wallet_sent_receive = self.arangoDb.get_num_send_receive(wallets_name)
                     sent_receive_df = pd.DataFrame(wallet_sent_receive)
