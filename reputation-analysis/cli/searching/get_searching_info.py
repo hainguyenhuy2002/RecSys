@@ -82,7 +82,7 @@ def get_searching_info(chain, direction, input_path, saving_path, start, end, st
     cursor = mongo_available_addresses.find({},{'address':1})
     addresses = []
     for address in cursor:
-        if (address['numberReceived']<= 150) &(address['numberSent']<=150):
+        if (address['numberReceived']<= 200) &(address['numberSent']<=200):
             addresses.append(address['address'])
 
     if sources != None:
