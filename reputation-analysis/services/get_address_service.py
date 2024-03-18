@@ -21,7 +21,7 @@ class GetAddress(BaseJob):
             wallet_lst: List[Dict] = list()
             try:
                 query =  {"flagged":work, "chainId":"0x1", "balanceChangeLogs":{"$exists":"True"},"type":"wallet", "balanceInUSD":{"$lte":50000}, "balanceInUSD":{"$gte":10}}
-                wallets = self.mongo_klg.find(query,{'_id':1,'flagged':1,'balanceChangeLogs':1,'address':1})
+                wallets = self.mongo_klg.find(query,{'_id':1,'flagged':1,'balanceChangeLogs':1,'address':1,'tokenChangeLogs':1,'tags':1})
                 for wallet in wallets:
                 #  wallet_sent_receive = self.arangoDb.get_num_send_receive(wallet['address'])
                 # if (wallet_sent_receive['numberSent'] >300) |((wallet_sent_receive['numberReceived'] >300)):

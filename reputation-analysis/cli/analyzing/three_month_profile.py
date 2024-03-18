@@ -81,23 +81,23 @@ def three_month_profile(chain, direction, input_path, saving_path, start, end, s
     if sources != None:
         sources = [sources]
         print(sources)
-    job = GetWalletTransactionTransfer(chain=chain, 
-                             mongo_transaction= mongo_transaction,
-                             postgres= postgres,
-                             historical_token_price=historical_token_round_price,
-                             block_timestamp_mappings=block_timestamp_mappings,
-                             wallets_list= addresses, 
-                             reputation_df= input_df,
-                             direction=direction,
-                             filename=saving_path, 
-                             start_date=start, 
-                             end_date= end, 
-                             start_block=start_block,
-                             end_block=end_block,
-                             max_workers=batch_size, 
-                             batch_size=max_workers,
-                             sources=sources)
-    job.run()
+    # job = GetWalletTransactionTransfer(chain=chain, 
+    #                          mongo_transaction= mongo_transaction,
+    #                          postgres= postgres,
+    #                          historical_token_price=historical_token_round_price,
+    #                          block_timestamp_mappings=block_timestamp_mappings,
+    #                          wallets_list= addresses, 
+    #                          reputation_df= input_df,
+    #                          direction=direction,
+    #                          filename=saving_path, 
+    #                          start_date=start, 
+    #                          end_date= end, 
+    #                          start_block=start_block,
+    #                          end_block=end_block,
+    #                          max_workers=batch_size, 
+    #                          batch_size=max_workers,
+    #                          sources=sources)
+    # job.run()
 
 
 def format_prices(prices):
