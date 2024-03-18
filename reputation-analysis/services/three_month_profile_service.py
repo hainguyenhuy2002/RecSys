@@ -32,7 +32,7 @@ class GetWalletTransactionTransfer(BaseJob):
         self.filename = filename
     
         if not sources:
-            #sources = ['mongo', 'postgres']
+           # sources = ['mongo', 'postgres']
             sources = ['postgres']
         self.sources = sources
         self.chain_id = Chains.mapping[chain]
@@ -94,8 +94,8 @@ class GetWalletTransactionTransfer(BaseJob):
         wallet_transfer = []
         fields_to_select =['contract_address', 'block_number', 'from_address', 'to_address', 'value']
         for row in transfers_data:
-            new_row = row[:1] + (self.block_timestamp_mappings[row[1]],) +row[2:]
-            wallet_transfer.append(dict(zip(fields_to_select, new_row)))
+          #  new_row = row[:1] + (self.block_timestamp_mappings[row[1]],) +row[2:]
+            wallet_transfer.append(dict(zip(fields_to_select, row)))
 
         if len(wallet_transfer)!=0:            
             transfer_concat = pd.DataFrame(wallet_transfer)
@@ -123,8 +123,7 @@ class GetWalletTransactionTransfer(BaseJob):
 
     def _end(self):
         super()._end()
-        transaction_df = pd.concat(self.transaction_info, ignore_index=True)
+#        transaction_df = pd.concat(self.transaction_info, ignore_index=True)
         transfer_df = pd.concat(self.transfer_info, ignore_index=True)
-        #return df
-        transaction_df.to_csv(f'{self.filename}/{self.direction}_transaction.csv', index=False)
+ #       transaction_df.to_csv(f'{self.filename}/{self.direction}_transaction.csv', index=False)
         transfer_df.to_csv(f'{self.filename}/{self.direction}_transfer.csv', index=False)
