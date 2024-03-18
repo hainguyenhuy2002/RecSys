@@ -72,13 +72,17 @@ class ArangoDB:
         # Define your AQL query with conditions
         aql_query = '''
             FOR doc IN ethereum_addresses
-            FILTER doc._id == @value
-            RETURN doc
+            FILTER doc._id IN @value
+            RETURN { 
+                address: doc.address,
+                numberSent: doc.numberSent,
+                numberReceived: doc.numberReceived,
+            }
         '''
 
-        bind_vars = {'value': f'ethereum_addresses/0x1_{wallet}'}
-        cursor = self._db.aql.execute(aql_query, bind_vars=bind_vars)
-        cur = [doc for doc in cursor][0]
+ #       bind_vars = {'value': f'ethereum_addresses/0x1_{wallet}'}
+        cursor = self._db.aql.execute(aql_query, bind_vars={'value':wallet})
+        cur = [doc for doc in cursor]
         return cur
 
 
