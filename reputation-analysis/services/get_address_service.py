@@ -19,7 +19,7 @@ class GetAddress(BaseJob):
         for work in works:
             wallet_lst: List[Dict] = list()
             try:
-                query =  {"flagged":work, "chainId":"0x1", "balanceChangeLogs":{"$exists":"True"},"type":"wallet", "balanceInUSD":{"$lte":150000}, "balanceInUSD":{"$gte":10}}
+                query =  {"flagged":work, "chainId":"0x1", "balanceChangeLogs":{"$exists":"True"},"type":"wallet", "balanceInUSD":{"$gte":10}}
                 wallets = self.mongo_klg.find(query,{'_id':1,'flagged':1,'balanceChangeLogs':1,'address':1,'tokenChangeLogs':1,'tags':1})
                 for wallet in wallets:
                     try:
