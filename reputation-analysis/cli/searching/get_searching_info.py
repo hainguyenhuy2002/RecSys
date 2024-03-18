@@ -1,4 +1,5 @@
 import os
+import json
 import click
 import requests
 import pandas as pd 
@@ -19,7 +20,7 @@ from services.web3_service  import web3_service
 @click.option('-d', '--direction', default='sneding', show_default=True, type=str,
               help='direction of transaction of an wallet (sending or receiving)')
 @click.option('-i', '--input_path', type=str,
-              help='Path to input addresses')
+              help='Path to input hot addresses')
 @click.option('-sv', '--saving_path', type=str,
               help='Path to save time_amount file')
 @click.option('-s', '--start', type=int,
@@ -79,10 +80,21 @@ def get_searching_info(chain, direction, input_path, saving_path, start, end, st
     except Exception as e:
         logger.info(e)
 
+
+    with open(input_path, 'r') as file:
+        hot_wallets = json.load(file)
+
+    hot_wallets_lst = []
+    for exchange, data in hot_wallets_lst.items():
+        if "0x1" in data["wallets"]:
+            hot_wallets_lst.extend(data["wallets"]["0x1"])
+
+
+
     cursor = mongo_available_addresses.find({},{'address':1})
     addresses = []
     for address in cursor:
-        if (address['numberReceived']<= 200) &(address['numberSent']<=200):
+        if (address['numberReceived']<= 200) &(address['numberSent']<=200) &(address['address'] not in hot_wallets_lst):
             addresses.append(address['address'])
 
     if sources != None:
