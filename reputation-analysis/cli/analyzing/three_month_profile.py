@@ -67,7 +67,6 @@ def three_month_profile(chain, direction, input_path, saving_path, start, end, s
     logger.info("Start to get the mapping timestamp dictonary and the mapping token history prices dictionary")
     try:
         input_df = pd.read_json(input_path)
-        print(input_df.columns)
         input_df['wallet'] = input_df['_id'].apply(lambda x: x.split('_')[1])
         addresses = input_df.wallet.unique().tolist()
         historical_token_price = get_historical_prices('ethereum')
