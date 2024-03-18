@@ -69,11 +69,6 @@ def get_searching_info(chain, direction, input_path, saving_path, start, end, st
 
     logger.info("Start to get the mapping timestamp dictonary and the mapping token history prices dictionary")
     try:
-        cursor = mongo_available_addresses.find({},{'address':1})
-        addresses = []
-        for address in cursor:
-            if (address['numberReceived']<= 150) &(address['numberSent']<=150):
-                addresses.append(address['address'])
         historical_token_price = get_historical_prices('ethereum')
         historical_token_round_price = dict()
         historical_token_round_price['ethereum'] = {(timestamp - (timestamp % 86400000)): value for timestamp, value in historical_token_price['ethereum'].items()}
@@ -83,6 +78,12 @@ def get_searching_info(chain, direction, input_path, saving_path, start, end, st
 
     except Exception as e:
         logger.info(e)
+
+    cursor = mongo_available_addresses.find({},{'address':1})
+    addresses = []
+    for address in cursor:
+        if (address['numberReceived']<= 150) &(address['numberSent']<=150):
+            addresses.append(address['address'])
 
     if sources != None:
         sources = [sources]
