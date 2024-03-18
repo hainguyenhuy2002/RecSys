@@ -85,7 +85,7 @@ def get_searching_info(chain, direction, input_path, saving_path, start, end, st
         hot_wallets = json.load(file)
 
     hot_wallets_lst = []
-    for exchange, data in hot_wallets_lst.items():
+    for exchange, data in hot_wallets.items():
         if "0x1" in data["wallets"]:
             hot_wallets_lst.extend(data["wallets"]["0x1"])
 
