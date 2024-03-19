@@ -23,18 +23,30 @@ class GetAddress(BaseJob):
             wallets_name = []
             try:
                 query =  {"flagged":work, "chainId":"0x1", "balanceChangeLogs":{"$exists":"True"}, "balanceInUSD":{"$gte":10}}
-                wallets = self.mongo_klg.find(query,{'_id':1,'flagged':1,'balanceChangeLogs':1,'address':1,'tokenChangeLogs':1,'tags':1, 'balanceInUSD':1})
+                wallets = self.mongo_klg.find(query,{'_id':1,'flagged':1,'balanceChangeLogs':1,'address':1,'tokenChangeLogs':1,'type':1, 'balanceInUSD':1})
                 for wallet in wallets:
                     if wallet in self.hot_wallets:
                         continue
                     else:
-                        wallet_lst.append({
-                                    '_id':wallet['_id'],
-                                    'address': wallet['address'],
-                                    'flagged': wallet['flagged'],
-                                    'balanceChangeLogs': wallet['balanceChangeLogs'],
-                                    'tokenChangeLogs': wallet['tokenChangeLogs'],
-                                    'balanceInUSD': wallet['balanceInUSD']
+                        if 'type' in wallet:
+                            wallet_lst.append({
+                                        '_id':wallet['_id'],
+                                        'address': wallet['address'],
+                                        'flagged': wallet['flagged'],
+                                        'balanceChangeLogs': wallet['balanceChangeLogs'],
+                                        'tokenChangeLogs': wallet['tokenChangeLogs'],
+                                        'balanceInUSD': wallet['balanceInUSD'],
+                                        'type': wallet['type']
+                                })
+                        else:
+                            wallet_lst.append({
+                                        '_id':wallet['_id'],
+                                        'address': wallet['address'],
+                                        'flagged': wallet['flagged'],
+                                        'balanceChangeLogs': wallet['balanceChangeLogs'],
+                                        'tokenChangeLogs': wallet['tokenChangeLogs'],
+                                        'balanceInUSD': wallet['balanceInUSD'],
+                                        'type': 0
                                 })
                         str = f'ethereum_addresses/0x1_'+wallet['address']
                         wallets_name.append(str)
