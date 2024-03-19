@@ -60,7 +60,7 @@ def get_searching_info(chain, direction, input_path, saving_path, start, end, st
         mongo_transaction = mongo._db['transactions']   
         postgres = PostgresDB()
         mongo_clustering = MongoDB()
-        mongo_available_addresses = mongo_clustering._db['searching_addresses']
+        mongo_available_addresses = mongo_clustering._db['searching_addresses_filter_type']
         logger.info("Successful connect to MongoDB and PosgresDB")
 
     except Exception as e:
