@@ -50,7 +50,7 @@ class MongoDBMain:
                     single_transaction_info['amount'] = int(single_transaction_info['value']) /10**18
                     addresses_info.append(single_transaction_info)    
         except Exception as e:
-            log =get_logger("Oh no getting an error in the query task")
+            log =get_logger("Oh no getting an error in the query Mongo task")
             log.info(addresses)
             log.info(e)
             addresses_info = []
