@@ -51,14 +51,14 @@ class GetAddress(BaseJob):
                         str = f'ethereum_addresses/0x1_'+wallet['address']
                         wallets_name.append(str)
                 if len(wallet_lst) !=0:
-                    wallet_sent_receive = self.arangoDb.get_num_send_receive(wallets_name)
-                    sent_receive_df = pd.DataFrame(wallet_sent_receive)
-                    sent_receive_df = sent_receive_df.fillna(0)
-                    address_df = pd.DataFrame(wallet_lst)
-                    final_df = address_df.merge(sent_receive_df, on='address', how='inner')
-                    final_df = final_df[(final_df['numberSent']<=200) & (final_df['numberReceived']<=200)]
-                    address_info =final_df.to_dict(orient='records')
-                    self._export_users_available(wallet_lst= address_info, name=self.name)
+                    # wallet_sent_receive = self.arangoDb.get_num_send_receive(wallets_name)
+                    # sent_receive_df = pd.DataFrame(wallet_sent_receive)
+                    # sent_receive_df = sent_receive_df.fillna(0)
+                    # address_df = pd.DataFrame(wallet_lst)
+                    # final_df = address_df.merge(sent_receive_df, on='address', how='inner')
+                    # final_df = final_df[(final_df['numberSent']<=200) & (final_df['numberReceived']<=200)]
+                    # address_info =final_df.to_dict(orient='records')
+                    self._export_users_available(wallet_lst= wallets_name, name=self.name)
             except Exception as e:
                 print(e)
                 continue
