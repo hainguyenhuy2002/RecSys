@@ -51,7 +51,9 @@ class MongoDBMain:
                     addresses_info.append(single_transaction_info)    
         except Exception as e:
             log =get_logger("Oh no getting an error in the query task")
+            log.info(addresses)
             log.info(e)
+            addresses_info = []
         return addresses_info
 
 
