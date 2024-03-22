@@ -14,7 +14,6 @@ from constants.network_constants import Chains
               help='input of hot wallet')
 @click.option('-bm', '--burn_mint_path', type=str,
               help='input of hot wallet')
-
 @click.option('-b', '--batch-size', type=int, default=1, show_default=True,
               help='Batch size - number of addresses each worker processes')
 @click.option('-w', '--max-workers', default=8, show_default=True, type=int,
