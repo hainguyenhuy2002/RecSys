@@ -7,12 +7,13 @@ from multithread_processing.base_job import BaseJob
 from utils.logger_utils import get_logger
 
 class GetAddress(BaseJob):
-    def __init__(self, importer, arangoDb, exporter, hot_wallets, name,flagged_lst: list, max_workers= 4, batch_size=500):
+    def __init__(self, importer, arangoDb, exporter, hot_wallets, chain_id, name, flagged_lst: list, max_workers= 4, batch_size=500):
         self.mongo_klg = importer
         self.exporter = exporter
         self.arangoDb = arangoDb
-        self.name = name
         self.hot_wallets = hot_wallets
+        self.chain_id = chain_id
+        self.name = name
         super().__init__(work_iterable=flagged_lst,
                          max_workers=max_workers,
                          batch_size=batch_size)
@@ -22,7 +23,7 @@ class GetAddress(BaseJob):
             wallet_lst: List[Dict] = list()
             wallets_name = []
             try:
-                query =  {"flagged":work, "chainId":"0x1", "balanceChangeLogs":{"$exists":"True"}, "balanceInUSD":{"$gte":10}}
+                query =  {"flagged":work, "chainId":f"{self.chain_id}", "balanceChangeLogs":{"$exists":"True"}, "balanceInUSD":{"$gte":10}}
                 wallets = self.mongo_klg.find(query,{'_id':1,'flagged':1,'balanceChangeLogs':1,'address':1,'tokenChangeLogs':1,'type':1, 'balanceInUSD':1})
                 for wallet in wallets:
                     if wallet in self.hot_wallets:
