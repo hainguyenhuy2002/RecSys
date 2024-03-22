@@ -44,8 +44,8 @@ class GetAddress(BaseJob):
                                         '_id':wallet['_id'],
                                         'address': wallet['address'],
                                         'flagged': wallet['flagged'],
-                                        'balanceChangeLogs': wallet['balanceChangeLogs'],
-                                        'tokenChangeLogs': wallet['tokenChangeLogs'],
+                                        # 'balanceChangeLogs': wallet['balanceChangeLogs'],
+                                        # 'tokenChangeLogs': wallet['tokenChangeLogs'],
                                         'balanceInUSD': wallet['balanceInUSD'],
                                         'type': 0
                                 })
@@ -58,8 +58,8 @@ class GetAddress(BaseJob):
                     # address_df = pd.DataFrame(wallet_lst)
                     # final_df = address_df.merge(sent_receive_df, on='address', how='inner')
                     # final_df = final_df[(final_df['numberSent']<=200) & (final_df['numberReceived']<=200)]
-                    # address_info =final_df.to_dict(orient='records')
-                    self._export_users_available(wallet_lst= wallets_name, name=self.name)
+                    # address_info =final_df.to_dict(orient='records') 
+                    self._export_users_available(wallet_lst= wallet_lst, name=self.name)
             except Exception as e:
                 print(e)
                 continue
