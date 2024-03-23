@@ -113,8 +113,6 @@ class GetWalletTransactionTransfer(BaseJob):
                     receiving_transaction_info = wallet_transaction_info.reset_index().rename(columns={"to_address": "wallet","from_address":"interactedWallet", "block_timestamp_tuple":"timestampHistory",  
                                                                                                        "valueInUSD_tuple":"valueInUSDHistory", "valueInUSD_sum":"totalValueInUSD", "amount_tuple":"amountHistory"})
                 if (len(address_info_lst) ==0 ) &(len(receiving_elite_addresses)!=0):
-                    print(works)
-
                     receiving_transaction_info = pd.DataFrame()
 
         elite_addresses = list(set(sending_elite_addresses).intersection(set(receiving_elite_addresses)))
