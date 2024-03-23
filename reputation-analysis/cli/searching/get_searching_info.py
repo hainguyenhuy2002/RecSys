@@ -112,11 +112,11 @@ def get_searching_info(chain, input_hot, input_mint_burn, name, start, end, star
 
     cursor = mongo_available_addresses.find()
     addresses = []
-    for address in cursor:
-        if (address['numberReceived']<= 150) &(address['numberSent']<=150) &(address['address'] not in hot_wallets_lst) &(address['type']!='contract'):
+    for address in cursor[0:100]:
+        if (address['address'] not in hot_wallets_lst) &(address['type']!='contract'):
             addresses.append(address['address'])
     
-    #addresses = ['0xc0f310084e7c63c12e49e056a33a3176354a8e53']
+    # addresses = ['0xc0f310084e7c63c12e49e056a33a3176354a8e53','0x98132de6fee36261963152cce819c7fd7bf75f5f', '0x9aab53f39dc2548eeeda9a7b682c55b7cf3837c6', '0x6887246668a3b87f54deb3b94ba47a6f63f32985']
 
     if sources != None:
         sources = [sources]
