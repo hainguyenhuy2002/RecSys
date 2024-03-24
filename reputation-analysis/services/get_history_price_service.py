@@ -40,6 +40,10 @@ class GetTokenPrice(BaseJob):
                          batch_size=batch_size)
 
     def _execute_batch(self, works):
+
+
+
+        
         smart_contracts = self.mongo_klg_contract.find({'_id': {'$in': works},'idCoingecko':{"$exists": True}},{'_id':1,'idCoingecko':1,'address':1})
         for smart_contract in smart_contracts:
             idCoin = smart_contract['idCoingecko']

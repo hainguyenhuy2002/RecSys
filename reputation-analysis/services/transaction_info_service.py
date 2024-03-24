@@ -35,58 +35,69 @@ def rename_key(list_of_dicts, old_key, new_key):
 
 
 class GetWalletTransactionTransfer(BaseJob):
-    def __init__(self, chain, mongo_transaction, postgres, exporter, historical_token_price, block_timestamp_mappings, special_wallets, wallets_list: list, other_lst, filename: str, start_date, end_date, start_block, end_block,
-                 max_workers= 4, batch_size=500, sources: List[str] = None):
+    def __init__(self, chain, mongo_transaction, postgres, mongo_clustering, mongo_available, historical_token_price,
+                 block_timestamp_mappings, special_wallets, index_lst: list, filename: str, 
+                 start_date, end_date, start_block, end_block, max_workers= 4, batch_size=500, sources: List[str] = None):
+        
         self.profile_info = list()
-    
         self.chain = chain
         self.mongo_transaction = mongo_transaction
         self.postgres = postgres
-        self.exporter =exporter
+        self.mongo_clustering =mongo_clustering
+        self.mongo_available = mongo_available
         self.historical_token_price = historical_token_price
         self.block_timestamp_mappings = block_timestamp_mappings
         self.special_wallets  = special_wallets
-        other_info = rename_key(other_lst, 'address','wallet') ## Get deposit, borrow, balance info
-        self.other_info = other_info
+## Get deposit, borrow, balance info
         
         # self.reputation_df = reputation_df
-
+        self.batch_size = batch_size
         self.start_date = start_date
         self.end_date = end_date
         self.start_block = start_block
         self.end_block = end_block
         self.direction = ['from','to']
         self.filename = filename
-    
+
         if not sources:
             sources = ['mongo', 'postgres']
         self.sources = sources
         self.chain_id = Chains.mapping[chain]
 
-        super().__init__(work_iterable=wallets_list,
+        super().__init__(work_iterable=index_lst,
                          max_workers=max_workers,
-                         batch_size=batch_size)
+                         batch_size=1)
 
     def _execute_batch(self, works):
+        for work in works:
+            cursor = self.mongo_available.find()
+            addresses = []
+            other_lst = []
+            for address in cursor[work-self.batch_size:work]:
+                if (address['address'] not in self.special_wallets) &(address['type']!='contract'):
+                    addresses.append(address['address'])
+                    other_lst.append(address)
+            other_info = rename_key(other_lst, 'address','wallet') 
 
-        sending_transaction_info, receiving_transaction_info, elite_addresses = self._wallet_transaction_info(works=works) ##mongo
-        if len(elite_addresses)!=0:
-            sending_transfer_info, receiving_transfer_info = self._wallet_transfer_info(works=elite_addresses)#postgres
-            sending_transaction_info['contractAddress'] = '0x0000000000000000000000000000000000000000'
-            receiving_transaction_info['contractAddress'] = '0x0000000000000000000000000000000000000000'
-            profiling = pd.concat([sending_transfer_info, sending_transaction_info, receiving_transaction_info, receiving_transfer_info])
-            if profiling.empty == False:
-                profile_info = profiling.groupby(['wallet','interactedWallet','contractAddress']).agg({"timestampHistory":flatten_and_concat, "valueInUSDHistory":flatten_and_concat,"amountHistory":flatten_and_concat}).reset_index()
-                profile_info_dict = update_format(profile_info)
+
+            sending_transaction_info, receiving_transaction_info, elite_addresses = self._wallet_transaction_info(works=addresses) ##mongo
+            if len(elite_addresses)!=0:
+                sending_transfer_info, receiving_transfer_info = self._wallet_transfer_info(works=elite_addresses)#postgres
+                sending_transaction_info['contractAddress'] = '0x0000000000000000000000000000000000000000'
+                receiving_transaction_info['contractAddress'] = '0x0000000000000000000000000000000000000000'
+                profiling = pd.concat([sending_transfer_info, sending_transaction_info, receiving_transaction_info, receiving_transfer_info])
+                if profiling.empty == False:
+                    profile_info = profiling.groupby(['wallet','interactedWallet','contractAddress']).agg({"timestampHistory":flatten_and_concat, "valueInUSDHistory":flatten_and_concat,"amountHistory":flatten_and_concat}).reset_index()
+                    profile_info_dict = update_format(profile_info)
 
 
-                dict_lookup = {item['wallet']: item for item in profile_info_dict}
-                for update in self.other_info:
-                    wallet = update['wallet']
-                    if wallet in dict_lookup:
-                       dict_lookup[wallet].update(update)
+                    dict_lookup = {item['wallet']: item for item in profile_info_dict}
+                    for update in other_info:
+                        wallet = update['wallet']
+                        if wallet in dict_lookup:
+                            dict_lookup[wallet].update(update)
 
-                self.exporter.update_data(name=self.filename, data=profile_info_dict)
+                    self.mongo_clustering.update_data(name=self.filename, data=profile_info_dict)
         ##profile_info = profile_info.groupby(['wallet','interactedWallet'])[[col for col in profile_info.columns if col not in ['wallet','interactedWallet']]].agg(lambda x: list(x)).reset_index()
         #profile_info = profile_info.groupby('wallet')[[col for col in profile_info.columns if col !='wallet']].agg(lambda x: list(x)).reset_index()
 
@@ -110,7 +121,6 @@ class GetWalletTransactionTransfer(BaseJob):
                     sending_transaction_info = wallet_transaction_info.reset_index().rename(columns={"from_address": "wallet","to_address":"interactedWallet", "block_timestamp_tuple":"timestampHistory", 
                                                                                                      "valueInUSD_tuple":"valueInUSDHistory", "valueInUSD_sum":"totalValueInUSD", "amount_tuple":"amountHistory"})
                 if (len(address_info_lst) ==0 ) &(len(sending_elite_addresses)!=0):
-                    print(works)
                     sending_transaction_info = pd.DataFrame()
 
             if direction == 'to':

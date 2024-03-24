@@ -111,14 +111,9 @@ def get_searching_info(chain, input_hot, input_mint_burn, searching_db, name, st
     mint_burn_lst = mint_burn[f'{chain_id}']    
     hot_wallets_lst.extend(mint_burn_lst)
 
-
-    cursor = mongo_available_addresses.find()
-    addresses = []
-    other_info = []
-    for address in cursor[0:100]:
-        if (address['address'] not in hot_wallets_lst) &(address['type']!='contract'):
-            addresses.append(address['address'])
-            other_info.append(address)
+    num_documents = mongo_available_addresses.estimated_document_count()
+    index_list = list(range(batch_size, num_documents, batch_size))
+    index_list.append(num_documents) 
 
 
     if sources != None:
@@ -127,20 +122,20 @@ def get_searching_info(chain, input_hot, input_mint_burn, searching_db, name, st
     job = GetWalletTransactionTransfer(chain=chain, 
                              mongo_transaction= mongo,
                              postgres= postgres,
-                             exporter=mongo_clustering,
+                             mongo_clustering=mongo_clustering,
+                             mongo_available=mongo_available_addresses,
                              historical_token_price=historical_token_round_price,
                              block_timestamp_mappings=block_timestamp_mappings,
                              special_wallets= hot_wallets_lst,
-                             wallets_list= addresses,
-                             other_lst = other_info,
+                             index_lst= index_list,
                  #            direction=direction,
                              filename=name, 
                              start_date=start, 
                              end_date= end, 
                              start_block=start_block,
                              end_block=end_block,
-                             max_workers=batch_size, 
-                             batch_size=max_workers,
+                             max_workers=max_workers, 
+                             batch_size=batch_size,
                              sources=sources)
     job.run()
 
