@@ -24,6 +24,8 @@ from services.web3_service  import web3_service
               help='Path to hot walelt addresses')
 @click.option('-ib', '--input_mint_burn', type=str,
               help='Path to mint burn wallet addresses')
+@click.option('-search', '--searching_db', type=str,
+              help='name of database for searching')
 @click.option('-n', '--name', type=str,
               help='Path to save time_amount file')
 @click.option('-s', '--start', type=int,
@@ -43,7 +45,7 @@ from services.web3_service  import web3_service
 @click.option('-w', '--max-workers', default=8, show_default=True, type=int,
               help='The number of workers')
 
-def get_searching_info(chain, input_hot, input_mint_burn, name, start, end, start_block, end_block, token_price, sources, batch_size, max_workers):
+def get_searching_info(chain, input_hot, input_mint_burn, searching_db, name, start, end, start_block, end_block, token_price, sources, batch_size, max_workers):
     logger = get_logger('User infromation exporter')
     if (start_block == None) | (end_block ==None):
         logger.info("Start map timestamp to block number")
@@ -65,7 +67,7 @@ def get_searching_info(chain, input_hot, input_mint_burn, name, start, end, star
 
         postgres = PostgresDB()
         mongo_clustering = MongoDB()
-        mongo_available_addresses = mongo_clustering._db['searching_addresses_filter_type']
+        mongo_available_addresses = mongo_clustering._db[f'{searching_db}']
         logger.info("Successful connect to MongoDB and PosgresDB")
 
     except Exception as e:
@@ -100,8 +102,8 @@ def get_searching_info(chain, input_hot, input_mint_burn, name, start, end, star
         hot_wallets = json.load(file)
     hot_wallets_lst = []
     for exchange, data in hot_wallets.items():
-        if "0x1" in data["wallets"]:
-            hot_wallets_lst.extend(data["wallets"]["0x1"])
+        if f"{chain_id}" in data["wallets"]:
+            hot_wallets_lst.extend(data["wallets"][f"{chain_id}"])
 
     with open(input_mint_burn, 'r') as file:
         mint_burn = json.load(file)
@@ -112,11 +114,12 @@ def get_searching_info(chain, input_hot, input_mint_burn, name, start, end, star
 
     cursor = mongo_available_addresses.find()
     addresses = []
+    other_info = []
     for address in cursor:
         if (address['address'] not in hot_wallets_lst) &(address['type']!='contract'):
             addresses.append(address['address'])
-    
-    # addresses = ['0xc0f310084e7c63c12e49e056a33a3176354a8e53','0x98132de6fee36261963152cce819c7fd7bf75f5f', '0x9aab53f39dc2548eeeda9a7b682c55b7cf3837c6', '0x6887246668a3b87f54deb3b94ba47a6f63f32985']
+            other_info.append(address)
+
 
     if sources != None:
         sources = [sources]
@@ -128,7 +131,8 @@ def get_searching_info(chain, input_hot, input_mint_burn, name, start, end, star
                              historical_token_price=historical_token_round_price,
                              block_timestamp_mappings=block_timestamp_mappings,
                              special_wallets= hot_wallets_lst,
-                             wallets_list= addresses, 
+                             wallets_list= addresses,
+                             other_lst = other_info,
                  #            direction=direction,
                              filename=name, 
                              start_date=start, 

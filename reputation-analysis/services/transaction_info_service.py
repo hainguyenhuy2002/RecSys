@@ -30,9 +30,12 @@ def update_format(data):
 
     final_result = [{'_id':wallet, 'wallet': wallet, **data} for wallet, data in result.items()]
     return final_result
+def rename_key(list_of_dicts, old_key, new_key):
+    return [{new_key if k == old_key else k: v for k, v in d.items()} for d in list_of_dicts]
+
 
 class GetWalletTransactionTransfer(BaseJob):
-    def __init__(self, chain, mongo_transaction, postgres, exporter, historical_token_price, block_timestamp_mappings, special_wallets, wallets_list: list, filename: str, start_date, end_date, start_block, end_block,
+    def __init__(self, chain, mongo_transaction, postgres, exporter, historical_token_price, block_timestamp_mappings, special_wallets, wallets_list: list, other_lst, filename: str, start_date, end_date, start_block, end_block,
                  max_workers= 4, batch_size=500, sources: List[str] = None):
         self.profile_info = list()
     
@@ -43,6 +46,9 @@ class GetWalletTransactionTransfer(BaseJob):
         self.historical_token_price = historical_token_price
         self.block_timestamp_mappings = block_timestamp_mappings
         self.special_wallets  = special_wallets
+        other_info = rename_key(other_lst, 'address','wallet') ## Get deposit, borrow, balance info
+        self.other_info = other_info
+        
         # self.reputation_df = reputation_df
 
         self.start_date = start_date
@@ -72,6 +78,14 @@ class GetWalletTransactionTransfer(BaseJob):
             if profiling.empty == False:
                 profile_info = profiling.groupby(['wallet','interactedWallet','contractAddress']).agg({"timestampHistory":flatten_and_concat, "valueInUSDHistory":flatten_and_concat,"amountHistory":flatten_and_concat}).reset_index()
                 profile_info_dict = update_format(profile_info)
+
+
+                dict_lookup = {item['wallet']: item for item in profile_info_dict}
+                for update in self.other_info:
+                    wallet = update['wallet']
+                    if wallet in dict_lookup:
+                       dict_lookup[wallet].update(update)
+
                 self.exporter.update_data(name=self.filename, data=profile_info_dict)
         ##profile_info = profile_info.groupby(['wallet','interactedWallet'])[[col for col in profile_info.columns if col not in ['wallet','interactedWallet']]].agg(lambda x: list(x)).reset_index()
         #profile_info = profile_info.groupby('wallet')[[col for col in profile_info.columns if col !='wallet']].agg(lambda x: list(x)).reset_index()
@@ -80,6 +94,7 @@ class GetWalletTransactionTransfer(BaseJob):
 
 
     def _wallet_transaction_info(self, works): 
+
         for direction in self.direction:
             if direction == 'from':
                 opposite_direction ='to'
