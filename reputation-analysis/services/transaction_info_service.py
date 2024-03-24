@@ -66,7 +66,7 @@ class GetWalletTransactionTransfer(BaseJob):
 
         super().__init__(work_iterable=index_lst,
                          max_workers=max_workers,
-                         batch_size=1)
+                         batch_size=batch_size)
 
     def _execute_batch(self, works):
         for work in works:

@@ -50,7 +50,7 @@ class MongoDBMain:
                                                     f'{opposite_direction}_address':{'$nin': special_addresses}}
                     query_counting_v2 ={f'{direction}_address': address}
                     counting_v2 = self._transaction.count_documents(query_counting_v2)
-                    if counting_v2 >=2000:
+                    if counting_v2 >5000:
                         failed_addresses.append(address)
                         continue
                     else:
@@ -64,7 +64,7 @@ class MongoDBMain:
                                 single_transaction_info['valueInUSD'] = (int(single_transaction_info['value']) * price_history[f'{round_timestamp}']) /10**18
                                 single_transaction_info['amount'] = int(single_transaction_info['value']) /10**18
                                 addresses_info.append(single_transaction_info)    
-                print(failed_addresses)
+                #print(failed_addresses)
                 #logger.info(failed_addresses)               
             else:
                 transactions_data =self._transaction.find(query,{'from_address':1, 'to_address':1, 'value':1, 'block_timestamp':1})
