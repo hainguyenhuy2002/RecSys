@@ -115,7 +115,7 @@ def get_searching_info(chain, input_hot, input_mint_burn, searching_db, name, st
     cursor = mongo_available_addresses.find()
     addresses = []
     other_info = []
-    for address in cursor:
+    for address in cursor[0:100]:
         if (address['address'] not in hot_wallets_lst) &(address['type']!='contract'):
             addresses.append(address['address'])
             other_info.append(address)
