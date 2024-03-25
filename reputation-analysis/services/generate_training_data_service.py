@@ -1,10 +1,6 @@
 import pandas as pd 
 import numpy as np
-from utils.logger_utils import get_logger
-from services.one_month_profile_service import GetWalletInfo
-from constants.time_constants import TimeConstants
-from databases.mongodb_entity import MongoDBEntity
-from constants.network_constants import Chains
+from multithread_processing.base_job import BaseJob
 
 def flatten_and_concat(tuples):
     flattened = [item for sublist in tuples for item in sublist]
@@ -181,6 +177,13 @@ def get_balance_features(profile_elite):
     profile_elite['tokenBalanceStd'] = profile_elite['tokenBalances'].apply(np.std)
     Dapps_balance = profile_elite[['_id','tokenBalanceStd','overallBalance','reputationScore']]
     return Dapps_balance
+def search_balance_feature(profile_elite):
+    profile_elite['tokenChangeLogs'].fillna("0", inplace=True)
+    profile_elite['tokenBalances'] = profile_elite['tokenChangeLogs'].apply(get_token_balance)
+    profile_elite['tokenBalanceStd'] = profile_elite['tokenBalances'].apply(np.std)
+    Dapps_balance = profile_elite[['_id','tokenBalanceStd']]
+    return Dapps_balance
+
     
 def generate_training_data_service(input_path,saving_path):
     profile = pd.read_csv(f"{input_path}/profile.csv")
@@ -231,3 +234,61 @@ def generate_training_data_service(input_path,saving_path):
     Dapps_training['label'] = Dapps_training.apply(lambda row: get_label(row, balance_threshold), axis=1)
     Dapps_training.drop("reputationScore", axis=1, inplace = True)
     Dapps_training.to_csv(f"{saving_path}/training_data.csv", index=False)
+
+
+class GenerateData(BaseJob):
+    def __init__(self, direction, importer, exporter, name, index_lst, aave_addresses, max_workers= 4, batch_size=500):
+        self.importer = importer
+        self.exporter = exporter
+        self.name = name
+        self.batch_size = batch_size
+        self.aave_address = aave_addresses
+        self.direction = direction
+        super().__init__(work_iterable=index_lst,
+                         max_workers=max_workers,
+                         batch_size=batch_size)
+
+    def _execute_batch(self, works):
+        if self.direction =='train':
+            for work in works:
+                cursor = self.importer.find({'_id':{ '$in': self.aave_address}},{'_id':1,'interactedWallet':1,'tokenChangeLogs':1,'balanceChangeLogs':1,'depositChangeLogs':1,'borrowChangeLogs':1})
+                transact_lst = ['_id','interactedWallet']
+                balance_lst = ['_id','balanceChangeLogs','depositChangeLogs','borrowChangeLogs','tokenChangeLogs']
+                info_df_lst = []
+                for aave_users in cursor[work-self.batch_size: work]:
+                    aave_transac = {key: aave_users.get(key) for key in transact_lst}
+                    aave_balance =  {key: aave_users.get(key) for key in balance_lst}
+                    transac_df = get_df(aave_transac)
+                    value_df = get_value_features(transac_df)
+                    freq_df = get_freq_features(transac_df)
+                    balance_df = get_balance_features(pd.DataFrame([aave_balance]))
+                    info_df = value_df.merge(freq_df, on='_id',how = 'inner')
+                    info_df = info_df.merge(balance_df, on='_id', how='inner')
+                    
+                    info_dict = info_df.to_dict(orient='records')
+                    info_df_lst.extend(info_dict)
+                self.exporter.update_data(name=self.name, data=info_df_lst)
+        if self.direction =='search':
+            for work in works:
+                cursor = self.importer.find({'_id':{ '$in': self.aave_address}},{'_id':1,'interactedWallet':1,'tokenChangeLogs':1,'balanceChangeLogs':1,'depositChangeLogs':1,'borrowChangeLogs':1})
+                transact_lst = ['_id','interactedWallet']
+                balance_lst = ['_id','balanceChangeLogs','depositChangeLogs','borrowChangeLogs','tokenChangeLogs']
+                info_df_lst = []
+                for aave_users in cursor[work-self.batch_size: work]:
+                    aave_transac = {key: aave_users.get(key) for key in transact_lst}
+                    aave_balance =  {key: aave_users.get(key) for key in balance_lst}
+                    transac_df = get_df(aave_transac)
+                    value_df = get_value_features(transac_df)
+                    freq_df = get_freq_features(transac_df)
+                    balance_df = search_balance_feature(pd.DataFrame([aave_balance]))
+                    info_df = value_df.merge(freq_df, on='_id',how = 'inner')
+                    info_df = info_df.merge(balance_df, on='_id', how='inner')
+                    info_dict = info_df.to_dict(orient='records')
+                    info_df_lst.extend(info_dict)
+                self.exporter.update_data(name=self.name, data=info_df_lst)
+
+    def _end(self):
+        super()._end()
+
+
+

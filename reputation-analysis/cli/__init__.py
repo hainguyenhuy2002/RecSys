@@ -2,7 +2,7 @@ import click
 
 from cli.analyzing.three_month_profile import three_month_profile
 from cli.analyzing.one_month_profile import one_month_profile
-from cli.preprocessing.generate_training_data import generate_training_data
+from cli.generate.generate_training_data import generate_training_data
 from cli.analyzing.get_token_price import get_token_price
 from cli.searching.get_address import get_address 
 from cli.searching.get_searching_info import get_searching_info
