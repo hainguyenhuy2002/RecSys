@@ -270,7 +270,7 @@ class GenerateData(BaseJob):
                 self.exporter.update_data(name=self.name, data=info_df_lst)
         if self.direction =='search':
             for work in works:
-                cursor = self.importer.find({'_id':{ '$in': self.aave_address}},{'_id':1,'interactedWallet':1,'tokenChangeLogs':1,'balanceChangeLogs':1,'depositChangeLogs':1,'borrowChangeLogs':1})
+                cursor = self.importer.find({'_id':{ '$nin': self.aave_address}},{'_id':1,'interactedWallet':1,'tokenChangeLogs':1,'balanceChangeLogs':1,'depositChangeLogs':1,'borrowChangeLogs':1})
                 transact_lst = ['_id','interactedWallet']
                 balance_lst = ['_id','balanceChangeLogs','depositChangeLogs','borrowChangeLogs','tokenChangeLogs']
                 info_df_lst = []
