@@ -1,5 +1,6 @@
 import bisect
-
+import json
+import os
 import pandas as pd 
 import numpy as np
 from multithread_processing.base_job import BaseJob
@@ -49,16 +50,14 @@ def get_token_balance(row, timestamp):
         tokens_balance.append(0)
     else:
         for token, value_history in row.items():
-            try:
-                if value_history == {}:
-                    value = 0
-                else:
-                    largest_key = largest_key_smaller_than(value_history, timestamp)
-                    last_value = value_history[largest_key]
-                    value = last_value['valueInUSD']
-                tokens_balance.append(value)
-            except Exception as e:
-                print(value_history)
+            if value_history == {}:
+                value = 0
+            else:
+                largest_key = largest_key_smaller_than(value_history, timestamp)
+                last_value = value_history[largest_key]
+                value = last_value['valueInUSD']
+            tokens_balance.append(value)
+
     return tokens_balance
         
 
@@ -69,16 +68,13 @@ def get_aave_balance(row, timestamp):
     else:
         for token, value_history in row.items():
             if (token =='0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9') |(token =='0x4da27a545c0c5b758a6ba100e3a049001de870f5'):       
-                try:
-                    if value_history == {}:
-                        value = 0
-                    else:
-                        largest_key = largest_key_smaller_than(value_history, timestamp)
-                        last_value = value_history[largest_key]
-                        value = last_value['valueInUSD']
-                    tokens_balance.append(value)
-                except Exception as e:
-                    print(value_history)
+                if value_history == {}:
+                    value = 0
+                else:
+                    largest_key = largest_key_smaller_than(value_history, timestamp)
+                    last_value = value_history[largest_key]
+                    value = last_value['valueInUSD']
+                tokens_balance.append(value)
             
             else: 
                 tokens_balance.append(0)
@@ -198,6 +194,23 @@ def search_balance_feature(profile_elite, timestamp):
     Dapps_balance = profile_elite[['_id','tokenBalanceStd','overallBalance']]
     return Dapps_balance
 
+def update_json_file(address, removed_path):
+    with open(removed_path, 'r+') as file:
+        try:
+            existing_data = json.load(file)
+        except json.JSONDecodeError:
+            existing_data = {}
+
+        for data in address:
+            existing_data.append(data)
+        
+        file.seek(0)
+        json.dump(existing_data, file, indent=4)
+
+def write_to_json(data, filename):
+    with open(filename, 'w') as json_file:
+        json.dump(data, json_file, indent=4)
+
 class GenerateData(BaseJob):
     def __init__(self, direction, importer, exporter, name, index_lst, aave_addresses, timestamp, max_workers= 4, batch_size=500):
         self.importer = importer
@@ -220,18 +233,28 @@ class GenerateData(BaseJob):
                 balance_lst = ['_id','balanceChangeLogs','depositChangeLogs','borrowChangeLogs','tokenChangeLogs']
                 info_df_lst = []
                 for aave_users in cursor[work-self.batch_size: work]:
-                    aave_transac = {key: aave_users.get(key) for key in transact_lst}
-                    aave_balance =  {key: aave_users.get(key) for key in balance_lst}
-                    transac_df = get_df(aave_transac)
-                    value_df = get_value_features(transac_df)
-                    freq_df = get_freq_features(transac_df)
-                    balance_df = get_balance_features(pd.DataFrame([aave_balance]))
-                    info_df = value_df.merge(freq_df, on='_id',how = 'inner')
-                    info_df = info_df.merge(balance_df, on='_id', how='inner')
-                    info_dict = info_df.to_dict(orient='records')
-                    info_df_lst.extend(info_dict)
+                    try:
+                        aave_transac = {key: aave_users.get(key) for key in transact_lst}
+                        aave_balance =  {key: aave_users.get(key) for key in balance_lst}
+                        transac_df = get_df(aave_transac)
+                        transac_df = transac_df[transac_df['timestampHistory']<self.timestamp]
+                        value_df = get_value_features(transac_df)
+                        freq_df = get_freq_features(transac_df)
+                        balance_df = get_balance_features(pd.DataFrame([aave_balance]), self.timestamp_str)
+                        info_df = value_df.merge(freq_df, on='_id',how = 'inner')
+                        info_df = info_df.merge(balance_df, on='_id', how='inner')
+                        info_dict = info_df.to_dict(orient='records')
+                        info_df_lst.extend(info_dict)
+                    except Exception as e:
+                        if not os.path.exists(f'data/log_file/{self.name}/train'):
+                            os.makedirs(f'data/log_file/{self.name}/train')
+                            write_to_json([aave_users['_id']],f'data/log_file/{self.name}/train/failed_addresses.json')
+                        else:
+                            update_json_file([aave_users['_id']], f'data/log_file/{self.name}/train/failed_addresses.json')
+                        continue
                 if info_df_lst != []:
                     self.exporter.update_data(name=self.name, data=info_df_lst)
+
         if self.direction =='search':
             for work in works:
                 cursor = self.importer.find({'_id':{ '$nin': self.aave_address}},{'_id':1,'interactedWallet':1,'tokenChangeLogs':1,'balanceChangeLogs':1,'depositChangeLogs':1,'borrowChangeLogs':1})
@@ -244,6 +267,7 @@ class GenerateData(BaseJob):
                             aave_transac = {key: aave_users.get(key) for key in transact_lst}
                             aave_balance =  {key: aave_users.get(key) for key in balance_lst}
                             transac_df = get_df(aave_transac)
+                            transac_df = transac_df[transac_df['timestampHistory']<self.timestamp]
                             value_df = get_value_features(transac_df)
                             freq_df = get_freq_features(transac_df)
                             balance_df = search_balance_feature(pd.DataFrame([aave_balance]), self.timestamp_str)
@@ -252,6 +276,11 @@ class GenerateData(BaseJob):
                             info_dict = info_df.to_dict(orient='records')
                             info_df_lst.extend(info_dict)
                         except Exception as e:
+                            if not os.path.exists(f'data/log_file/{self.name}/train'):
+                              os.makedirs('data/log_file/{self.name}/search')
+                              write_to_json([aave_users['_id']],f'data/log_file/{self.name}/search/failed_addresses.json')
+                            else:
+                                update_json_file([aave_users['_id']], f'data/log_file/{self.name}/train/search/failed_addresses.json')
                             continue
                 except Exception as ex:
                     get_logger(ex)
