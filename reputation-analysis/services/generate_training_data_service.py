@@ -250,6 +250,7 @@ class GenerateData(BaseJob):
                             os.makedirs(f'data/log_file/{self.name}/train')
                         with open(f'data/log_file/{self.name}/train/failed_addresses.json', 'a') as f:
                             f.write(json.dumps(aave_users['_id']))
+                            f.write("\n")
                         continue
                 if info_df_lst != []:
                     self.exporter.update_data(name=self.name, data=info_df_lst)
@@ -277,8 +278,9 @@ class GenerateData(BaseJob):
                         except Exception as e:
                             if not os.path.exists(f'data/log_file/{self.name}/search'):
                                 os.makedirs(f'data/log_file/{self.name}/search')
-                        with open(f'data/log_file/{self.name}/search/failed_addresses.json', 'a') as f:
-                            f.write(json.dumps(aave_users['_id']))
+                            with open(f'data/log_file/{self.name}/search/failed_addresses.json', 'a') as f:
+                                f.write(json.dumps(aave_users['_id']))
+                                f.write("\n")
                             continue
                 except Exception as ex:
                     print(ex)
