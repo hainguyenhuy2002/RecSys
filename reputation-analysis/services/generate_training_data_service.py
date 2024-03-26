@@ -276,8 +276,8 @@ class GenerateData(BaseJob):
                             info_dict = info_df.to_dict(orient='records')
                             info_df_lst.extend(info_dict)
                         except Exception as e:
-                            if not os.path.exists(f'data/log_file/{self.name}/train'):
-                              os.makedirs('data/log_file/{self.name}/search')
+                            if not os.path.exists(f'data/log_file/{self.name}/search'):
+                              os.makedirs(f'data/log_file/{self.name}/search')
                               write_to_json([aave_users['_id']],f'data/log_file/{self.name}/search/failed_addresses.json')
                             else:
                                 update_json_file([aave_users['_id']], f'data/log_file/{self.name}/search/failed_addresses.json')
