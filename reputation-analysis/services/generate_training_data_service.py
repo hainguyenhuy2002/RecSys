@@ -280,10 +280,10 @@ class GenerateData(BaseJob):
                               os.makedirs('data/log_file/{self.name}/search')
                               write_to_json([aave_users['_id']],f'data/log_file/{self.name}/search/failed_addresses.json')
                             else:
-                                update_json_file([aave_users['_id']], f'data/log_file/{self.name}/train/search/failed_addresses.json')
+                                update_json_file([aave_users['_id']], f'data/log_file/{self.name}/search/failed_addresses.json')
                             continue
                 except Exception as ex:
-                    get_logger(ex)
+                    print(ex)
                     if info_df_lst != []:
                         self.exporter.update_data(name=self.name, data=info_df_lst)
                     continue
