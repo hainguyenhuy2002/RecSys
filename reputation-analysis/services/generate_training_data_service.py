@@ -1,6 +1,7 @@
 import pandas as pd 
 import numpy as np
 from multithread_processing.base_job import BaseJob
+from utils.logger_utils import get_logger
 
 def flatten_and_concat(tuples):
     flattened = [item for sublist in tuples for item in sublist]
@@ -264,28 +265,38 @@ class GenerateData(BaseJob):
                     balance_df = get_balance_features(pd.DataFrame([aave_balance]))
                     info_df = value_df.merge(freq_df, on='_id',how = 'inner')
                     info_df = info_df.merge(balance_df, on='_id', how='inner')
-                    
                     info_dict = info_df.to_dict(orient='records')
                     info_df_lst.extend(info_dict)
-                self.exporter.update_data(name=self.name, data=info_df_lst)
+                if info_df_lst != []:
+                    self.exporter.update_data(name=self.name, data=info_df_lst)
         if self.direction =='search':
             for work in works:
                 cursor = self.importer.find({'_id':{ '$nin': self.aave_address}},{'_id':1,'interactedWallet':1,'tokenChangeLogs':1,'balanceChangeLogs':1,'depositChangeLogs':1,'borrowChangeLogs':1})
                 transact_lst = ['_id','interactedWallet']
                 balance_lst = ['_id','balanceChangeLogs','depositChangeLogs','borrowChangeLogs','tokenChangeLogs']
                 info_df_lst = []
-                for aave_users in cursor[work-self.batch_size: work]:
-                    aave_transac = {key: aave_users.get(key) for key in transact_lst}
-                    aave_balance =  {key: aave_users.get(key) for key in balance_lst}
-                    transac_df = get_df(aave_transac)
-                    value_df = get_value_features(transac_df)
-                    freq_df = get_freq_features(transac_df)
-                    balance_df = search_balance_feature(pd.DataFrame([aave_balance]))
-                    info_df = value_df.merge(freq_df, on='_id',how = 'inner')
-                    info_df = info_df.merge(balance_df, on='_id', how='inner')
-                    info_dict = info_df.to_dict(orient='records')
-                    info_df_lst.extend(info_dict)
-                self.exporter.update_data(name=self.name, data=info_df_lst)
+                try:
+                    for aave_users in cursor[work-self.batch_size: work]:
+                        try:
+                            aave_transac = {key: aave_users.get(key) for key in transact_lst}
+                            aave_balance =  {key: aave_users.get(key) for key in balance_lst}
+                            transac_df = get_df(aave_transac)
+                            value_df = get_value_features(transac_df)
+                            freq_df = get_freq_features(transac_df)
+                            balance_df = search_balance_feature(pd.DataFrame([aave_balance]))
+                            info_df = value_df.merge(freq_df, on='_id',how = 'inner')
+                            info_df = info_df.merge(balance_df, on='_id', how='inner')
+                            info_dict = info_df.to_dict(orient='records')
+                            info_df_lst.extend(info_dict)
+                        except Exception as e:
+                            continue
+                except Exception as ex:
+                    get_logger(ex)
+                    if info_df_lst != []:
+                        self.exporter.update_data(name=self.name, data=info_df_lst)
+                    continue
+                if info_df_lst != []:
+                    self.exporter.update_data(name=self.name, data=info_df_lst)
 
     def _end(self):
         super()._end()
