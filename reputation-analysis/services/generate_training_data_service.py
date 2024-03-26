@@ -289,7 +289,6 @@ class GenerateData(BaseJob):
                             info_dict = info_df.to_dict(orient='records')
                             info_df_lst.extend(info_dict)
                         except Exception as e:
-                            print(e)
                             continue
                 except Exception as ex:
                     get_logger(ex)
