@@ -199,8 +199,8 @@ def update_json_file(address, removed_path):
         try:
             existing_data = json.load(file)
         except json.JSONDecodeError:
-            existing_data = {}
-
+            print('start to append')
+            existing_data = []
         for data in address:
             existing_data.append(data)
         
@@ -248,9 +248,8 @@ class GenerateData(BaseJob):
                     except Exception as e:
                         if not os.path.exists(f'data/log_file/{self.name}/train'):
                             os.makedirs(f'data/log_file/{self.name}/train')
-                            write_to_json([aave_users['_id']],f'data/log_file/{self.name}/train/failed_addresses.json')
-                        else:
-                            update_json_file([aave_users['_id']], f'data/log_file/{self.name}/train/failed_addresses.json')
+                        with open(f'data/log_file/{self.name}/train/failed_addresses.json', 'a') as f:
+                            f.write(json.dumps(aave_users['_id']))
                         continue
                 if info_df_lst != []:
                     self.exporter.update_data(name=self.name, data=info_df_lst)
@@ -277,10 +276,9 @@ class GenerateData(BaseJob):
                             info_df_lst.extend(info_dict)
                         except Exception as e:
                             if not os.path.exists(f'data/log_file/{self.name}/search'):
-                              os.makedirs(f'data/log_file/{self.name}/search')
-                              write_to_json([aave_users['_id']],f'data/log_file/{self.name}/search/failed_addresses.json')
-                            else:
-                                update_json_file([aave_users['_id']], f'data/log_file/{self.name}/search/failed_addresses.json')
+                                os.makedirs(f'data/log_file/{self.name}/search')
+                        with open(f'data/log_file/{self.name}/search/failed_addresses.json', 'a') as f:
+                            f.write(json.dumps(aave_users['_id']))
                             continue
                 except Exception as ex:
                     print(ex)
