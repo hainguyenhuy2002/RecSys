@@ -1,3 +1,5 @@
+import bisect
+
 import pandas as pd 
 import numpy as np
 from multithread_processing.base_job import BaseJob
@@ -6,9 +8,18 @@ from utils.logger_utils import get_logger
 def flatten_and_concat(tuples):
     flattened = [item for sublist in tuples for item in sublist]
     return tuple(flattened)
+
 def calculate_impurity_numeric(data):
     std_deviation = np.std(data)
     return std_deviation
+
+def largest_key_smaller_than(dictionary, value):
+    keys = sorted(dictionary.keys())
+    index = bisect.bisect_left(keys, value) - 1
+    if index >= 0:
+        return keys[index]
+    else:
+        return None
 
 
 def remove_outliers_iqr(df, columns):
@@ -32,7 +43,7 @@ def get_label(row, threshold):
         return 0
 
 
-def get_token_balance(row):
+def get_token_balance(row, timestamp):
     tokens_balance =[]
     if (row == 0) |(row == {}):
         tokens_balance.append(0)
@@ -42,8 +53,8 @@ def get_token_balance(row):
                 if value_history == {}:
                     value = 0
                 else:
-                    last_key = list(value_history.keys())[-1]
-                    last_value = value_history[last_key]
+                    largest_key = largest_key_smaller_than(value_history, timestamp)
+                    last_value = value_history[largest_key]
                     value = last_value['valueInUSD']
                 tokens_balance.append(value)
             except Exception as e:
@@ -51,7 +62,7 @@ def get_token_balance(row):
     return tokens_balance
         
 
-def get_aave_balance(row):
+def get_aave_balance(row, timestamp):
     tokens_balance =[]
     if (row == 0) |(row == {}):
         tokens_balance.append(0)
@@ -62,8 +73,8 @@ def get_aave_balance(row):
                     if value_history == {}:
                         value = 0
                     else:
-                        last_key = list(value_history.keys())[-1]
-                        last_value = value_history[last_key]
+                        largest_key = largest_key_smaller_than(value_history, timestamp)
+                        last_value = value_history[largest_key]
                         value = last_value['valueInUSD']
                     tokens_balance.append(value)
                 except Exception as e:
@@ -75,12 +86,12 @@ def get_aave_balance(row):
     
     
         
-def get_balance(my_dict):
+def get_balance(my_dict, timestamp):
     if my_dict =={}:
         return 0
     else:
-        last_key = list(my_dict.keys())[-1]
-        last_value = my_dict[last_key]
+        largest_key = largest_key_smaller_than(my_dict, timestamp)
+        last_value = my_dict[largest_key]
         return last_value
     
     
@@ -165,77 +176,27 @@ def get_df(data):
     df = pd.DataFrame(rows)
     return df
 
-def get_balance_features(profile_elite):
+def get_balance_features(profile_elite, timestamp):
     #balance
 
     profile_elite['tokenChangeLogs'].fillna("0", inplace=True)
-    profile_elite['tokenBalances'] = profile_elite['tokenChangeLogs'].apply(get_token_balance)
-    profile_elite['aaveBalance'] = profile_elite['tokenChangeLogs'].apply(get_aave_balance)
-    profile_elite['overallBalance'] = profile_elite['balanceChangeLogs'].apply(get_balance)
-    profile_elite['aaveAvgDeposit'] = profile_elite['depositChangeLogs'].apply(average_value)
-    profile_elite['aaveAvgBorrow'] = profile_elite['borrowChangeLogs'].apply(average_value)
+    profile_elite['tokenBalances'] = profile_elite['tokenChangeLogs'].apply(lambda row: get_token_balance(row,timestamp))
+    profile_elite['aaveBalance'] = profile_elite['tokenChangeLogs'].apply(lambda row: get_aave_balance(row, timestamp))
+    profile_elite['overallBalance'] = profile_elite['balanceChangeLogs'].apply(lambda row: get_balance(row, timestamp))
+    profile_elite['aaveAvgDeposit'] = profile_elite['depositChangeLogs'].apply(lambda row: average_value(row))
+    profile_elite['aaveAvgBorrow'] = profile_elite['borrowChangeLogs'].apply(lambda row: average_value(row))
     profile_elite['reputationScore'] = (profile_elite['aaveBalance'] + profile_elite['aaveAvgDeposit']+ profile_elite['aaveAvgBorrow'])/3
     profile_elite['tokenBalanceStd'] = profile_elite['tokenBalances'].apply(np.std)
     Dapps_balance = profile_elite[['_id','tokenBalanceStd','overallBalance','reputationScore']]
     return Dapps_balance
-def search_balance_feature(profile_elite):
+def search_balance_feature(profile_elite, timestamp):
     profile_elite['tokenChangeLogs'].fillna("0", inplace=True)
-    profile_elite['tokenBalances'] = profile_elite['tokenChangeLogs'].apply(get_token_balance)
+    profile_elite['tokenBalances'] = profile_elite['tokenChangeLogs'].apply(lambda row: get_token_balance(row, timestamp))
+    profile_elite['overallBalance'] = profile_elite['balanceChangeLogs'].apply(lambda row: get_balance(row, timestamp))
+
     profile_elite['tokenBalanceStd'] = profile_elite['tokenBalances'].apply(np.std)
     Dapps_balance = profile_elite[['_id','tokenBalanceStd']]
     return Dapps_balance
-
-    
-def generate_training_data_service(input_path,saving_path):
-    profile = pd.read_csv(f"{input_path}/profile.csv")
-    transfer_from = pd.read_csv(f"{input_path}/from_transfer_price.csv")
-    transfer_to = pd.read_csv(f"{input_path}/to_transfer_price.csv")
-    transaction_from = pd.read_csv(f"{input_path}/from_transaction.csv")
-    transaction_to = pd.read_csv(f"{input_path}/to_transaction.csv")
-
-    profile_clean= profile.dropna(subset=['balanceChangeLogs'])
-    transaction_from = transaction_from.rename(columns={"sending_wallet":"to_wallet","block_timestampHistory":"timestampHistory","value_tuple":"amount_history"})
-    transaction_from['contractAddress'] ='0x0000000000000000000000000000000000000000'
-    Dapps_from = pd.concat([transfer_from, transaction_from])
-
-    transaction_to = transaction_to.rename(columns={"receiving_wallet":"from_wallet","block_timestampHistory":"timestampHistory","value_tuple":"amount_history"})
-    transaction_to['contractAddress'] ='0x0000000000000000000000000000000000000000'
-    Dapps_to = pd.concat([transfer_to, transaction_to])
-
-    profile_clean[['tokens','depositChangeLogs','borrowChangeLogs','balanceChangeLogs']] = profile_clean[['tokens','depositChangeLogs','borrowChangeLogs','balanceChangeLogs']].fillna("0")
-    profile_clean['tokens'] =profile_clean['tokens'].apply(eval)
-    profile_clean['borrowChangeLogs'] =profile_clean['borrowChangeLogs'].apply(eval)
-    profile_clean['depositChangeLogs'] =profile_clean['depositChangeLogs'].apply(eval)
-    profile_clean['balanceChangeLogs'] =profile_clean['balanceChangeLogs'].apply(eval)
-
-    Dapps_from.rename(columns ={"to_wallet":"interactedWallet"}, inplace=True)
-    Dapps_to.rename(columns ={"from_wallet":"interactedWallet"}, inplace=True)
-    Dapps_transaction = pd.concat([Dapps_from, Dapps_to])
-    Dapps_transaction_clean = Dapps_transaction[Dapps_transaction['wallet'].isin(profile_clean.wallet.unique().tolist())]
-    Dapps_transaction_clean['timestampHistory'] = Dapps_transaction_clean['timestampHistory'].apply(eval)
-    Dapps_transaction_clean['tokenInteractTimes'] = Dapps_transaction_clean['timestampHistory'].apply(len)
-    #frequency
-    Dapps_freq = get_freq_features(Dapps_transaction_clean)
-    Dapps_value = get_value_features(Dapps_transaction_clean)
-    Dapps_balance = get_balance_features(Dapps_transaction_clean, profile_clean)
-
-
-
-
-    ## balance
-
-    ### Training data
-    Dapps_freq_value = Dapps_freq.merge(Dapps_value, on='wallet', how ='inner')
-    Dapps_training = Dapps_freq_value.merge(Dapps_balance, on='wallet', how='inner')
-    Dapps_training = Dapps_training.sort_values('reputationScore', ascending=False)
-    df_filtered = remove_outliers_iqr(Dapps_training,['reputationScore'])
-    df_sorted = df_filtered.sort_values(by='reputationScore', ascending=False)
-    num_observations_to_select = int(0.3 * len(df_sorted))
-    balance_threshold = Dapps_training.iloc[num_observations_to_select-1]['reputationScore']
-    Dapps_training['label'] = Dapps_training.apply(lambda row: get_label(row, balance_threshold), axis=1)
-    Dapps_training.drop("reputationScore", axis=1, inplace = True)
-    Dapps_training.to_csv(f"{saving_path}/training_data.csv", index=False)
-
 
 class GenerateData(BaseJob):
     def __init__(self, direction, importer, exporter, name, index_lst, aave_addresses, max_workers= 4, batch_size=500):
