@@ -195,17 +195,19 @@ def search_balance_feature(profile_elite, timestamp):
     profile_elite['overallBalance'] = profile_elite['balanceChangeLogs'].apply(lambda row: get_balance(row, timestamp))
 
     profile_elite['tokenBalanceStd'] = profile_elite['tokenBalances'].apply(np.std)
-    Dapps_balance = profile_elite[['_id','tokenBalanceStd']]
+    Dapps_balance = profile_elite[['_id','tokenBalanceStd','overallBalance']]
     return Dapps_balance
 
 class GenerateData(BaseJob):
-    def __init__(self, direction, importer, exporter, name, index_lst, aave_addresses, max_workers= 4, batch_size=500):
+    def __init__(self, direction, importer, exporter, name, index_lst, aave_addresses, timestamp, max_workers= 4, batch_size=500):
         self.importer = importer
         self.exporter = exporter
         self.name = name
         self.batch_size = batch_size
         self.aave_address = aave_addresses
         self.direction = direction
+        self.timestamp = timestamp
+        self.timestamp_str = str(timestamp)
         super().__init__(work_iterable=index_lst,
                          max_workers=max_workers,
                          batch_size=batch_size)
@@ -244,7 +246,7 @@ class GenerateData(BaseJob):
                             transac_df = get_df(aave_transac)
                             value_df = get_value_features(transac_df)
                             freq_df = get_freq_features(transac_df)
-                            balance_df = search_balance_feature(pd.DataFrame([aave_balance]))
+                            balance_df = search_balance_feature(pd.DataFrame([aave_balance]), self.timestamp_str)
                             info_df = value_df.merge(freq_df, on='_id',how = 'inner')
                             info_df = info_df.merge(balance_df, on='_id', how='inner')
                             info_dict = info_df.to_dict(orient='records')
