@@ -1,0 +1,7 @@
+ko ranking
+show randomly
+
+xét người tham gia trong 1 tháng vừa qua.
+Đưa ra tỉ lệ overlap
+Đưa ra corr giữa các features của những thằng chưa đoán đc so với những thằng dự đoán
+Đưa ra CPC

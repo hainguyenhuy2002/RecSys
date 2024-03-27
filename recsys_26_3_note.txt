@@ -1,0 +1,10 @@
+
+Import: import 1 project đã tồn tại
+
+
+CDP thực hành 1 dự án đã run trong 1 khoảng tgian nhất định
+Làm cho prj đã tồn tại trog 1 khoảng thời gian
+
+flow: Dự án nào, đã track chưa? Nếu chưa thì làm form mới hoàn toàn. Nếu có r thì chỉ cần click thôi.
+
+đăng từ bot lên, Twitter tich hop grammarly

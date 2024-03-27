@@ -20,7 +20,7 @@ def largest_key_smaller_than(dictionary, value):
     if index >= 0:
         return keys[index]
     else:
-        return None
+        return 0
 
 
 def remove_outliers_iqr(df, columns):
@@ -54,8 +54,11 @@ def get_token_balance(row, timestamp):
                 value = 0
             else:
                 largest_key = largest_key_smaller_than(value_history, timestamp)
-                last_value = value_history[largest_key]
-                value = last_value['valueInUSD']
+                if largest_key ==0:
+                    value = 0
+                else:
+                    last_value = value_history[largest_key]
+                    value = last_value['valueInUSD']
             tokens_balance.append(value)
 
     return tokens_balance
@@ -72,8 +75,11 @@ def get_aave_balance(row, timestamp):
                     value = 0
                 else:
                     largest_key = largest_key_smaller_than(value_history, timestamp)
-                    last_value = value_history[largest_key]
-                    value = last_value['valueInUSD']
+                    if largest_key ==0:
+                        value = 0
+                    else:
+                        last_value = value_history[largest_key]
+                        value = last_value['valueInUSD']
                 tokens_balance.append(value)
             
             else: 
@@ -175,23 +181,23 @@ def get_df(data):
 def get_balance_features(profile_elite, timestamp):
     #balance
 
-    profile_elite['tokenChangeLogs'].fillna("0", inplace=True)
-    profile_elite['tokenBalances'] = profile_elite['tokenChangeLogs'].apply(lambda row: get_token_balance(row,timestamp))
+    #profile_elite['tokenChangeLogs'].fillna("0", inplace=True)
+    #profile_elite['tokenBalances'] = profile_elite['tokenChangeLogs'].apply(lambda row: get_token_balance(row,timestamp))
     profile_elite['aaveBalance'] = profile_elite['tokenChangeLogs'].apply(lambda row: get_aave_balance(row, timestamp))
     profile_elite['overallBalance'] = profile_elite['balanceChangeLogs'].apply(lambda row: get_balance(row, timestamp))
     profile_elite['aaveAvgDeposit'] = profile_elite['depositChangeLogs'].apply(lambda row: average_value(row))
     profile_elite['aaveAvgBorrow'] = profile_elite['borrowChangeLogs'].apply(lambda row: average_value(row))
     profile_elite['reputationScore'] = (profile_elite['aaveBalance'] + profile_elite['aaveAvgDeposit']+ profile_elite['aaveAvgBorrow'])/3
-    profile_elite['tokenBalanceStd'] = profile_elite['tokenBalances'].apply(np.std)
-    Dapps_balance = profile_elite[['_id','tokenBalanceStd','overallBalance','reputationScore']]
+#    profile_elite['tokenBalanceStd'] = profile_elite['tokenBalances'].apply(np.std)
+    Dapps_balance = profile_elite[['_id','overallBalance','reputationScore']]
     return Dapps_balance
 def search_balance_feature(profile_elite, timestamp):
-    profile_elite['tokenChangeLogs'].fillna("0", inplace=True)
-    profile_elite['tokenBalances'] = profile_elite['tokenChangeLogs'].apply(lambda row: get_token_balance(row, timestamp))
+    # profile_elite['tokenChangeLogs'].fillna("0", inplace=True)
+    # profile_elite['tokenBalances'] = profile_elite['tokenChangeLogs'].apply(lambda row: get_token_balance(row, timestamp))
     profile_elite['overallBalance'] = profile_elite['balanceChangeLogs'].apply(lambda row: get_balance(row, timestamp))
 
-    profile_elite['tokenBalanceStd'] = profile_elite['tokenBalances'].apply(np.std)
-    Dapps_balance = profile_elite[['_id','tokenBalanceStd','overallBalance']]
+#    profile_elite['tokenBalanceStd'] = profile_elite['tokenBalances'].apply(np.std)
+    Dapps_balance = profile_elite[['_id','overallBalance']]
     return Dapps_balance
 
 def update_json_file(address, removed_path):
@@ -243,21 +249,24 @@ class GenerateData(BaseJob):
                         balance_df = get_balance_features(pd.DataFrame([aave_balance]), self.timestamp_str)
                         info_df = value_df.merge(freq_df, on='_id',how = 'inner')
                         info_df = info_df.merge(balance_df, on='_id', how='inner')
-                        info_dict = info_df.to_dict(orient='records')
-                        info_df_lst.extend(info_dict)
+                        if info_df.empty:
+                            if not os.path.exists(f'data/log_file/{self.name}/train'):
+                                os.makedirs(f'data/log_file/{self.name}/train')
+                            with open(f'data/log_file/{self.name}/train/failed_addresses.json', 'a') as f:
+                                f.write(json.dumps(aave_users['_id']))
+                                f.write("\n")
+                        else:
+                            info_dict = info_df.to_dict(orient='records')
+                            info_df_lst.extend(info_dict)
                     except Exception as e:
-                        if not os.path.exists(f'data/log_file/{self.name}/train'):
-                            os.makedirs(f'data/log_file/{self.name}/train')
-                        with open(f'data/log_file/{self.name}/train/failed_addresses.json', 'a') as f:
-                            f.write(json.dumps(aave_users['_id']))
-                            f.write("\n")
+                        print(e)
                         continue
                 if info_df_lst != []:
                     self.exporter.update_data(name=self.name, data=info_df_lst)
 
         if self.direction =='search':
             for work in works:
-                cursor = self.importer.find({'_id':{ '$nin': self.aave_address}},{'_id':1,'interactedWallet':1,'tokenChangeLogs':1,'balanceChangeLogs':1,'depositChangeLogs':1,'borrowChangeLogs':1})
+                cursor = self.importer.find({},{'_id':1,'interactedWallet':1,'tokenChangeLogs':1,'balanceChangeLogs':1,'depositChangeLogs':1,'borrowChangeLogs':1})
                 transact_lst = ['_id','interactedWallet']
                 balance_lst = ['_id','balanceChangeLogs','depositChangeLogs','borrowChangeLogs','tokenChangeLogs']
                 info_df_lst = []
@@ -267,20 +276,24 @@ class GenerateData(BaseJob):
                             aave_transac = {key: aave_users.get(key) for key in transact_lst}
                             aave_balance =  {key: aave_users.get(key) for key in balance_lst}
                             transac_df = get_df(aave_transac)
+
                             transac_df = transac_df[transac_df['timestampHistory']<self.timestamp]
                             value_df = get_value_features(transac_df)
                             freq_df = get_freq_features(transac_df)
                             balance_df = search_balance_feature(pd.DataFrame([aave_balance]), self.timestamp_str)
                             info_df = value_df.merge(freq_df, on='_id',how = 'inner')
                             info_df = info_df.merge(balance_df, on='_id', how='inner')
-                            info_dict = info_df.to_dict(orient='records')
-                            info_df_lst.extend(info_dict)
+                            if info_df.empty:
+                                if not os.path.exists(f'data/log_file/{self.name}/search'):
+                                    os.makedirs(f'data/log_file/{self.name}/search')
+                                with open(f'data/log_file/{self.name}/search/failed_addresses.json', 'a') as f:
+                                    f.write(json.dumps(aave_users['_id']))
+                                    f.write("\n")
+                            else:
+                                info_dict = info_df.to_dict(orient='records')
+                                info_df_lst.extend(info_dict)
                         except Exception as e:
-                            if not os.path.exists(f'data/log_file/{self.name}/search'):
-                                os.makedirs(f'data/log_file/{self.name}/search')
-                            with open(f'data/log_file/{self.name}/search/failed_addresses.json', 'a') as f:
-                                f.write(json.dumps(aave_users['_id']))
-                                f.write("\n")
+                            print(e)
                             continue
                 except Exception as ex:
                     print(ex)
