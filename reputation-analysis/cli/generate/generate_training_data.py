@@ -8,7 +8,7 @@ from services.generate_training_data_service import GenerateData
 
 @click.command(context_settings=dict(help_option_names=['-h', '--help']))
 
-@click.option('-a', '--aave_path', type=str,
+@click.option('-a', '--aave_path', type=str, default='', show_default=True,
               help='Path to input addresses')
 @click.option('-n', '--name', type=str,
               help='name')
@@ -28,9 +28,9 @@ def generate_training_data(aave_path, name, direction, time_stamp, batch_size, m
     lenn = len(aave_address)
     if direction == 'train':
         index_list = list(range(batch_size, lenn, batch_size))
-        index_list.append(num_documents)
+        index_list.append(lenn)
     elif direction =='search':
-        index_list = list(range(batch_size, num_documents-lenn, batch_size))
+        index_list = list(range(num_documents -lenn+batch_size, num_documents, batch_size))
         index_list.append(num_documents)
     print(time_stamp)
     job =GenerateData(importer=mongo_searching_18_3, exporter= mongodb, name=name, direction=direction, index_lst=index_list,aave_addresses= aave_address, timestamp=time_stamp,
