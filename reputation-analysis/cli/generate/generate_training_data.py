@@ -30,8 +30,9 @@ def generate_training_data(aave_path, name, direction, time_stamp, batch_size, m
         index_list = list(range(batch_size, lenn, batch_size))
         index_list.append(lenn)
     elif direction =='search':
-        index_list = list(range(num_documents -lenn+batch_size, num_documents-batch_size, batch_size))
-        index_list.append(num_documents)
+        numm = num_documents-batch_size
+        index_list = list(range(num_documents -lenn+batch_size, numm, batch_size))
+        index_list.append(numm)
     print(time_stamp)
     job =GenerateData(importer=mongo_searching_18_3, exporter= mongodb, name=name, direction=direction, index_lst=index_list,aave_addresses= aave_address, timestamp=time_stamp,
                             max_workers=max_workers, batch_size=batch_size)
