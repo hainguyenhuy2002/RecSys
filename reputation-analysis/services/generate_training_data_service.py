@@ -93,7 +93,10 @@ def get_balance(my_dict, timestamp):
         return 0
     else:
         largest_key = largest_key_smaller_than(my_dict, timestamp)
-        last_value = my_dict[largest_key]
+        if largest_key == 0:
+            last_value = 0
+        else:
+            last_value = my_dict[largest_key]
         return last_value
     
     
@@ -105,15 +108,21 @@ def get_inactive_user(row):
         return row['score_label']
 
 
-def average_value(dictionary):
+def average_value(dictionary, timestamp):
+    previous_1month = timestamp - 2678400 
     if dictionary =={}:
         return 0
     elif dictionary == 0:
         return 0 
     elif not dictionary:
         return None
-
-    return np.mean(list(dictionary.values()))
+    
+    sub_dict = {key: value for key, value in dictionary.items() if key > previous_1month}  
+    if sub_dict =={}:
+        return 0
+    if sub_dict ==0:
+        return 0
+    return np.mean(list(sub_dict.values()))
 
 def get_freq_features(Dapps_transaction_clean):
     #frequency
@@ -185,8 +194,8 @@ def get_balance_features(profile_elite, timestamp):
     #profile_elite['tokenBalances'] = profile_elite['tokenChangeLogs'].apply(lambda row: get_token_balance(row,timestamp))
     profile_elite['aaveBalance'] = profile_elite['tokenChangeLogs'].apply(lambda row: get_aave_balance(row, timestamp))
     profile_elite['overallBalance'] = profile_elite['balanceChangeLogs'].apply(lambda row: get_balance(row, timestamp))
-    profile_elite['aaveAvgDeposit'] = profile_elite['depositChangeLogs'].apply(lambda row: average_value(row))
-    profile_elite['aaveAvgBorrow'] = profile_elite['borrowChangeLogs'].apply(lambda row: average_value(row))
+    profile_elite['aaveAvgDeposit'] = profile_elite['depositChangeLogs'].apply(lambda row: average_value(row, timestamp))
+    profile_elite['aaveAvgBorrow'] = profile_elite['borrowChangeLogs'].apply(lambda row: average_value(row, timestamp))
     profile_elite['reputationScore'] = (profile_elite['aaveBalance'] + profile_elite['aaveAvgDeposit']+ profile_elite['aaveAvgBorrow'])/3
 #    profile_elite['tokenBalanceStd'] = profile_elite['tokenBalances'].apply(np.std)
     Dapps_balance = profile_elite[['_id','overallBalance','reputationScore']]
