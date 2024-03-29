@@ -109,7 +109,7 @@ def get_inactive_user(row):
 
 
 def average_value(dictionary, timestamp):
-    previous_1month = timestamp - 2678400 
+    previous_1month = str(int(timestamp) - 2678400 )
     if dictionary =={}:
         return 0
     elif dictionary == 0:
