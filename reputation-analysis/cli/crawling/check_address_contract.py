@@ -20,6 +20,6 @@ def check_address_contract(chain, input_path, saving_path, batch_size, max_worke
     chain_id = Chains.mapping[chain]
     with open(input_path,'r') as file:
         top_addresses = json.load(file)
-    job = checkAddressContractService(chain_id=chain_id, saving_path=saving_path, lst_addresses=top_addresses[0:10],
+    job = checkAddressContractService(chain_id=chain_id, saving_path=saving_path, lst_addresses=top_addresses,
                                       batch_size=batch_size, max_workers=max_workers)
     job.run()

@@ -1,5 +1,6 @@
 import json
 import os
+import pandas as pd
 from multithread_processing.base_job import BaseJob
 from utils.ethereum_utils import filter_out_contracts
 
@@ -17,7 +18,10 @@ class checkAddressContractService(BaseJob):
         try:     
             is_contract = filter_out_contracts(works, chain_id=self.chain_id)
             self.is_contract.update(is_contract)
+
+
         except Exception as e:
+            print(e)
             for work in works:
                 if not os.path.exists(f'data/log_file/is_contract/'):
                     os.makedirs(f'data/log_file/is_contract/')
@@ -30,8 +34,9 @@ class checkAddressContractService(BaseJob):
                 pass
         
     def _end(self):
+        super()._end()        
+
         with open(f'{self.saving_path}/is_contract_address.json', 'w') as wfile:
             json.dump(self.is_contract, wfile, indent=4)
 
-
-    
+        
