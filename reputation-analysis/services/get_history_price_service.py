@@ -29,9 +29,8 @@ def get_historical_prices(token_id, days=99, vs_currency='usd'):
     return prices_dict
     
 class GetTokenPrice(BaseJob):
-    def __init__(self, mongo_klg_contract, token_addresses: list,filename,
+    def __init__(self, token_addresses: list,filename,
                  max_workers= 4, batch_size=500):
-        self.mongo_klg_contract = mongo_klg_contract
         self.token_history = dict()
         self.filename = filename
 
@@ -41,11 +40,7 @@ class GetTokenPrice(BaseJob):
 
     def _execute_batch(self, works):
 
-
-
-        
-        smart_contracts = self.mongo_klg_contract.find({'_id': {'$in': works},'idCoingecko':{"$exists": True}},{'_id':1,'idCoingecko':1,'address':1})
-        for smart_contract in smart_contracts:
+        for smart_contract in works:
             idCoin = smart_contract['idCoingecko']
             address = smart_contract['address']
             historical_token_price = get_historical_prices(idCoin)
