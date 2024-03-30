@@ -18,7 +18,7 @@ def get_historical_prices(token_id, days=99, vs_currency='usd'):
     if response.status_code == 200:
         time.sleep(3)
     elif response.status_code == 429:
-        time.sleep(60)
+        time.sleep(50)
         response = requests.get(url)
     else:
         return None
