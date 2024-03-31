@@ -65,7 +65,7 @@ def get_token_balance(row, timestamp):
         
 
 def get_aave_balance(row, timestamp):
-    previous_2month = str(int(timestamp) - 2678400*2)
+    previous_2month = int(timestamp) - 2678400*2
     tokens_balance =[]
     if (row == 0) |(row == {}):
         tokens_balance.append(0)
