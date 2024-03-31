@@ -65,6 +65,7 @@ def get_token_balance(row, timestamp):
         
 
 def get_aave_balance(row, timestamp):
+    previous_2month = str(int(timestamp) - 2678400*2)
     tokens_balance =[]
     if (row == 0) |(row == {}):
         tokens_balance.append(0)
@@ -75,7 +76,7 @@ def get_aave_balance(row, timestamp):
                     value = 0
                 else:
                     largest_key = largest_key_smaller_than(value_history, timestamp)
-                    if largest_key ==0:
+                    if largest_key <=previous_2month:
                         value = 0
                     else:
                         last_value = value_history[largest_key]
@@ -127,7 +128,7 @@ def average_value(dictionary, timestamp):
             else: 
                 return 'future data'
 
-    return np.sum(list(sub_dict.values()))
+    return np.mean(list(sub_dict.values()))
 
 def get_freq_features(Dapps_transaction_clean):
     #frequency
@@ -201,12 +202,21 @@ def get_balance_features(profile_elite, timestamp):
     profile_elite['overallBalance'] = profile_elite['balanceChangeLogs'].apply(lambda row: get_balance(row, timestamp))
     profile_elite['aaveAvgDeposit'] = profile_elite['depositChangeLogs'].apply(lambda row: average_value(row, timestamp))
     profile_elite['aaveAvgBorrow'] = profile_elite['borrowChangeLogs'].apply(lambda row: average_value(row, timestamp))
+    if profile_elite['aaveBalance'].iloc[0] ==0:
+        if (profile_elite['aaveAvgDeposit'].iloc[0]=='outdated')&(profile_elite['aaveAvgBorrow'].iloc[0]=='outdated'):
+            return pd.DataFrame(), 'outdated'
+        elif (((profile_elite['aaveAvgDeposit'].iloc[0] in ['future data','outdated'])&(profile_elite['aaveAvgBorrow'].iloc[0]=='future data'))|((profile_elite['aaveAvgBorrow'].iloc[0] in ['future data','outdated'])&(profile_elite['aaveAvgDeposit'].iloc[0]=='future data'))):
+            return pd.DataFrame(), 'future data'
+        else:
+            profile_elite = profile_elite.replace('future data', 0)
+            profile_elite = profile_elite.replace('outdated', 0)
+            profile_elite['reputationScore'] = (profile_elite['aaveBalance'] + profile_elite['aaveAvgDeposit']+ profile_elite['aaveAvgBorrow'])/3
 
-    if (profile_elite['aaveAvgDeposit'].iloc[0]=='outdated')&(profile_elite['aaveAvgBorrow'].iloc[0]=='outdated'):
-        return pd.DataFrame(), 'outdated'
-    elif (((profile_elite['aaveAvgDeposit'].iloc[0] in ['future data','outdated'])&(profile_elite['aaveAvgBorrow'].iloc[0]=='future data'))|((profile_elite['aaveAvgBorrow'].iloc[0] in ['future data','outdated'])&(profile_elite['aaveAvgDeposit'].iloc[0]=='future data'))):
-        return pd.DataFrame(), 'future data'
+
+
     else:
+        profile_elite = profile_elite.replace('future data', 0)
+        profile_elite = profile_elite.replace('outdated', 0)
         profile_elite['reputationScore'] = (profile_elite['aaveBalance'] + profile_elite['aaveAvgDeposit']+ profile_elite['aaveAvgBorrow'])/3
 
     Dapps_balance = profile_elite[['_id','overallBalance','reputationScore']]
