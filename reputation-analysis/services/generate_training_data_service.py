@@ -23,20 +23,6 @@ def largest_key_smaller_than(dictionary, value):
         return 0
 
 
-def remove_outliers_iqr(df, columns):
-    cleaned_df = df.copy()
-    for col in columns:
-
-        Q1 = df[col].quantile(0.15)
-        Q3 = df[col].quantile(0.85)
-        IQR = Q3 - Q1
-        lower_bound = Q1 - 1.5 * IQR
-        upper_bound = Q3 + 1.5 * IQR
-        
-        cleaned_df = cleaned_df[(cleaned_df[col] >= lower_bound) & (cleaned_df[col] <= upper_bound)]
-    
-    return cleaned_df
-
 def get_label(row, threshold):
     if row['reputationScore'] >= threshold:
         return 1
@@ -65,7 +51,7 @@ def get_token_balance(row, timestamp):
         
 
 def get_aave_balance(row, timestamp):
-    previous_2month = int(timestamp) - 2678400*2
+    previous_2month = str(int(timestamp) - 2678400*2)
     tokens_balance =[]
     if (row == 0) |(row == {}):
         tokens_balance.append(0)
@@ -100,15 +86,6 @@ def get_balance(my_dict, timestamp):
             last_value = my_dict[largest_key]
         return last_value
     
-    
-    
-def get_inactive_user(row):
-    if row['balance'] <= 100:
-        return 'inactive'
-    else:
-        return row['score_label']
-
-
 def average_value(dictionary, timestamp):
     previous_2month = str(int(timestamp) - 2678400*2)
     if (dictionary =={}) |(dictionary ==0):
