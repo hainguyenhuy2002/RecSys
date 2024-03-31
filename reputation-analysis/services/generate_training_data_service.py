@@ -62,7 +62,9 @@ def get_aave_balance(row, timestamp):
                     value = 0
                 else:
                     largest_key = largest_key_smaller_than(value_history, timestamp)
-                    if largest_key <=previous_2month:
+                    if largest_key ==0:
+                        value = 0
+                    elif largest_key <=previous_2month:
                         value = 0
                     else:
                         last_value = value_history[largest_key]
