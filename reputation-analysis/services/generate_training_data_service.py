@@ -109,7 +109,7 @@ def get_inactive_user(row):
 
 
 def average_value(dictionary, timestamp):
-    previous_2month = str(int(timestamp) - 2678400*2 )
+    previous_2month = str(int(timestamp) - 2678400*2)
     if (dictionary =={}) |(dictionary ==0):
         return 'outdated'
     elif not dictionary:
@@ -202,9 +202,9 @@ def get_balance_features(profile_elite, timestamp):
     profile_elite['aaveAvgDeposit'] = profile_elite['depositChangeLogs'].apply(lambda row: average_value(row, timestamp))
     profile_elite['aaveAvgBorrow'] = profile_elite['borrowChangeLogs'].apply(lambda row: average_value(row, timestamp))
 
-    if (profile_elite['aaveAvgDeposit']=='outdated')&(profile_elite['aaveAvgBorrow']=='outdated'):
+    if (profile_elite['aaveAvgDeposit'].iloc[0]=='outdated')&(profile_elite['aaveAvgBorrow'].iloc[0]=='outdated'):
         return pd.DataFrame(), 'outdated'
-    elif (((profile_elite['aaveAvgDeposit'].isin(['future data','outdated']))&(profile_elite['aaveAvgBorrow']=='future data'))|((profile_elite['aaveAvgBorrow'].isin(['future data','outdated']))&(profile_elite['aaveAvgDeposit']=='future data'))):
+    elif (((profile_elite['aaveAvgDeposit'].iloc[0] in ['future data','outdated'])&(profile_elite['aaveAvgBorrow'].iloc[0]=='future data'))|((profile_elite['aaveAvgBorrow'].iloc[0] in ['future data','outdated'])&(profile_elite['aaveAvgDeposit'].iloc[0]=='future data'))):
         return pd.DataFrame(), 'future data'
     else:
         profile_elite['reputationScore'] = (profile_elite['aaveBalance'] + profile_elite['aaveAvgDeposit']+ profile_elite['aaveAvgBorrow'])/3
@@ -259,49 +259,46 @@ class GenerateData(BaseJob):
                 balance_lst = ['_id','balanceChangeLogs','depositChangeLogs','borrowChangeLogs','tokenChangeLogs']
                 info_df_lst = []
                 for aave_users in cursor[work-self.batch_size: work]:
-                    try:
-                        aave_transac = {key: aave_users.get(key) for key in transact_lst}
-                        aave_balance =  {key: aave_users.get(key) for key in balance_lst}
-                        transac_df = get_df(aave_transac)
-                        transac_df = transac_df[transac_df['timestampHistory']<self.timestamp]
-                        balance_df, text = get_balance_features(pd.DataFrame([aave_balance]), self.timestamp_str)
+                    aave_transac = {key: aave_users.get(key) for key in transact_lst}
+                    aave_balance =  {key: aave_users.get(key) for key in balance_lst}
+                    transac_df = get_df(aave_transac)
+                    transac_df = transac_df[transac_df['timestampHistory']<self.timestamp]
+                    balance_df, text = get_balance_features(pd.DataFrame([aave_balance]), self.timestamp_str)
 
-                        if (transac_df.empty) &(text =='future data'):
-                            if not os.path.exists(f'data/log_file/{self.name}/future_wallet'):
-                                    os.makedirs(f'data/log_file/{self.name}/future_wallet')
-                            with open(f'data/log_file/{self.name}/future_wallet/future_addresses.json', 'a') as f:
-                                f.write(json.dumps(aave_users['_id']))
-                                f.write("\n")
+                    if (transac_df.empty) &(text =='future data'):
+                        if not os.path.exists(f'data/log_file/{self.name}/future_wallet'):
+                                os.makedirs(f'data/log_file/{self.name}/future_wallet')
+                        with open(f'data/log_file/{self.name}/future_wallet/future_addresses.json', 'a') as f:
+                            f.write(json.dumps(aave_users['_id']))
+                            f.write("\n")
 
-                            continue
-
-                        elif text =='future data':
-                            if not os.path.exists(f'data/log_file/{self.name}/potential_wallet'):
-                                    os.makedirs(f'data/log_file/{self.name}/potential_wallet')
-                            with open(f'data/log_file/{self.name}/potential_wallet/potential_addresses.json', 'a') as f:
-                                f.write(json.dumps(aave_users['_id']))
-                                f.write("\n")
-
-                            continue
-                        
-                        elif text =='outdated':
-                            if not os.path.exists(f'data/log_file/{self.name}/outdated_wallet'):
-                                    os.makedirs(f'data/log_file/{self.name}/outdated_wallet')
-                            with open(f'data/log_file/{self.name}/outdated_wallet/outdated_addresses.json', 'a') as f:
-                                f.write(json.dumps(aave_users['_id']))
-                                f.write("\n")
-                            continue
-
-                        elif text == 'acceptable':
-                            value_df = get_value_features(transac_df)
-                            freq_df = get_freq_features(transac_df)
-                            info_df = value_df.merge(freq_df, on='_id',how = 'inner')
-                            info_df = info_df.merge(balance_df, on='_id', how='inner')
-                            info_dict = info_df.to_dict(orient='records')
-                            info_df_lst.extend(info_dict)
-                    except Exception as e:
-                        print(e)
                         continue
+
+                    elif text =='future data':
+                        if not os.path.exists(f'data/log_file/{self.name}/potential_wallet'):
+                                os.makedirs(f'data/log_file/{self.name}/potential_wallet')
+                        with open(f'data/log_file/{self.name}/potential_wallet/potential_addresses.json', 'a') as f:
+                            f.write(json.dumps(aave_users['_id']))
+                            f.write("\n")
+
+                        continue
+                    
+                    elif text =='outdated':
+                        if not os.path.exists(f'data/log_file/{self.name}/outdated_wallet'):
+                                os.makedirs(f'data/log_file/{self.name}/outdated_wallet')
+                        with open(f'data/log_file/{self.name}/outdated_wallet/outdated_addresses.json', 'a') as f:
+                            f.write(json.dumps(aave_users['_id']))
+                            f.write("\n")
+                        continue
+
+                    elif text == 'acceptable':
+                        value_df = get_value_features(transac_df)
+                        freq_df = get_freq_features(transac_df)
+                        info_df = value_df.merge(freq_df, on='_id',how = 'inner')
+                        info_df = info_df.merge(balance_df, on='_id', how='inner')
+                        info_dict = info_df.to_dict(orient='records')
+                        info_df_lst.extend(info_dict)
+    
                 if info_df_lst != []:
                     self.exporter.update_data(name=self.name, data=info_df_lst)
 
