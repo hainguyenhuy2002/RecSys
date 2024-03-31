@@ -10,9 +10,6 @@ def flatten_and_concat(tuples):
     flattened = [item for sublist in tuples for item in sublist]
     return tuple(flattened)
 
-def calculate_impurity_numeric(data):
-    std_deviation = np.std(data)
-    return std_deviation
 
 def largest_key_smaller_than(dictionary, value):
     keys = sorted(dictionary.keys())
