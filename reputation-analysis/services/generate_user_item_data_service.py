@@ -62,10 +62,16 @@ class GetUserItem(BaseJob):
             if (lending_balance['lendings'] != {})&(lending_balance['lendings'] != None):
                 lending_dct = lending_balance['lendings']
                 for contract, info in lending_dct.items():
-                    deposit_info = info['depositChangeLogs']
-                    deposit_value = deposit_borrow_info(deposit_info, self.str_timestamp)
-                    borrow_info = info['borrowChangeLogs']
-                    borrow_value = deposit_borrow_info(borrow_info, self.str_timestamp)
+                    if 'depositChangeLogs' in info:
+                        deposit_info = info['depositChangeLogs']
+                        deposit_value = deposit_borrow_info(deposit_info, self.str_timestamp)
+                    if 'depositChangeLogs' not in info:
+                        deposit_value =0
+                    if 'borrowChangeLogs' in info:
+                        borrow_info = info['borrowChangeLogs']
+                        borrow_value = deposit_borrow_info(borrow_info, self.str_timestamp)
+                    if 'borrowChangeLogs' not in info:
+                        borrow_value = 0
 
                     rating = deposit_value + borrow_value
                     lending_contract_lst.append(contract)
