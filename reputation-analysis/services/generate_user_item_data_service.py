@@ -110,7 +110,7 @@ class GetUserItem(BaseJob):
                                         'amountHistory': contract_data['amountHistory'][i]
                                     }
                                     rows.append(row)
-            if len(row)!=0:
+            if len(rows)!=0:
                 contract_user_rating_df = pd.DataFrame(rows)
                 contract_user_rating_df = contract_user_rating_df.groupby(['contract','address']).agg({"valueInUSDHistory":"sum"}).reset_index().rename(columns={"valueInUSDHistory":"rating"})
                 self.contract_address_lst.append(contract_user_rating_df)
