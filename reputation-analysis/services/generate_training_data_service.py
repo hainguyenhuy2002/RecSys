@@ -86,13 +86,13 @@ def get_balance(my_dict, timestamp):
         return last_value
     
 def average_value(dictionary, timestamp):
-    previous_2month = str(int(timestamp) - 2678400*2)
+    previous3month = str(int(timestamp) - 2678400*3)
     if (dictionary =={}) |(dictionary ==0):
         return 'outdated'
     elif not dictionary:
         return 'outdated'
     
-    sub_dict = {key: value for key, value in dictionary.items() if ((key >= previous_2month) &(key <= timestamp))}  
+    sub_dict = {key: value for key, value in dictionary.items() if ((key >= previous3month) &(key <= timestamp))}  
     if sub_dict =={}:
         future_subdict = {key: value for key, value in dictionary.items() if key > timestamp}
         if (future_subdict =={}):
@@ -104,7 +104,7 @@ def average_value(dictionary, timestamp):
             else: 
                 return 'future data'
 
-    return np.mean(list(sub_dict.values()))
+    return list(sub_dict.values())[-1]
 
 def get_freq_features(Dapps_transaction_clean):
     #frequency
