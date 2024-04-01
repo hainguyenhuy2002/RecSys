@@ -253,28 +253,44 @@ class GenerateData(BaseJob):
 
                     if (transac_df.empty) &(text =='future data'):
                         if not os.path.exists(f'data/log_file/{self.name}/future_wallet'):
+                            try:
                                 os.makedirs(f'data/log_file/{self.name}/future_wallet')
-                        with open(f'data/log_file/{self.name}/future_wallet/future_addresses.json', 'a') as f:
-                            f.write(json.dumps(aave_users['_id']))
-                            f.write("\n")
-
+                            except Exception as e:
+                                with open(f'data/log_file/{self.name}/future_wallet/future_addresses.json', 'a') as f:
+                                    f.write(json.dumps(aave_users['_id']))
+                                    f.write("\n")
+                        else:
+                            with open(f'data/log_file/{self.name}/future_wallet/future_addresses.json', 'a') as f:
+                                    f.write(json.dumps(aave_users['_id']))
+                                    f.write("\n")
                         continue
 
                     elif text =='future data':
                         if not os.path.exists(f'data/log_file/{self.name}/potential_wallet'):
+                            try:
                                 os.makedirs(f'data/log_file/{self.name}/potential_wallet')
-                        with open(f'data/log_file/{self.name}/potential_wallet/potential_addresses.json', 'a') as f:
-                            f.write(json.dumps(aave_users['_id']))
-                            f.write("\n")
-
+                            except Exception as e:
+                                with open(f'data/log_file/{self.name}/potential_wallet/potential_addresses.json', 'a') as f:
+                                    f.write(json.dumps(aave_users['_id']))
+                                    f.write("\n")
+                        else:
+                            with open(f'data/log_file/{self.name}/potential_wallet/potential_addresses.json', 'a') as f:
+                                    f.write(json.dumps(aave_users['_id']))
+                                    f.write("\n")
                         continue
                     
                     elif text =='outdated':
                         if not os.path.exists(f'data/log_file/{self.name}/outdated_wallet'):
+                            try:
                                 os.makedirs(f'data/log_file/{self.name}/outdated_wallet')
-                        with open(f'data/log_file/{self.name}/outdated_wallet/outdated_addresses.json', 'a') as f:
-                            f.write(json.dumps(aave_users['_id']))
-                            f.write("\n")
+                            except Exception as e:
+                                with open(f'data/log_file/{self.name}/outdated_wallet/outdated_addresses.json', 'a') as f:
+                                    f.write(json.dumps(aave_users['_id']))
+                                    f.write("\n")
+                        else:
+                            with open(f'data/log_file/{self.name}/outdated_wallet/outdated_addresses.json', 'a') as f:
+                                f.write(json.dumps(aave_users['_id']))
+                                f.write("\n")
                         continue
 
                     elif text == 'acceptable':
