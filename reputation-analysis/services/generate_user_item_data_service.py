@@ -106,7 +106,7 @@ class GetUserItem(BaseJob):
                     if wallet in self.contract_set:
                         for token, contract_data in wallet_data['contractAddress'].items():
                             for i in range(len(contract_data['timestampHistory'])):
-                                if i <= self.timestamp:
+                                if contract_data['timestampHistory'][i] <= self.timestamp:
                                     row = {
                                         'address': cur['_id'],
                                         'contract': wallet,
