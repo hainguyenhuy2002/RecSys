@@ -10,9 +10,6 @@ def flatten_and_concat(tuples):
     flattened = [item for sublist in tuples for item in sublist]
     return tuple(flattened)
 
-def calculate_impurity_numeric(data):
-    std_deviation = np.std(data)
-    return std_deviation
 
 def largest_key_smaller_than(dictionary, value):
     keys = sorted(dictionary.keys())
@@ -22,20 +19,6 @@ def largest_key_smaller_than(dictionary, value):
     else:
         return 0
 
-
-def remove_outliers_iqr(df, columns):
-    cleaned_df = df.copy()
-    for col in columns:
-
-        Q1 = df[col].quantile(0.15)
-        Q3 = df[col].quantile(0.85)
-        IQR = Q3 - Q1
-        lower_bound = Q1 - 1.5 * IQR
-        upper_bound = Q3 + 1.5 * IQR
-        
-        cleaned_df = cleaned_df[(cleaned_df[col] >= lower_bound) & (cleaned_df[col] <= upper_bound)]
-    
-    return cleaned_df
 
 def get_label(row, threshold):
     if row['reputationScore'] >= threshold:
@@ -65,6 +48,7 @@ def get_token_balance(row, timestamp):
         
 
 def get_aave_balance(row, timestamp):
+    previous_2month = str(int(timestamp) - 2678400*2)
     tokens_balance =[]
     if (row == 0) |(row == {}):
         tokens_balance.append(0)
@@ -76,6 +60,8 @@ def get_aave_balance(row, timestamp):
                 else:
                     largest_key = largest_key_smaller_than(value_history, timestamp)
                     if largest_key ==0:
+                        value = 0
+                    elif largest_key <=previous_2month:
                         value = 0
                     else:
                         last_value = value_history[largest_key]
@@ -99,30 +85,26 @@ def get_balance(my_dict, timestamp):
             last_value = my_dict[largest_key]
         return last_value
     
-    
-    
-def get_inactive_user(row):
-    if row['balance'] <= 100:
-        return 'inactive'
-    else:
-        return row['score_label']
-
-
 def average_value(dictionary, timestamp):
-    previous_1month = str(int(timestamp) - 2678400 )
-    if dictionary =={}:
-        return 0
-    elif dictionary == 0:
-        return 0 
+    previous3month = str(int(timestamp) - 2678400*3)
+    if (dictionary =={}) |(dictionary ==0):
+        return 'outdated'
     elif not dictionary:
-        return None
+        return 'outdated'
     
-    sub_dict = {key: value for key, value in dictionary.items() if key > previous_1month}  
+    sub_dict = {key: value for key, value in dictionary.items() if ((key >= previous3month) &(key <= timestamp))}  
     if sub_dict =={}:
-        return 0
-    if sub_dict ==0:
-        return 0
-    return np.mean(list(sub_dict.values()))
+        future_subdict = {key: value for key, value in dictionary.items() if key > timestamp}
+        if (future_subdict =={}):
+            return 'outdated'
+        else:
+            value = np.sum(list(future_subdict.values()))
+            if value ==0:
+                return 'outdated'
+            else: 
+                return 'future data'
+
+    return list(sub_dict.values())[-1]
 
 def get_freq_features(Dapps_transaction_clean):
     #frequency
@@ -196,10 +178,25 @@ def get_balance_features(profile_elite, timestamp):
     profile_elite['overallBalance'] = profile_elite['balanceChangeLogs'].apply(lambda row: get_balance(row, timestamp))
     profile_elite['aaveAvgDeposit'] = profile_elite['depositChangeLogs'].apply(lambda row: average_value(row, timestamp))
     profile_elite['aaveAvgBorrow'] = profile_elite['borrowChangeLogs'].apply(lambda row: average_value(row, timestamp))
-    profile_elite['reputationScore'] = (profile_elite['aaveBalance'] + profile_elite['aaveAvgDeposit']+ profile_elite['aaveAvgBorrow'])/3
-#    profile_elite['tokenBalanceStd'] = profile_elite['tokenBalances'].apply(np.std)
+    if profile_elite['aaveBalance'].iloc[0] ==0:
+        if (profile_elite['aaveAvgDeposit'].iloc[0]=='outdated')&(profile_elite['aaveAvgBorrow'].iloc[0]=='outdated'):
+            return pd.DataFrame(), 'outdated'
+        elif (((profile_elite['aaveAvgDeposit'].iloc[0] in ['future data','outdated'])&(profile_elite['aaveAvgBorrow'].iloc[0]=='future data'))|((profile_elite['aaveAvgBorrow'].iloc[0] in ['future data','outdated'])&(profile_elite['aaveAvgDeposit'].iloc[0]=='future data'))):
+            return pd.DataFrame(), 'future data'
+        else:
+            profile_elite = profile_elite.replace('future data', 0)
+            profile_elite = profile_elite.replace('outdated', 0)
+            profile_elite['reputationScore'] = (profile_elite['aaveBalance'] + profile_elite['aaveAvgDeposit']+ profile_elite['aaveAvgBorrow'])/3
+
+
+
+    else:
+        profile_elite = profile_elite.replace('future data', 0)
+        profile_elite = profile_elite.replace('outdated', 0)
+        profile_elite['reputationScore'] = (profile_elite['aaveBalance'] + profile_elite['aaveAvgDeposit']+ profile_elite['aaveAvgBorrow'])/3
+
     Dapps_balance = profile_elite[['_id','overallBalance','reputationScore']]
-    return Dapps_balance
+    return Dapps_balance, 'acceptable'
 def search_balance_feature(profile_elite, timestamp):
     # profile_elite['tokenChangeLogs'].fillna("0", inplace=True)
     # profile_elite['tokenBalances'] = profile_elite['tokenChangeLogs'].apply(lambda row: get_token_balance(row, timestamp))
@@ -248,28 +245,62 @@ class GenerateData(BaseJob):
                 balance_lst = ['_id','balanceChangeLogs','depositChangeLogs','borrowChangeLogs','tokenChangeLogs']
                 info_df_lst = []
                 for aave_users in cursor[work-self.batch_size: work]:
-                    try:
-                        aave_transac = {key: aave_users.get(key) for key in transact_lst}
-                        aave_balance =  {key: aave_users.get(key) for key in balance_lst}
-                        transac_df = get_df(aave_transac)
-                        transac_df = transac_df[transac_df['timestampHistory']<self.timestamp]
-                        value_df = get_value_features(transac_df)
-                        freq_df = get_freq_features(transac_df)
-                        balance_df = get_balance_features(pd.DataFrame([aave_balance]), self.timestamp_str)
-                        info_df = value_df.merge(freq_df, on='_id',how = 'inner')
-                        info_df = info_df.merge(balance_df, on='_id', how='inner')
-                        if info_df.empty:
-                            if not os.path.exists(f'data/log_file/{self.name}/train'):
-                                os.makedirs(f'data/log_file/{self.name}/train')
-                            with open(f'data/log_file/{self.name}/train/failed_addresses.json', 'a') as f:
+                    aave_transac = {key: aave_users.get(key) for key in transact_lst}
+                    aave_balance =  {key: aave_users.get(key) for key in balance_lst}
+                    transac_df = get_df(aave_transac)
+                    transac_df = transac_df[transac_df['timestampHistory']<self.timestamp]
+                    balance_df, text = get_balance_features(pd.DataFrame([aave_balance]), self.timestamp_str)
+
+                    if (transac_df.empty) &(text =='future data'):
+                        if not os.path.exists(f'data/log_file/{self.name}/future_wallet'):
+                            try:
+                                os.makedirs(f'data/log_file/{self.name}/future_wallet')
+                            except Exception as e:
+                                with open(f'data/log_file/{self.name}/future_wallet/future_addresses.json', 'a') as f:
+                                    f.write(json.dumps(aave_users['_id']))
+                                    f.write("\n")
+                        else:
+                            with open(f'data/log_file/{self.name}/future_wallet/future_addresses.json', 'a') as f:
+                                    f.write(json.dumps(aave_users['_id']))
+                                    f.write("\n")
+                        continue
+
+                    elif text =='future data':
+                        if not os.path.exists(f'data/log_file/{self.name}/potential_wallet'):
+                            try:
+                                os.makedirs(f'data/log_file/{self.name}/potential_wallet')
+                            except Exception as e:
+                                with open(f'data/log_file/{self.name}/potential_wallet/potential_addresses.json', 'a') as f:
+                                    f.write(json.dumps(aave_users['_id']))
+                                    f.write("\n")
+                        else:
+                            with open(f'data/log_file/{self.name}/potential_wallet/potential_addresses.json', 'a') as f:
+                                    f.write(json.dumps(aave_users['_id']))
+                                    f.write("\n")
+                        continue
+                    
+                    elif text =='outdated':
+                        if not os.path.exists(f'data/log_file/{self.name}/outdated_wallet'):
+                            try:
+                                os.makedirs(f'data/log_file/{self.name}/outdated_wallet')
+                            except Exception as e:
+                                with open(f'data/log_file/{self.name}/outdated_wallet/outdated_addresses.json', 'a') as f:
+                                    f.write(json.dumps(aave_users['_id']))
+                                    f.write("\n")
+                        else:
+                            with open(f'data/log_file/{self.name}/outdated_wallet/outdated_addresses.json', 'a') as f:
                                 f.write(json.dumps(aave_users['_id']))
                                 f.write("\n")
-                        else:
-                            info_dict = info_df.to_dict(orient='records')
-                            info_df_lst.extend(info_dict)
-                    except Exception as e:
-                        print(e)
                         continue
+
+                    elif text == 'acceptable':
+                        value_df = get_value_features(transac_df)
+                        freq_df = get_freq_features(transac_df)
+                        info_df = value_df.merge(freq_df, on='_id',how = 'inner')
+                        info_df = info_df.merge(balance_df, on='_id', how='inner')
+                        info_dict = info_df.to_dict(orient='records')
+                        info_df_lst.extend(info_dict)
+    
                 if info_df_lst != []:
                     self.exporter.update_data(name=self.name, data=info_df_lst)
 
