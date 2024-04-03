@@ -12,7 +12,7 @@ def format_prices(prices):
         formatted_prices[timestamp] = price_value
     return formatted_prices
 
-def get_historical_prices(token_id, days=99, vs_currency='usd'):
+def get_historical_prices(token_id, days=90, vs_currency='usd'):
     url = f'https://api.coingecko.com/api/v3/coins/{token_id}/market_chart?vs_currency={vs_currency}&days={days}'
     response = requests.get(url)
     if response.status_code == 200:
@@ -54,5 +54,5 @@ class GetTokenPrice(BaseJob):
 
     def _end(self):
         super()._end()
-        with open(f'{self.filename}/aave_tokens.json', "w") as json_file:
+        with open(f'{self.filename}', "w") as json_file:
             json.dump(self.token_history, json_file, indent=4)
