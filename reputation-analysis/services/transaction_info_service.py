@@ -40,7 +40,6 @@ class GetWalletTransactionTransfer(BaseJob):
                  start_date, end_date, start_block, end_block, max_workers= 4, batch_size=500, sources: List[str] = None):
         
         self.profile_info = list()
-        self.chain = chain
         self.mongo_transaction = mongo_transaction
         self.postgres = postgres
         self.mongo_clustering =mongo_clustering
@@ -63,6 +62,7 @@ class GetWalletTransactionTransfer(BaseJob):
             sources = ['mongo', 'postgres']
         self.sources = sources
         self.chain_id = Chains.mapping[chain]
+        self.native_token_address = f'{self.chain_id}_0x0000000000000000000000000000000000000000'
 
         super().__init__(work_iterable=index_lst,
                          max_workers=max_workers,
@@ -110,7 +110,7 @@ class GetWalletTransactionTransfer(BaseJob):
             if direction == 'from':
                 opposite_direction ='to'
                 address_info_lst, sending_failed_addresses = self.mongo_transaction.get_transaction_info(start_date=self.start_date, end_date=self.end_date, direction=direction, 
-                                                                               opposite_direction=opposite_direction, special_addresses=self.special_wallets, addresses=works, price_history=self.historical_token_price[f'{self.chain}'])
+                                                                               opposite_direction=opposite_direction, special_addresses=self.special_wallets, addresses=works, price_history=self.historical_token_price[f'{self.native_token_address}'])
                 sending_elite_addresses = list(set(works)- set(sending_failed_addresses))
                 if len(sending_elite_addresses) ==0:
                     return  pd.DataFrame(), pd.DataFrame(), []
@@ -126,7 +126,7 @@ class GetWalletTransactionTransfer(BaseJob):
             if direction == 'to':
                 opposite_direction ='from'
                 address_info_lst, receiving_failed_addresses = self.mongo_transaction.get_transaction_info(start_date=self.start_date, end_date=self.end_date, direction=direction, 
-                                                                               opposite_direction=opposite_direction, special_addresses=self.special_wallets, addresses=sending_elite_addresses, price_history=self.historical_token_price[f'{self.chain}'])
+                                                                               opposite_direction=opposite_direction, special_addresses=self.special_wallets, addresses=sending_elite_addresses, price_history=self.historical_token_price[f'{self.native_token_address}'])
                 receiving_elite_addresses = list(set(works)- set(receiving_failed_addresses))
 
                 if len(receiving_elite_addresses) ==0:
