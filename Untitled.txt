@@ -1,1 +1,3 @@
 Searching condition is just Temporary method
+
+EDA abt: avg age of wallets.
