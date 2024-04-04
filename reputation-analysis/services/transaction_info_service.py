@@ -62,7 +62,7 @@ class GetWalletTransactionTransfer(BaseJob):
             sources = ['mongo', 'postgres']
         self.sources = sources
         self.chain_id = Chains.mapping[chain]
-        self.native_token_address = f'{self.chain_id}_0x0000000000000000000000000000000000000000'
+        self.native_token_address = f'0x0000000000000000000000000000000000000000'
 
         super().__init__(work_iterable=index_lst,
                          max_workers=max_workers,
