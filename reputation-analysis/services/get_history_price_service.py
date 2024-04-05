@@ -12,7 +12,7 @@ def format_prices(prices):
         formatted_prices[timestamp] = price_value
     return formatted_prices
 
-def get_historical_prices(token_id, days=90, vs_currency='usd'):
+def get_historical_prices(token_id, days=60, vs_currency='usd'):
     url = f'https://api.coingecko.com/api/v3/coins/{token_id}/market_chart?vs_currency={vs_currency}&days={days}'
     response = requests.get(url)
     if response.status_code == 200:
@@ -44,12 +44,10 @@ class GetTokenPrice(BaseJob):
             idCoin = smart_contract['idCoingecko']
             address = smart_contract['address']
             historical_token_price = get_historical_prices(idCoin)
-            if historical_token_price == None:
-                continue
-            historical_token_round_price = dict()
-            historical_token_round_price[f'{address}'] = {(timestamp - (timestamp % 86400000)): value for timestamp, value in historical_token_price[f'{idCoin}'].items()}
- 
-            self.token_history.update(historical_token_round_price)
+            if historical_token_price != None:
+                historical_token_round_price = dict()
+                historical_token_round_price[f'{address}'] = {(timestamp - (timestamp % 86400000)): value for timestamp, value in historical_token_price[f'{idCoin}'].items()}
+                self.token_history.update(historical_token_round_price)
 
 
     def _end(self):
