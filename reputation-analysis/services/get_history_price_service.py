@@ -59,6 +59,10 @@ class GetTokenPrice(BaseJob):
                         with open(f'data/log_file/failed_tokens/failed_tokens.json', 'a') as f:
                             f.write(json.dumps(smart_contract['address']))
                             f.write("\n")
+                            
+                with open(f'data/log_file/failed_tokens/failed_tokens.json', 'a') as f:
+                            f.write(json.dumps(smart_contract['address']))
+                            f.write("\n")
 
 
     def _end(self):

@@ -11,13 +11,16 @@ Session = sessionmaker()
 def get_valueInUSD(row, token_history, token_lst, block_timestamp_mappings):
     token = row[0] #contract
     if token in token_lst:
-        timestamp = row[1]
-        round_timestamp = ((block_timestamp_mappings[timestamp]  - block_timestamp_mappings[timestamp]  % 86400) *1000)  #change to timestamp daily
-        if f'{round_timestamp}' in list(token_history[token].keys()):
-            valueInUSD = (row[-1]) * token_history[token][f'{round_timestamp}']
+        if token_history[token] != {}:
+            timestamp = row[1]
+            round_timestamp = ((block_timestamp_mappings[timestamp]  - block_timestamp_mappings[timestamp]  % 86400) *1000)  #change to timestamp daily
+            if f'{round_timestamp}' in list(token_history[token].keys()):
+                valueInUSD = (row[-1]) * token_history[token][f'{round_timestamp}']
+            else:
+                valueInUSD = 0
+            return valueInUSD
         else:
-            valueInUSD = 0
-        return valueInUSD
+            return None
     else: 
         return None
 
