@@ -1,3 +1,4 @@
+import bisect
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import text
@@ -8,6 +9,14 @@ logger = get_logger('PostgreSQL thread safe')
 
 Session = sessionmaker()
 
+def largest_key_smaller_than(dictionary, value):
+    keys = sorted(dictionary.keys())
+    index = bisect.bisect_left(keys, value) - 1
+    if index >= 0:
+        return keys[index]
+    else:
+        return 0
+
 def get_valueInUSD(row, token_history, token_lst, block_timestamp_mappings):
     token = row[0] #contract
     if token in token_lst:
@@ -17,6 +26,12 @@ def get_valueInUSD(row, token_history, token_lst, block_timestamp_mappings):
             if f'{round_timestamp}' in list(token_history[token].keys()):
                 valueInUSD = (row[-1]) * token_history[token][f'{round_timestamp}']
             else:
+                largest_key = largest_key_smaller_than(token_history, round_timestamp)
+                if largest_key ==0:
+                    valueInUSD = 0
+                else:
+                    last_value = token_history[largest_key]
+                    valueInUSD = (row[-1]) * last_value
                 valueInUSD = 0
             return valueInUSD
         else:
