@@ -8,8 +8,10 @@ from services.generate_training_data_service import GenerateData
 
 @click.command(context_settings=dict(help_option_names=['-h', '--help']))
 
-@click.option('-a', '--aave_path', type=str, default='', show_default=True,
-              help='Path to input addresses')
+@click.option('-a', '--address_dapps', type=str, default='', show_default=True,
+              help='Dapps users addresses')
+@click.option('-s', '--address_searching', type=str, default='', show_default=True,
+              help='address searching mongoDb')
 @click.option('-n', '--name', type=str,
               help='name')
 @click.option('-d', '--direction', type=str,
@@ -19,21 +21,23 @@ from services.generate_training_data_service import GenerateData
 @click.option('-w', '--max-workers', default=8, show_default=True, type=int,
               help='The number of workers')
 
-def generate_training_data(aave_path, name, direction, time_stamp, batch_size, max_workers):
-    with open(aave_path,'r') as file:
-        aave_address = json.load(file)
+def generate_training_data(address_dapps, address_searching, name, direction, time_stamp, batch_size, max_workers):
+
     mongodb = MongoDB()
-    mongo_searching_18_3 = mongodb._db['addresses_searching_18_3']
-    num_documents = mongo_searching_18_3.estimated_document_count()
-    lenn = len(aave_address)
+    address_searching = mongodb._db[f'{address_searching}']
+    num_documents = address_searching.estimated_document_count()
     if direction == 'train':
-        index_list = list(range(batch_size, lenn, batch_size))
-        index_list.append(lenn)
+        with open(address_dapps,'r') as file:
+            Dapps_user_address = json.load(file)
+        index_list = list(range(batch_size, len(Dapps_user_address), batch_size))
+        index_list.append(len(Dapps_user_address))
+        job =GenerateData(importer=address_searching, exporter= mongodb, name=name, direction=direction, index_lst=index_list, Dapps_user_addresses= Dapps_user_address, timestamp=time_stamp,
+                            max_workers=max_workers, batch_size=batch_size)
+        job.run()
+
     elif direction =='search':
         index_list = list(range(batch_size, num_documents, batch_size))
         index_list.append(num_documents)
-    print(time_stamp)
-    job =GenerateData(importer=mongo_searching_18_3, exporter= mongodb, name=name, direction=direction, index_lst=index_list,aave_addresses= aave_address, timestamp=time_stamp,
-                            max_workers=max_workers, batch_size=batch_size)
+        job =GenerateData(importer=address_searching, exporter= mongodb, name=name, direction=direction, index_lst=index_list, timestamp=time_stamp, max_workers=max_workers, batch_size=batch_size)
+        job.run()
     
-    job.run()
