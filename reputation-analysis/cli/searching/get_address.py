@@ -37,7 +37,7 @@ def get_address(chain, name, hot_path, burn_mint_path, batch_size, max_workers):
     mongoKlg_wallets = mongoKlg.wallets
     mongoSubgraph = MongoDB()
     arangoDb = ArangoDB()
-    flagged_lst = [i for i in range(1,3944)]
+    flagged_lst = [i for i in range(1,3945)]
     job = GetAddress(importer=mongoKlg_wallets,
                      arangoDb= arangoDb,
                      exporter=mongoSubgraph,
