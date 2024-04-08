@@ -60,7 +60,7 @@ class MongoDBMain:
                             if single_transaction_info['value'] == '0':
                                 continue
                             else:
-                                round_timestamp = ((single_transaction_info['block_timestamp']  - single_transaction_info['block_timestamp']  % 86400) *1000)  #change to timestamp daily
+                                round_timestamp = ((single_transaction_info['block_timestamp']  - single_transaction_info['block_timestamp']  % 86400))  #change to timestamp daily, not times 1000
                                 single_transaction_info['valueInUSD'] = (int(single_transaction_info['value']) * price_history[f'{round_timestamp}']) /10**18
                                 single_transaction_info['amount'] = int(single_transaction_info['value']) /10**18
                                 addresses_info.append(single_transaction_info)    
@@ -73,7 +73,7 @@ class MongoDBMain:
                     if single_transaction_info['value'] == '0':
                         continue
                     else:
-                        round_timestamp = ((single_transaction_info['block_timestamp']  - single_transaction_info['block_timestamp']  % 86400) *1000)  #change to timestamp daily
+                        round_timestamp = ((single_transaction_info['block_timestamp']  - single_transaction_info['block_timestamp']  % 86400))  #change to timestamp daily
                         single_transaction_info['valueInUSD'] = (int(single_transaction_info['value']) * price_history[f'{round_timestamp}']) /10**18
                         single_transaction_info['amount'] = int(single_transaction_info['value']) /10**18
                         addresses_info.append(single_transaction_info)    

@@ -22,7 +22,7 @@ def get_valueInUSD(row, token_history, token_lst, block_timestamp_mappings):
     if token in token_lst:
         if token_history[token] != {}:
             timestamp = row[1]
-            round_timestamp = ((block_timestamp_mappings[timestamp]  - block_timestamp_mappings[timestamp]  % 86400) *1000)  #change to timestamp daily
+            round_timestamp = ((block_timestamp_mappings[timestamp]  - block_timestamp_mappings[timestamp]  % 86400))  #change to timestamp daily, not times 1000
             if f'{round_timestamp}' in list(token_history[token].keys()):
                 valueInUSD = (row[-1]) * token_history[token][f'{round_timestamp}']
             else:
