@@ -26,11 +26,11 @@ def get_valueInUSD(row, token_history, token_lst, block_timestamp_mappings):
             if f'{round_timestamp}' in list(token_history[token].keys()):
                 valueInUSD = (row[-1]) * token_history[token][f'{round_timestamp}']
             else:
-                largest_key = largest_key_smaller_than(token_history, round_timestamp)
+                largest_key = largest_key_smaller_than(token_history[token], str(round_timestamp))
                 if largest_key ==0:
                     valueInUSD = 0
                 else:
-                    last_value = token_history[largest_key]
+                    last_value = token_history[token][largest_key]
                     valueInUSD = (row[-1]) * last_value
                 valueInUSD = 0
             return valueInUSD
