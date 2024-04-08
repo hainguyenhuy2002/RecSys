@@ -224,12 +224,12 @@ def write_to_json(data, filename):
         json.dump(data, json_file, indent=4)
 
 class GenerateData(BaseJob):
-    def __init__(self, direction, importer, exporter, name, index_lst, aave_addresses, timestamp, max_workers= 4, batch_size=500):
+    def __init__(self, direction, importer, exporter, name, index_lst, timestamp, Dapps_user_addresses=None, max_workers= 4, batch_size=500):
         self.importer = importer
         self.exporter = exporter
         self.name = name
         self.batch_size = batch_size
-        self.aave_address = aave_addresses
+        self.Dapps_user_addresses = Dapps_user_addresses
         self.direction = direction
         self.timestamp = timestamp
         self.timestamp_str = str(timestamp)
@@ -240,7 +240,7 @@ class GenerateData(BaseJob):
     def _execute_batch(self, works):
         if self.direction =='train':
             for work in works:
-                cursor = self.importer.find({'_id':{ '$in': self.aave_address}},{'_id':1,'interactedWallet':1,'tokenChangeLogs':1,'balanceChangeLogs':1,'depositChangeLogs':1,'borrowChangeLogs':1})
+                cursor = self.importer.find({'_id':{ '$in': self.Dapps_user_addresses}},{'_id':1,'interactedWallet':1,'tokenChangeLogs':1,'balanceChangeLogs':1,'depositChangeLogs':1,'borrowChangeLogs':1})
                 transact_lst = ['_id','interactedWallet']
                 balance_lst = ['_id','balanceChangeLogs','depositChangeLogs','borrowChangeLogs','tokenChangeLogs']
                 info_df_lst = []
