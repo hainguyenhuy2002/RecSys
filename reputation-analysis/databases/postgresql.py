@@ -66,8 +66,7 @@ class PostgresDB:
         count_query =f"""
             SELECT COUNT(*)
             FROM  {schema}.{PostgresDBConfig.TRANSFER_EVENT_TABLE}
-            WHERE {direction}_address IN ({addresses_values});
-            AND block_number BETWEEN {from_block} AND {to_block}
+            WHERE {direction}_address IN ({addresses_values})
         """
         with Session.begin() as session:
             wallet_transfer = []
@@ -86,12 +85,11 @@ class PostgresDB:
                         count_query_v2 =f"""
                             SELECT COUNT(*)
                             FROM  {schema}.{PostgresDBConfig.TRANSFER_EVENT_TABLE}
-                            WHERE {direction}_address IN ({addresses_values});
-                            AND block_number BETWEEN {from_block} AND {to_block}
+                            WHERE {direction}_address IN ({addresses_values})
                         """
 
                         num_event_v2 = session.execute(text(count_query_v2)).fetchone()[0]
-                        if num_event_v2 >1500:
+                        if num_event_v2 >2500:
                             failed_addresses.append(address)
                             continue
                         else:
