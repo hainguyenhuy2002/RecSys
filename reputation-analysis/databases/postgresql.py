@@ -63,19 +63,57 @@ class PostgresDB:
             AND {opposite_direction}_address NOT IN ({special_addresses_values})
             AND block_number BETWEEN {from_block} AND {to_block}
         """
-
+        count_query =f"""
+            SELECT COUNT(*)
+            FROM  {schema}.{PostgresDBConfig.TRANSFER_EVENT_TABLE}
+            WHERE {direction}_address IN ({addresses_values});
+            AND block_number BETWEEN {from_block} AND {to_block}
+        """
         with Session.begin() as session:
             wallet_transfer = []
+            failed_addresses = []
             try:
-                event_transfer = session.execute(text(query))
-                fields_to_select =['contract_address', 'block_number', 'from_address', 'to_address', 'value']
-                for event in event_transfer:
-                    valueInUSD = get_valueInUSD(row = event, token_history =price_history,token_lst = token_lst, block_timestamp_mappings=block_timestamp_mappings)
+                num_event = session.execute(text(count_query)).fetchone()[0]
+                if num_event >= 30000:
+                    for address in addresses:
+                        query_v2 = f"""
+                        SELECT contract_address, block_number, from_address, to_address, value
+                        FROM {schema}.{PostgresDBConfig.TRANSFER_EVENT_TABLE}
+                        WHERE {direction}_address={address}
+                        AND {opposite_direction}_address NOT IN ({special_addresses_values})
+                        AND block_number BETWEEN {from_block} AND {to_block}
+                        """
+                        count_query_v2 =f"""
+                            SELECT COUNT(*)
+                            FROM  {schema}.{PostgresDBConfig.TRANSFER_EVENT_TABLE}
+                            WHERE {direction}_address IN ({addresses_values});
+                            AND block_number BETWEEN {from_block} AND {to_block}
+                        """
 
-                    modified_event = event[:1] + (block_timestamp_mappings[event[1]],) + event[2:]
-                    timestamp_event = dict(zip(fields_to_select, modified_event))
-                    timestamp_event['valueInUSD'] = valueInUSD
-                    wallet_transfer.append(timestamp_event)
+                        num_event_v2 = session.execute(text(count_query_v2)).fetchone()[0]
+                        if num_event_v2 >1500:
+                            failed_addresses.append(address)
+                            continue
+                        else:
+                            event_transfer = session.execute(text(query_v2))
+                            fields_to_select =['contract_address', 'block_number', 'from_address', 'to_address', 'value']
+                            for event in event_transfer:
+                                valueInUSD = get_valueInUSD(row = event, token_history =price_history,token_lst = token_lst, block_timestamp_mappings=block_timestamp_mappings)
+                                modified_event = event[:1] + (block_timestamp_mappings[event[1]],) + event[2:]
+                                timestamp_event = dict(zip(fields_to_select, modified_event))
+                                timestamp_event['valueInUSD'] = valueInUSD
+                                wallet_transfer.append(timestamp_event)
+
+                else:
+                    event_transfer = session.execute(text(query))
+                    fields_to_select =['contract_address', 'block_number', 'from_address', 'to_address', 'value']
+                    for event in event_transfer:
+                        valueInUSD = get_valueInUSD(row = event, token_history =price_history,token_lst = token_lst, block_timestamp_mappings=block_timestamp_mappings)
+                        modified_event = event[:1] + (block_timestamp_mappings[event[1]],) + event[2:]
+                        timestamp_event = dict(zip(fields_to_select, modified_event))
+                        timestamp_event['valueInUSD'] = valueInUSD
+                        wallet_transfer.append(timestamp_event)
+
             except Exception as e:
                 log =get_logger("Oh no getting an error in the query Postgres task")
                 log.info(addresses)
@@ -83,4 +121,3 @@ class PostgresDB:
                 wallet_transfer = []
                 
         return wallet_transfer
-
