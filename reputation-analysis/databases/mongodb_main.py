@@ -44,7 +44,7 @@ class MongoDBMain:
             query_counting ={f'{direction}_address': {'$in': addresses}}
             counting = self._transaction.count_documents(query_counting)
 
-            if counting >=30000:
+            if counting >=20000:
                 for address in addresses:
                     query_v2 = {"block_timestamp" : {"$gte": start_date, "$lte": end_date}, f'{direction}_address': address, 
                                                     f'{opposite_direction}_address':{'$nin': special_addresses}}
@@ -60,7 +60,7 @@ class MongoDBMain:
                             if single_transaction_info['value'] == '0':
                                 continue
                             else:
-                                round_timestamp = ((single_transaction_info['block_timestamp']  - single_transaction_info['block_timestamp']  % 86400) *1000)  #change to timestamp daily
+                                round_timestamp = ((single_transaction_info['block_timestamp']  - single_transaction_info['block_timestamp']  % 86400))  #change to timestamp daily, not times 1000
                                 single_transaction_info['valueInUSD'] = (int(single_transaction_info['value']) * price_history[f'{round_timestamp}']) /10**18
                                 single_transaction_info['amount'] = int(single_transaction_info['value']) /10**18
                                 addresses_info.append(single_transaction_info)    
@@ -73,7 +73,7 @@ class MongoDBMain:
                     if single_transaction_info['value'] == '0':
                         continue
                     else:
-                        round_timestamp = ((single_transaction_info['block_timestamp']  - single_transaction_info['block_timestamp']  % 86400) *1000)  #change to timestamp daily
+                        round_timestamp = ((single_transaction_info['block_timestamp']  - single_transaction_info['block_timestamp']  % 86400))  #change to timestamp daily
                         single_transaction_info['valueInUSD'] = (int(single_transaction_info['value']) * price_history[f'{round_timestamp}']) /10**18
                         single_transaction_info['amount'] = int(single_transaction_info['value']) /10**18
                         addresses_info.append(single_transaction_info)    
