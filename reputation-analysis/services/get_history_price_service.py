@@ -23,7 +23,7 @@ def get_historical_prices(token_id, days=60, vs_currency='usd'):
         if  response.status_code == 429:
             time.sleep(60)
             response = requests.get(url)
-            if  response.status_code == 429:
+            if response.status_code == 429:
                 time.sleep(60)
         
     else:
@@ -45,32 +45,19 @@ class GetTokenPrice(BaseJob):
                          batch_size=batch_size)
 
     def _execute_batch(self, works):
-
+        history_lst = []
         for smart_contract in works:
-            try:
-                idCoin = smart_contract['idCoingecko']
-                address = smart_contract['address']
-                id = smart_contract['_id']
-                historical_token_price = get_historical_prices(idCoin)
-                if (historical_token_price[idCoin] != {}):
-                    historical_token_round_price = dict()
-                    historical_token_round_price['_id'] = id
-                    historical_token_round_price['address'] = address
-                    historical_token_round_price['priceHistory'] = {(timestamp - (timestamp % 86400000)): value for timestamp, value in historical_token_price[f'{idCoin}'].items()}
-                    self.exporter.update_data(name=self.name, data=[historical_token_round_price])
-                else:
-                    if not os.path.exists(f'data/log_file/failed_tokens'):
-                        try:
-                            os.makedirs(f'data/log_file/failed_tokens')
-                        except Exception as ex:
-                            with open(f'data/log_file/failed_tokens/failed_tokens.json', 'a') as f:
-                                f.write(json.dumps(smart_contract['address']))
-                                f.write("\n")
-                            
-                    with open(f'data/log_file/failed_tokens/failed_tokens.json', 'a') as f:
-                                f.write(json.dumps(smart_contract['address']))
-                                f.write("\n")
-            except Exception as e:
+            idCoin = smart_contract['idCoingecko']
+            address = smart_contract['address']
+            id = smart_contract['_id']
+            historical_token_price = get_historical_prices(idCoin)
+            if (historical_token_price[idCoin] != {}):
+                historical_token_round_price = dict()
+                historical_token_round_price['_id'] = id
+                historical_token_round_price['address'] = address
+                historical_token_round_price['priceHistory'] = {(timestamp - (timestamp % 86400000)): value for timestamp, value in historical_token_price[f'{idCoin}'].items()}
+                history_lst.append(historical_token_round_price)
+            else:
                 if not os.path.exists(f'data/log_file/failed_tokens'):
                     try:
                         os.makedirs(f'data/log_file/failed_tokens')
@@ -78,10 +65,12 @@ class GetTokenPrice(BaseJob):
                         with open(f'data/log_file/failed_tokens/failed_tokens.json', 'a') as f:
                             f.write(json.dumps(smart_contract['address']))
                             f.write("\n")
-                            
+                        
                 with open(f'data/log_file/failed_tokens/failed_tokens.json', 'a') as f:
                             f.write(json.dumps(smart_contract['address']))
                             f.write("\n")
+            
+        self.exporter.update_data(name=self.name, data=history_lst)
 
 
     def _end(self):
