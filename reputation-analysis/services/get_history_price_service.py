@@ -70,7 +70,6 @@ class GetTokenPrice(BaseJob):
                             f.write(json.dumps(smart_contract['address']))
                             f.write("\n")
         if len(history_lst)>0:
-            print(history_lst)
             self.exporter.update_data(name=self.name, data=history_lst)
 
 
