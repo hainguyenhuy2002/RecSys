@@ -27,7 +27,7 @@ class GetAddress(BaseJob):
                 wallets = self.mongo_klg.find(query,{'_id':1,'flagged':1,'balanceChangeLogs':1,'address':1,'tokenChangeLogs':1,'type':1, 
                                                         'balanceInUSD':1,'tags':1,'depositChangeLogs':1,'depositInUSD':1,'borrowChangeLogs':1,
                                                             'borrowInUSD':1, 'lendings':1,'createdAt':1,'theFirstToTimestamp':1,
-                                                                'theFirstFromTimestamp':1, 'dailyAllTransactions':1, 'lastTokenInteractedAt':1})
+                                                                'theFirstFromTimestamp':1, 'dailyAllTransactions':1, 'lastTokenInteractedAt':1, 'dailyAllTransactions': 1})
                 for wallet in wallets:
                     if wallet in self.hot_wallets:
                         continue
