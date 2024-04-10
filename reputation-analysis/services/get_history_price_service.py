@@ -55,7 +55,7 @@ class GetTokenPrice(BaseJob):
                 historical_token_round_price = dict()
                 historical_token_round_price['_id'] = id
                 historical_token_round_price['address'] = address
-                historical_token_round_price['priceHistory'] = {(timestamp - (timestamp % 86400000)): value for timestamp, value in historical_token_price[f'{idCoin}'].items()}
+                historical_token_round_price['priceHistory'] = {str(timestamp - (timestamp % 86400000)): value for timestamp, value in historical_token_price[f'{idCoin}'].items()}
                 history_lst.append(historical_token_round_price)
             else:
                 if not os.path.exists(f'data/log_file/failed_tokens'):
