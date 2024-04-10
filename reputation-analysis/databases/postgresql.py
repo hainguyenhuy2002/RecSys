@@ -32,7 +32,6 @@ def get_valueInUSD(row, token_history, token_lst, block_timestamp_mappings):
                 else:
                     last_value = token_history[token][largest_key]
                     valueInUSD = (row[-1]) * last_value
-                valueInUSD = 0
             return valueInUSD
         else:
             return None
@@ -73,7 +72,7 @@ class PostgresDB:
             failed_addresses = []
             try:
                 num_event = session.execute(text(count_query)).fetchone()[0]
-                if num_event >= 30000:
+                if num_event >= 50000:
                     for address in addresses:
                         query_v2 = f"""
                         SELECT contract_address, block_number, from_address, to_address, value
