@@ -75,24 +75,10 @@ class GetWalletTransactionTransfer(BaseJob):
             addresses = []
             other_lst = []
             for address in cursor[work-self.batch_size:work]:
-                if (address['address'] not in self.special_wallets) &(address['type']!='contract')&('dailyAllTransactions'  in address):
-                    if (address['dailyAllTransactions'] != {})&(address['dailyAllTransactions'] != None):
-                        numTransaction = sum(value for key, value in address['dailyAllTransactions'].items() if key >= str(self.start_date))
-                        if numTransaction < 2000:
-                            addresses.append(address['address'])
-                            other_lst.append(address)
-                        else:
-                            if not os.path.exists(f'data/log_file/{self.name}/fail_transaction'):
-                                try:
-                                    os.makedirs(f'data/log_file/{self.name}/fail_transaction')
-                                except Exception as e:
-                                    with open(f'data/log_file/{self.name}/fail_transaction/fail_addresses.json', 'a') as f:
-                                        f.write(json.dumps(address['address']))
-                                        f.write("\n")
-                            else:
-                                with open(f'data/log_file/{self.name}/fail_transaction/fail_addresses.json', 'a') as f:
-                                        f.write(json.dumps(address['address']))
-                                        f.write("\n")
+                if (address['address'] not in self.special_wallets) &(address['type']!='contract'):
+                    addresses.append(address['address'])
+                    other_lst.append(address)
+                
             other_info = rename_key(other_lst, 'address','wallet') 
 
             sending_transfer_info, receiving_transfer_info, transfer_elite_addresses = self._wallet_transfer_info(works=addresses)#postgres

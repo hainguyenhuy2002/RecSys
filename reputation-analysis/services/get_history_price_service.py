@@ -1,39 +1,11 @@
 import os
-import requests
 import pandas as pd 
 from multithread_processing.base_job import BaseJob
-import json
-import time
-def format_prices(prices):
-    formatted_prices = {}
-    for price in prices:
-        timestamp = price[0]
-        price_value = price[1]
-        formatted_prices[timestamp] = price_value
-    return formatted_prices
+from utils.history_price_utils import get_historical_prices
+from utils.logger_utils import write_file
 
-def get_historical_prices(token_id, days=75, vs_currency='usd'):
-    url = f'https://api.coingecko.com/api/v3/coins/{token_id}/market_chart?vs_currency={vs_currency}&days={days}'
-    response = requests.get(url)
-    if response.status_code == 200:
-        time.sleep(6)
-    elif response.status_code == 429:
-        time.sleep(70)
-        response = requests.get(url)
-        if  response.status_code == 429:
-            time.sleep(60)
-            response = requests.get(url)
-            if response.status_code == 429:
-                time.sleep(60)
-        
-    else:
-        return None
-    data = response.json()
-    prices = data.get('prices', [])
-    formatted_prices = format_prices(prices)
-    prices_dict = {token_id: formatted_prices}
-    return prices_dict
-    
+
+
 class GetTokenPrice(BaseJob):
     def __init__(self, exporter, chain_id, name, token_addresses: list,
                  max_workers= 4, batch_size=500):
@@ -62,36 +34,21 @@ class GetTokenPrice(BaseJob):
                     historical_token_round_price['priceHistory'] = {str(timestamp - (timestamp % 86400000)): value for timestamp, value in historical_token_price[f'{idCoin}'].items()}
                     history_lst.append(historical_token_round_price)
                 else:
-                    if not os.path.exists(f'data/log_file/failed_{self.chain_id}_tokens'):
-                        try:
-                            os.makedirs(f'data/log_file/failed_{self.chain_id}_tokens')
-                        except Exception as ex:
-                            with open(f'data/log_file/failed_{self.chain_id}_tokens/failed_tokens.json', 'a') as f:
-                                f.write(json.dumps(smart_contract['address']))
-                                f.write("\n")
-                            
-                    with open(f'data/log_file/failed_{self.chain_id}_tokens/failed_tokens.json', 'a') as f:
-                                f.write(json.dumps(smart_contract['address']))
-                                f.write("\n")
-
+                    write_file(
+                            folder_direction='data/log_file/failed_tokens/failed_{self.chain_id}_tokens',
+                            name='failed_tokens.json',
+                            file=smart_contract['address']
+                    )
+        
             except Exception as e:
-                if not os.path.exists(f'data/log_file/failed_{self.chain_id}_tokens'):
-                    try:
-                        os.makedirs(f'data/log_file/failed_{self.chain_id}_tokens')
-                    except Exception as ex:
-                        with open(f'data/log_file/failed_{self.chain_id}_tokens/failed_tokens.json', 'a') as f:
-                            f.write(json.dumps(smart_contract['address']))
-                            f.write("\n")
-                        
-                with open(f'data/log_file/failed_{self.chain_id}_tokens/failed_tokens.json', 'a') as f:
-                            f.write(json.dumps(smart_contract['address']))
-                            f.write("\n")
+                write_file(
+                            folder_direction='data/log_file/failed_tokens/failed_{self.chain_id}_tokens',
+                            name='failed_tokens.json',
+                            file=smart_contract['address']
+                    )
                 continue
 
-
         if len(history_lst)>0:
-            self.exporter.update_data(name=self.name, data=history_lst)
-
-
+            self.exporter.update_data(name=self.name, data=history_lst)    
     def _end(self):
         super()._end()
