@@ -32,9 +32,9 @@ def get_token_price(chain, name, failed, batch_size, max_workers):
     else:
         try:
             tokens = []
-            with open(f'data/log_file/failed_tokens/failed_{chain_id}_tokens/failed_tokens.json','r') as file:
+            with open(f'data/log_file/failed_tokens/failed_{chain_id}_tokens/failed_tokens.json') as file:
                 for failed_token in file:
-                    failed_addresses = json.load(failed_token)
+                    failed_addresses = json.loads(failed_token)
                     tokens.append(failed_addresses)
         except Exception as e:
             logger.info(e)
