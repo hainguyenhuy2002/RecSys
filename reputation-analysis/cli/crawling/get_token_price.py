@@ -12,9 +12,8 @@ from services.get_history_price_service import GetTokenPrice
               help='chain to get token price')
 @click.option('-n', '--name', type=str,
               help='name of collection')
-@click.option('-n', '--failed', type=str, default=None, show_default=True,
+@click.option('-f', '--failed', type=str, default=None, show_default=True,
               help='Is token has failed addresses?')
-
 @click.option('-b', '--batch-size', type=int, 
               help='Batch size - number of addresses each worker processes')
 @click.option('-w', '--max-workers', default=8, show_default=True, type=int,
