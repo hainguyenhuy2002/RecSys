@@ -56,6 +56,7 @@ class GetTokenPrice(BaseJob):
                 if (historical_token_price[idCoin] != {}):
                     historical_token_round_price = dict()
                     historical_token_round_price['_id'] = id
+                    historical_token_round_price['chainId'] = self.chain_id
                     historical_token_round_price['address'] = address
                     historical_token_round_price['idCoingecko'] = idCoin
                     historical_token_round_price['priceHistory'] = {str(timestamp - (timestamp % 86400000)): value for timestamp, value in historical_token_price[f'{idCoin}'].items()}
