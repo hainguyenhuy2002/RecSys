@@ -1,3 +1,5 @@
+import os
+import json
 import logging
 from logging.handlers import RotatingFileHandler
 
@@ -24,3 +26,18 @@ def get_logger(logger_name):
     logger.addHandler(get_console_handler())
     # logger.addHandler(get_file_handler())
     return logger
+
+
+def write_file(folder_direction, name, file):
+    if not os.path.exists(f'data/log_file/{folder_direction}'):
+        try:
+            os.makedirs(f'data/log_file/{folder_direction}')
+        except Exception as ex:
+            with open(f'data/log_file/{folder_direction}/{name}.json', 'a') as f:
+                f.write(json.dumps(file))
+                f.write("\n")
+            
+    with open(f'data/log_file/{folder_direction}/{name}.json', 'a') as f:
+                f.write(json.dumps(file))
+                f.write("\n")
+    
