@@ -1,3 +1,4 @@
+import os
 import json
 import pandas as pd 
 from multithread_processing.base_job import BaseJob
@@ -77,9 +78,21 @@ class GetWalletTransactionTransfer(BaseJob):
                 if (address['address'] not in self.special_wallets) &(address['type']!='contract')&('dailyAllTransactions'  in address):
                     if (address['dailyAllTransactions'] != {})&(address['dailyAllTransactions'] != None):
                         numTransaction = sum(value for key, value in address['dailyAllTransactions'].items() if key >= str(self.start_date))
-                        if numTransaction > 0:
+                        if numTransaction < 2000:
                             addresses.append(address['address'])
                             other_lst.append(address)
+                        else:
+                            if not os.path.exists(f'data/log_file/{self.name}/fail_transaction'):
+                                try:
+                                    os.makedirs(f'data/log_file/{self.name}/fail_transaction')
+                                except Exception as e:
+                                    with open(f'data/log_file/{self.name}/fail_transaction/fail_addresses.json', 'a') as f:
+                                        f.write(json.dumps(address['address']))
+                                        f.write("\n")
+                            else:
+                                with open(f'data/log_file/{self.name}/fail_transaction/fail_addresses.json', 'a') as f:
+                                        f.write(json.dumps(address['address']))
+                                        f.write("\n")
             other_info = rename_key(other_lst, 'address','wallet') 
 
             sending_transfer_info, receiving_transfer_info, transfer_elite_addresses = self._wallet_transfer_info(works=addresses)#postgres
@@ -89,6 +102,7 @@ class GetWalletTransactionTransfer(BaseJob):
                     sending_transaction_info['contractAddress'] = '0x0000000000000000000000000000000000000000'
                 if receiving_transaction_info.empty!=False:    
                     receiving_transaction_info['contractAddress'] = '0x0000000000000000000000000000000000000000'
+                
                 profiling = pd.concat([sending_transfer_info, sending_transaction_info, sending_transaction_info, receiving_transfer_info])
                 profiling = profiling.dropna()
                 if (profiling.empty == False) &('contractAddress' in profiling.columns):
@@ -105,7 +119,19 @@ class GetWalletTransactionTransfer(BaseJob):
                         profiling.to_csv(f"data/log_file/{self.chain_id}/checking.csv", index=False)
                         print('oh no having error in combinning 2 dataframe')
                         print(e)
-                            
+            else:
+                if not os.path.exists(f'data/log_file/{self.name}/fail_transfer_event'):
+                    try:
+                        os.makedirs(f'data/log_file/{self.name}/fail_transfer_event')
+                    except Exception as e:
+                        with open(f'data/log_file/{self.name}/fail_transfer_event/fail_addresses.json', 'a') as f:
+                            f.write(json.dumps(address['address']))
+                            f.write("\n")
+                else:
+                    with open(f'data/log_file/{self.name}/fail_transfer_event/fail_addresses.json', 'a') as f:
+                            f.write(json.dumps(address['address']))
+                            f.write("\n")
+
     def _wallet_transaction_info(self, works): 
 
         for direction in self.direction:
@@ -168,20 +194,21 @@ class GetWalletTransactionTransfer(BaseJob):
                 elite_sender = list(set(works)- set(failed_sender))
                 if len(elite_sender) ==0:
                     return  pd.DataFrame(), pd.DataFrame(), []
-                if len(wallet_transfer)!=0:            
-                    transfer_concat = pd.DataFrame(wallet_transfer)
-                    transfer_concat = transfer_concat.dropna()
-                    transfer_concat = transfer_concat.rename(columns={"value":"amount", "contract_address":"contractAddress"})
-                    wallet_transfer_info = transfer_concat.groupby(
-                        ['from_address', 'to_address', 'contractAddress'])  \
-                            .agg({"block_number":tuple, 'amount':tuple, "valueInUSD": ['sum',tuple]}
-                    )
-                    wallet_transfer_info.columns = ['{}_{}'.format(col[0], col[1]) for col in wallet_transfer_info.columns]
-                    sending_transfer_info = wallet_transfer_info.reset_index().rename(
-                                            columns={"from_address": "wallet","to_address":"interactedWallet", "block_number_tuple":"timestampHistory", 
-                                                    "valueInUSD_tuple":"valueInUSDHistory", "valueInUSD_sum":"totalValueInUSD", "amount_tuple":"amountHistory"})
                 else:
-                    sending_transfer_info = pd.DataFrame()
+                    if len(wallet_transfer)!=0:            
+                        transfer_concat = pd.DataFrame(wallet_transfer)
+                        transfer_concat = transfer_concat.dropna()
+                        transfer_concat = transfer_concat.rename(columns={"value":"amount", "contract_address":"contractAddress"})
+                        wallet_transfer_info = transfer_concat.groupby(
+                            ['from_address', 'to_address', 'contractAddress'])  \
+                                .agg({"block_number":tuple, 'amount':tuple, "valueInUSD": ['sum',tuple]}
+                        )
+                        wallet_transfer_info.columns = ['{}_{}'.format(col[0], col[1]) for col in wallet_transfer_info.columns]
+                        sending_transfer_info = wallet_transfer_info.reset_index().rename(
+                                                columns={"from_address": "wallet","to_address":"interactedWallet", "block_number_tuple":"timestampHistory", 
+                                                        "valueInUSD_tuple":"valueInUSDHistory", "valueInUSD_sum":"totalValueInUSD", "amount_tuple":"amountHistory"})
+                    else:
+                        sending_transfer_info = pd.DataFrame()
 
             if direction =='to':
                 opposite_direction = 'from'
