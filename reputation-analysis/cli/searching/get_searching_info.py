@@ -113,7 +113,7 @@ def get_searching_info(chain, input_hot, input_mint_burn, searching_db, name, st
     num_documents = mongo_available_addresses.estimated_document_count()
     index_list = list(range(batch_size, num_documents, batch_size))
     index_list.append(num_documents) 
-
+    index_list =[i for i in range(0,22000, batch_size)]
 
     if sources != None:
         sources = [sources]
@@ -137,24 +137,3 @@ def get_searching_info(chain, input_hot, input_mint_burn, searching_db, name, st
                              batch_size=batch_size,
                              sources=sources)
     job.run()
-
-
-def format_prices(prices):
-    formatted_prices = {}
-    for price in prices:
-        timestamp = price[0]
-        price_value = price[1]
-        formatted_prices[timestamp] = price_value
-    return formatted_prices
-
-def get_historical_prices(token_id, days=95, vs_currency='usd'):
-    url = f'https://api.coingecko.com/api/v3/coins/{token_id}/market_chart?vs_currency={vs_currency}&days={days}'
-    response = requests.get(url)
-    if response.status_code == 200:
-        data = response.json()
-        prices = data.get('prices', [])
-        formatted_prices = format_prices(prices)
-        prices_dict = {token_id: formatted_prices}
-        return prices_dict
-    else:
-        return None
