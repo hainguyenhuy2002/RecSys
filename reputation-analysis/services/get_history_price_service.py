@@ -7,13 +7,12 @@ from utils.logger_utils import write_file
 
 
 class GetTokenPrice(BaseJob):
-    def __init__(self, exporter, chain_id, name, token_addresses: list, failed_token=None,
+    def __init__(self, exporter, chain_id, name, token_addresses: list,
                  max_workers= 4, batch_size=500):
         self.token_history = dict()
         self.exporter = exporter
         self.name = name
         self.chain_id = chain_id
-        self.failed_token =failed_token
         super().__init__(work_iterable=token_addresses,
                          max_workers=max_workers,
                          batch_size=batch_size)
