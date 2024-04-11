@@ -4,6 +4,7 @@ import pandas as pd
 from multithread_processing.base_job import BaseJob
 from typing import List
 from constants.network_constants import Chains
+from utils.logger_utils import write_file
 def flatten_and_concat(tuples):
     flattened = [item for sublist in tuples for item in sublist]
     return flattened
@@ -102,21 +103,12 @@ class GetWalletTransactionTransfer(BaseJob):
                                 dict_lookup[wallet].update(update)
                         self.mongo_clustering.update_data(name=self.filename, data=profile_info_dict)
                     except Exception as e:
-                        profiling.to_csv(f"data/log_file/{self.chain_id}/checking.csv", index=False)
+                        profiling.to_csv(f"data/log_file/address_info/{self.chain_id}/checking.csv", index=False)
                         print('oh no having error in combinning 2 dataframe')
                         print(e)
             else:
-                if not os.path.exists(f'data/log_file/{self.name}/fail_transfer_event'):
-                    try:
-                        os.makedirs(f'data/log_file/{self.name}/fail_transfer_event')
-                    except Exception as e:
-                        with open(f'data/log_file/{self.name}/fail_transfer_event/fail_addresses.json', 'a') as f:
-                            f.write(json.dumps(address['address']))
-                            f.write("\n")
-                else:
-                    with open(f'data/log_file/{self.name}/fail_transfer_event/fail_addresses.json', 'a') as f:
-                            f.write(json.dumps(address['address']))
-                            f.write("\n")
+                write_file(f'address_info/{self.chain_id}', 'fail_addresses.json',addresses)
+     
 
     def _wallet_transaction_info(self, works): 
 
