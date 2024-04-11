@@ -113,7 +113,7 @@ def get_searching_info(chain, input_hot, input_mint_burn, searching_db, name, st
     num_documents = mongo_available_addresses.estimated_document_count()
     index_list = list(range(batch_size, num_documents, batch_size))
     index_list.append(num_documents) 
-    index_list =[i for i in range(batch_size,22000, batch_size)]
+    #index_list =[i for i in range(batch_size,22000, batch_size)]
 
     if sources != None:
         sources = [sources]
