@@ -85,7 +85,7 @@ class GetTokenPrice(BaseJob):
                 with open(f'data/log_file/failed_{self.chain_id}_tokens/failed_tokens.json', 'a') as f:
                             f.write(json.dumps(smart_contract['address']))
                             f.write("\n")
-
+                continue
 
 
         if len(history_lst)>0:
