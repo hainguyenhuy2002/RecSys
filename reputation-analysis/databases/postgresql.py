@@ -81,10 +81,18 @@ class PostgresDB:
                         AND {opposite_direction}_address NOT IN ({special_addresses_values})
                         AND block_number BETWEEN {from_block} AND {to_block}
                         """
+
+
                         count_query_v2 =f"""
-                            SELECT COUNT(*)
+                            SELECT
+                            COUNT(*)
+                            FROM (
+                            SELECT
+                                DISTINCT ON (server_id) server_id
                             FROM  {schema}.{PostgresDBConfig.TRANSFER_EVENT_TABLE}
+                            ) AS count
                             WHERE {direction}_address IN ({addresses_values})
+
                         """
                         with Session.begin() as session_2:
                             num_event_v2 = session_2.execute(text(count_query_v2)).fetchone()[0]

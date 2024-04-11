@@ -35,8 +35,6 @@ class GetAddress(BaseJob):
                         if 'type' not in wallet:
                             wallet['type'] = 0
                         wallet_lst.append(wallet)
-                        str = f'ethereum_addresses/0x1_'+wallet['address']
-                        wallets_name.append(str)
                 if len(wallet_lst) !=0:
                     # wallet_sent_receive = self.arangoDb.get_num_send_receive(wallets_name)
                     # sent_receive_df = pd.DataFrame(wallet_sent_receive)
