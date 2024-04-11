@@ -21,7 +21,7 @@ def get_valueInUSD(row, token_history, token_lst, block_timestamp_mappings):
     token = row[0] #contract
     if token in token_lst:
         if token_history[token] != {}:
-            timestamp = str(row[1])
+            timestamp = row[1]
             round_timestamp = ((block_timestamp_mappings[timestamp]  - block_timestamp_mappings[timestamp]  % 86400))*1000  #change to timestamp daily, not times 1000
             if f'{round_timestamp}' in list(token_history[token].keys()):
                 valueInUSD = (row[-1]) * token_history[token][f'{round_timestamp}']
@@ -108,7 +108,7 @@ class PostgresDB:
                         fields_to_select =['contract_address', 'block_number', 'from_address', 'to_address', 'value']
                         for event in event_transfer:
                             valueInUSD = get_valueInUSD(row = event, token_history =price_history,token_lst = token_lst, block_timestamp_mappings=block_timestamp_mappings)
-                            modified_event = event[:1] + (block_timestamp_mappings[f'{event[1]}'],) + event[2:]
+                            modified_event = event[:1] + (block_timestamp_mappings[event[1]],) + event[2:]
                             timestamp_event = dict(zip(fields_to_select, modified_event))
                             timestamp_event['valueInUSD'] = valueInUSD
                             wallet_transfer.append(timestamp_event)
