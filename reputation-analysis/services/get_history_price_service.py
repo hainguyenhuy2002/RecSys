@@ -49,7 +49,6 @@ class GetTokenPrice(BaseJob):
                 continue
 
         if len(history_lst)>0:
-            print(history_lst)
             self.exporter.update_data(name=self.name, data=history_lst)    
     def _end(self):
         super()._end()
