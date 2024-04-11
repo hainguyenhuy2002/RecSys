@@ -51,7 +51,7 @@ def get_token_price(chain, name, failed, batch_size, max_workers):
         token_info_dct['address'] = token_info['address']
         token_info_dct['idCoingecko'] = token_info['idCoingecko']
         token_list.append(token_info_dct)
-
+    print(token_list)
     job = GetTokenPrice(exporter=mongo_db, name=name, chain_id=chain_id, token_addresses=token_list,batch_size=batch_size,max_workers=max_workers)
 
 
