@@ -33,5 +33,5 @@ def get_token_price(chain, name, batch_size, max_workers):
         token_list.append(token_info_dct)
     logger = get_logger("Start to get tokens history")
 
-    job = GetTokenPrice(exporter=mongo_db, name=name, token_addresses=token_list,batch_size=batch_size,max_workers=max_workers)
+    job = GetTokenPrice(exporter=mongo_db, name=name, chain_id=chain_id, token_addresses=token_list,batch_size=batch_size,max_workers=max_workers)
     job.run()

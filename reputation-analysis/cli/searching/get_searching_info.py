@@ -75,28 +75,27 @@ def get_searching_info(chain, input_hot, input_mint_burn, searching_db, name, st
 
 
     if token_price == None:
-        logger.info("Start to get the mapping token history prices dictionary")
-        try:
-            historical_token_price = get_historical_prices('ethereum')
-            historical_token_round_price = dict()
-            historical_token_round_price['ethereum'] = {(timestamp - (timestamp % 86400000)): value for timestamp, value in historical_token_price['ethereum'].items()}
-            logger.info("Sucessful get mapping timestamp dictionary and the mapping token history")           
-
-        except Exception as e:
-            logger.info(e)
+        token_price = mongo_clustering._db['top_token_price_multichain'].find({'chainId':f'{chain_id}'})
+        historical_token_round_price = dict()
+        for token in token_price:
+            token_dct = dict()
+            address = token['address']
+            price_history = token['priceHistory']
+            token_dct[f'{address}'] = price_history
+            historical_token_round_price.update(token_dct)
 
     else:
         with open(token_price, 'r') as  token_file:
             historical_token_round_price  = json.load(token_file)
     
 
-    logger.info("Start to get the mapping timestamp dictonary")
-    block_timestamp_mappings = mongo.get_block_number_to_timestamp(start_block=start_block, end_block=end_block)
-    logger.info("Sucessful mapping timestamp dictionary")           
+    # logger.info("Start to get the mapping timestamp dictonary")
+    # block_timestamp_mappings = mongo.get_block_number_to_timestamp(start_block=start_block, end_block=end_block)
+    # logger.info("Sucessful mapping timestamp dictionary")           
     # with open('data/block_timestamp_mapping.json','w') as jfile:
     #     json.dump(block_timestamp_mappings, jfile, indent=4)
-    # with open('data/block_timestamp_mapping.json','r') as jfile:
-    #     block_timestamp_mappings = json.load(jfile)
+    with open('data/block_timestamp_mapping.json','r') as jfile:
+        block_timestamp_mappings = json.load(jfile)
 
     with open(input_hot, 'r') as file:
         hot_wallets = json.load(file)
@@ -123,7 +122,7 @@ def get_searching_info(chain, input_hot, input_mint_burn, searching_db, name, st
                              mongo_transaction= mongo,
                              postgres= postgres,
                              mongo_clustering=mongo_clustering,
-                             mongo_available=mongo_available_addresses,
+                             mongo_searching_space=mongo_available_addresses,
                              historical_token_price=historical_token_round_price,
                              block_timestamp_mappings=block_timestamp_mappings,
                              special_wallets= hot_wallets_lst,

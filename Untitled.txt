@@ -1,3 +1,5 @@
 Searching condition is just Temporary method
 
 EDA abt: avg age of wallets.
+dailyAllTransactions: from + to
+dailyTransactionAmounts: from

@@ -21,8 +21,8 @@ def get_valueInUSD(row, token_history, token_lst, block_timestamp_mappings):
     token = row[0] #contract
     if token in token_lst:
         if token_history[token] != {}:
-            timestamp = row[1]
-            round_timestamp = ((block_timestamp_mappings[timestamp]  - block_timestamp_mappings[timestamp]  % 86400))  #change to timestamp daily, not times 1000
+            timestamp = str(row[1])
+            round_timestamp = ((block_timestamp_mappings[timestamp]  - block_timestamp_mappings[timestamp]  % 86400))*1000  #change to timestamp daily, not times 1000
             if f'{round_timestamp}' in list(token_history[token].keys()):
                 valueInUSD = (row[-1]) * token_history[token][f'{round_timestamp}']
             else:
@@ -73,33 +73,34 @@ class PostgresDB:
             try:
                 num_event = session.execute(text(count_query)).fetchone()[0]
                 if num_event >= 50000:
-                    for address in addresses:
-                        query_v2 = f"""
-                        SELECT contract_address, block_number, from_address, to_address, value
-                        FROM {schema}.{PostgresDBConfig.TRANSFER_EVENT_TABLE}
-                        WHERE {direction}_address={address}
-                        AND {opposite_direction}_address NOT IN ({special_addresses_values})
-                        AND block_number BETWEEN {from_block} AND {to_block}
-                        """
-                        count_query_v2 =f"""
-                            SELECT COUNT(*)
-                            FROM  {schema}.{PostgresDBConfig.TRANSFER_EVENT_TABLE}
-                            WHERE {direction}_address IN ({addresses_values})
-                        """
-                        with Session.begin() as session_2:
-                            num_event_v2 = session_2.execute(text(count_query_v2)).fetchone()[0]
-                            if num_event_v2 >2500:
-                                failed_addresses.append(address)
-                                continue
-                            else:
-                                event_transfer = session_2.execute(text(query_v2))
-                                fields_to_select =['contract_address', 'block_number', 'from_address', 'to_address', 'value']
-                                for event in event_transfer:
-                                    valueInUSD = get_valueInUSD(row = event, token_history =price_history,token_lst = token_lst, block_timestamp_mappings=block_timestamp_mappings)
-                                    modified_event = event[:1] + (block_timestamp_mappings[event[1]],) + event[2:]
-                                    timestamp_event = dict(zip(fields_to_select, modified_event))
-                                    timestamp_event['valueInUSD'] = valueInUSD
-                                    wallet_transfer.append(timestamp_event)
+                    failed_addresses.extend(addresses)
+                    # for address in addresses:
+                    #     query_v2 = f"""
+                    #     SELECT contract_address, block_number, from_address, to_address, value
+                    #     FROM {schema}.{PostgresDBConfig.TRANSFER_EVENT_TABLE}
+                    #     WHERE {direction}_address={address}
+                    #     AND {opposite_direction}_address NOT IN ({special_addresses_values})
+                    #     AND block_number BETWEEN {from_block} AND {to_block}
+                    #     """
+                    #     count_query_v2 =f"""
+                    #         SELECT COUNT(*)
+                    #         FROM  {schema}.{PostgresDBConfig.TRANSFER_EVENT_TABLE}
+                    #         WHERE {direction}_address IN ({addresses_values})
+                    #     """
+                    #     with Session.begin() as session_2:
+                    #         num_event_v2 = session_2.execute(text(count_query_v2)).fetchone()[0]
+                    #         if num_event_v2 >2500:
+                    #             failed_addresses.append(address)
+                    #             continue
+                    #         else:
+                    #             event_transfer = session_2.execute(text(query_v2))
+                    #             fields_to_select =['contract_address', 'block_number', 'from_address', 'to_address', 'value']
+                    #             for event in event_transfer:
+                    #                 valueInUSD = get_valueInUSD(row = event, token_history =price_history,token_lst = token_lst, block_timestamp_mappings=block_timestamp_mappings)
+                    #                 modified_event = event[:1] + (block_timestamp_mappings[event[1]],) + event[2:]
+                    #                 timestamp_event = dict(zip(fields_to_select, modified_event))
+                    #                 timestamp_event['valueInUSD'] = valueInUSD
+                    #                 wallet_transfer.append(timestamp_event)
 
                 else:                        
                     with Session.begin() as session_1_prime:
@@ -107,7 +108,7 @@ class PostgresDB:
                         fields_to_select =['contract_address', 'block_number', 'from_address', 'to_address', 'value']
                         for event in event_transfer:
                             valueInUSD = get_valueInUSD(row = event, token_history =price_history,token_lst = token_lst, block_timestamp_mappings=block_timestamp_mappings)
-                            modified_event = event[:1] + (block_timestamp_mappings[event[1]],) + event[2:]
+                            modified_event = event[:1] + (block_timestamp_mappings[f'{event[1]}'],) + event[2:]
                             timestamp_event = dict(zip(fields_to_select, modified_event))
                             timestamp_event['valueInUSD'] = valueInUSD
                             wallet_transfer.append(timestamp_event)
