@@ -65,7 +65,7 @@ class GetWalletTransactionTransfer(BaseJob):
         self.sources = sources
         self.chain_id = Chains.mapping[chain]
         self.native_token_address = f'0x0000000000000000000000000000000000000000'
-
+        self.fail_addresses = []
         super().__init__(work_iterable=index_lst,
                          max_workers=max_workers,
                          batch_size=batch_size)
@@ -107,7 +107,7 @@ class GetWalletTransactionTransfer(BaseJob):
                         print('oh no having error in combinning 2 dataframe')
                         print(e)
             else:
-                write_file(f'address_info/{self.chain_id}', 'fail_addresses.json',addresses)
+                self.fail_addresses.extend(addresses)
      
 
     def _wallet_transaction_info(self, works): 
@@ -224,3 +224,5 @@ class GetWalletTransactionTransfer(BaseJob):
         return sending_transfer_info, receiving_transfer_info, elite_addresses
     def _end(self):
         super()._end()
+        write_file(f'address_info/{self.chain_id}', 'fail_addresses.json',self.fail_addresses)
+
