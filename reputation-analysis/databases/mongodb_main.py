@@ -37,7 +37,7 @@ class MongoDBMain:
         
     def get_transaction_info(self, start_date, end_date, direction, opposite_direction, special_addresses, addresses, price_history):
         addresses_info = list()
-        failed_addresses = list()
+        #failed_addresses = list()
         try:
             query = {"block_timestamp" : {"$gte": start_date, "$lte": end_date},f'{direction}_address': {'$in': addresses}, 
                                                     f'{opposite_direction}_address':{'$nin': special_addresses}}
@@ -82,7 +82,7 @@ class MongoDBMain:
             log.info(addresses)
             log.info(e)
             addresses_info = list()
-        return addresses_info, failed_addresses
+        return addresses_info
 
 
     def get_block_number_to_timestamp(self, start_block, end_block) -> Dict[int, int]:
