@@ -2,7 +2,7 @@ import json
 import numpy as np
 import pandas as pd
 from utils.list_dict_utils import largest_key_smaller_than, flatten_and_concat
-from constants.dapps_tokens_constans import Tokens
+from constants.dapps_tokens_constans import Dapps
 
 def get_label(row, threshold):
     if row['reputationScore'] >= threshold:
