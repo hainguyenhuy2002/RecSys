@@ -32,7 +32,7 @@ def get_token_balance(row, timestamp):
         
 
 def get_dapps_balance(dapps_name, row, timestamp):
-    dapps_tokens = Tokens(dapps_name=dapps_name)
+    dapps_tokens = Dapps(dapps_name=dapps_name)
     previous_2month = str(int(timestamp) - 2678400*2)
     tokens_balance =[]
     if (row == 0) |(row == {}):
@@ -153,12 +153,12 @@ def get_df(data):
     df = pd.DataFrame(rows)
     return df
 
-def get_balance_features(profile_elite, timestamp):
+def get_balance_features(dapps_name, profile_elite, timestamp):
     #balance
 
     #profile_elite['tokenChangeLogs'].fillna("0", inplace=True)
     #profile_elite['tokenBalances'] = profile_elite['tokenChangeLogs'].apply(lambda row: get_token_balance(row,timestamp))
-    profile_elite['aaveBalance'] = profile_elite['tokenChangeLogs'].apply(lambda row: get_dapps_balance(row, timestamp))
+    profile_elite['aaveBalance'] = profile_elite['tokenChangeLogs'].apply(lambda row: get_dapps_balance(dapps_name, row, timestamp))
     profile_elite['overallBalance'] = profile_elite['balanceChangeLogs'].apply(lambda row: get_balance(row, timestamp))
     profile_elite['aaveAvgDeposit'] = profile_elite['depositChangeLogs'].apply(lambda row: average_value(row, timestamp))
     profile_elite['aaveAvgBorrow'] = profile_elite['borrowChangeLogs'].apply(lambda row: average_value(row, timestamp))

@@ -22,12 +22,13 @@ def generate_training_data(searching_address_searching, dapps_name, direction, t
     address_searching = mongodb._db[f'{searching_address_searching}']
     if direction == 'train':
         dapps_tags = Dapps(dapps_name=dapps_name).tags
-        logger = get_logger('༼ つ ◕_◕ ༽つ ༼ つ ◕_◕ ༽つ start to generate training address ༼ つ ◕_◕ ༽つ ༼ つ ◕_◕ ༽つ')
+        logger = get_logger('Gen training')
+        logger.info('༼ つ ◕_◕ ༽つ ༼ つ ◕_◕ ༽つ start to generate training address ༼ つ ◕_◕ ༽つ ༼ つ ◕_◕ ༽つ')
         # with open(address_dapps,'r') as file:
         #     Dapps_user_address = json.load(file)
         Dapps_user_address = []
         training_cursor = address_searching.find({'tags':{'$in':dapps_tags}})  
-        for cur in training_cursor[0:500]:
+        for cur in training_cursor:
             Dapps_user_address.append(cur['_id'])
  
         logger.info('Successful get training addresses ( ˵ •̀ ᴗ •́˵) ( ˵ •̀ ᴗ •́˵)')
@@ -35,14 +36,15 @@ def generate_training_data(searching_address_searching, dapps_name, direction, t
         index_list = list(range(batch_size, len(Dapps_user_address), batch_size))
         index_list.append(len(Dapps_user_address))
         logger.info('༼ つ ◕_◕ ༽つ ༼ つ ◕_◕ ༽つ start to get training data༼ つ ◕_◕ ༽つ ༼ つ ◕_◕ ༽つ')
-        job =GenerateData(importer=address_searching, exporter= mongodb, name=dapps_name, direction=direction, index_lst=index_list, Dapps_user_addresses= Dapps_user_address, timestamp=time_stamp,
-                            max_workers=max_workers, batch_size=batch_size)
+        job =GenerateData(importer=address_searching, exporter= mongodb, dapps_name=dapps_name, direction=direction, index_lst=index_list, Dapps_user_addresses= Dapps_user_address, timestamp=time_stamp, max_workers=max_workers, batch_size=batch_size)
         job.run()
 
+        logger.info('Done ( ๑ ˃̵ᴗ˂̵)و ♡ ( ๑ ˃̵ᴗ˂̵)و ♡')
     elif direction =='search':
+        chain_name = searching_address_searching.split('_')[0]
         num_documents = address_searching.estimated_document_count()
         index_list = list(range(batch_size, num_documents, batch_size))
         index_list.append(num_documents)
-        job =GenerateData(importer=address_searching, exporter= mongodb, name=dapps_name, direction=direction, index_lst=index_list, timestamp=time_stamp, max_workers=max_workers, batch_size=batch_size)
+        job =GenerateData(importer=address_searching, exporter= mongodb, chain_name=chain_name, direction=direction, index_lst=index_list, timestamp=time_stamp, max_workers=max_workers, batch_size=batch_size)
         job.run()
     
