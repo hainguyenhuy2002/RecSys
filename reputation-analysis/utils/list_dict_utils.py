@@ -1,3 +1,4 @@
+import bisect
 import time
 from itertools import islice
 
@@ -13,6 +14,18 @@ def filter_none_keys(input_dict: dict):
 
     return input_dict
 
+
+def flatten_and_concat(tuples):
+    flattened = [item for sublist in tuples for item in sublist]
+    return tuple(flattened)
+
+def largest_key_smaller_than(dictionary, value):
+    keys = sorted(dictionary.keys())
+    index = bisect.bisect_left(keys, value) - 1
+    if index >= 0:
+        return keys[index]
+    else:
+        return 0
 
 def extend_abi(abi: list, added_abi: list):
     abi_names = {a['name']: 1 for a in abi if a.get('name')}
