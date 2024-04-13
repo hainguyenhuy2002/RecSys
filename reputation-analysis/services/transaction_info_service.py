@@ -92,8 +92,8 @@ class GetWalletTransactionTransfer(BaseJob):
                 if receiving_transaction_info.empty!=False:    
                     receiving_transaction_info['contractAddress'] = '0x0000000000000000000000000000000000000000'
                 
-                print(sending_transaction_info[['address','contractAddress','valueInUSDHistory','totalValueInUSD']])
-                print(receiving_transaction_info[['address','contractAddress','valueInUSDHistory','totalValueInUSD']])
+                print(sending_transaction_info[['wallet','contractAddress','valueInUSDHistory','totalValueInUSD']])
+                print(receiving_transaction_info[['wallet','contractAddress','valueInUSDHistory','totalValueInUSD']])
 
                 profiling = pd.concat([sending_transfer_info, sending_transaction_info, receiving_transaction_info, receiving_transfer_info])
                 profiling = profiling.dropna()
