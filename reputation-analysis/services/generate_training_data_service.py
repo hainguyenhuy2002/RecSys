@@ -41,7 +41,7 @@ class GenerateData(BaseJob):
 
                     if (transac_df.empty) &(text =='future data'):
                         write_file(
-                            folder_direction=f'{self.dapps_name}_{self.timestamp}/future_wallet',
+                            folder_direction=f'{self.dapps_name}_train/{self.timestamp}/future_wallet',
                             name='future_addresses.json', 
                             file=dapps_users['_id']
                         )
@@ -49,7 +49,7 @@ class GenerateData(BaseJob):
 
                     elif text =='future data':
                         write_file(
-                            folder_direction=f'{self.dapps_name}_{self.timestamp}/potential_wallet',
+                            folder_direction=f'{self.dapps_name}_train/{self.timestamp}/potential_wallet',
                             name='potential_addresses.json', 
                             file=dapps_users['_id']
                         )
@@ -57,7 +57,7 @@ class GenerateData(BaseJob):
                     
                     elif text =='outdated':
                         write_file(
-                            folder_direction=f'{self.dapps_name}_{self.timestamp}/outdated_wallet',
+                            folder_direction=f'{self.dapps_name}_train/{self.timestamp}/outdated_wallet',
                             name='outdated_addresses.json', 
                             file=dapps_users['_id']
                         )
@@ -97,7 +97,7 @@ class GenerateData(BaseJob):
                             info_df = info_df.merge(balance_df, on='_id', how='inner')
                             if info_df.empty:
                                 write_file(
-                                    folder_direction=f'{self.chain_name}_{self.timestamp}/search',
+                                    folder_direction=f'{self.chain_name}_search/{self.timestamp}/search',
                                     name='failed_addresses.json', 
                                     file=dapps_users['_id']
                                 )
