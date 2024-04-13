@@ -91,9 +91,9 @@ class GetWalletTransactionTransfer(BaseJob):
                 print(sending_transaction_info.empty)
                 print(sending_transaction_info)
 
-                if sending_transaction_info.empty!=False:
+                if sending_transaction_info.empty==False:
                     sending_transaction_info['contractAddress'] = '0x0000000000000000000000000000000000000000'
-                if receiving_transaction_info.empty!=False:    
+                if receiving_transaction_info.empty==False:    
                     receiving_transaction_info['contractAddress'] = '0x0000000000000000000000000000000000000000'
                 
                 # print(sending_transaction_info[['wallet','contractAddress','valueInUSDHistory','totalValueInUSD']])
