@@ -72,7 +72,7 @@ class GetWalletTransactionTransfer(BaseJob):
 
     def _execute_batch(self, works):
         for work in works:
-            cursor = self.mongo_searching_space.find({'_id':'0x1_0x005669a6b16aea164bef4daaf0c77fb9a9155a2d'})
+            cursor = self.mongo_searching_space.find()
             addresses = []
             other_lst = []
             for address in cursor[work-self.batch_size:work]:
