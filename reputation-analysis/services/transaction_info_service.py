@@ -83,6 +83,7 @@ class GetWalletTransactionTransfer(BaseJob):
             other_info = rename_key(other_lst, 'address','wallet') 
 
             sending_transfer_info, receiving_transfer_info, transfer_elite_addresses = self._wallet_transfer_info(works=addresses)#postgres
+            print(transfer_elite_addresses)
             if len(transfer_elite_addresses)!=0:
                 sending_transaction_info, receiving_transaction_info = self._wallet_transaction_info(works=addresses) ##mongo
                 if sending_transaction_info.empty!=False:
