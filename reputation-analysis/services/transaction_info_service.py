@@ -85,15 +85,19 @@ class GetWalletTransactionTransfer(BaseJob):
             sending_transfer_info, receiving_transfer_info, transfer_elite_addresses = self._wallet_transfer_info(works=addresses)#postgres
             if len(transfer_elite_addresses)!=0:
                 sending_transaction_info, receiving_transaction_info = self._wallet_transaction_info(works=addresses) ##mongo
+                print(sending_transaction_info.empty)
+                print(sending_transaction_info)
 
+                print(sending_transaction_info.empty)
+                print(sending_transaction_info)
 
                 if sending_transaction_info.empty!=False:
                     sending_transaction_info['contractAddress'] = '0x0000000000000000000000000000000000000000'
                 if receiving_transaction_info.empty!=False:    
                     receiving_transaction_info['contractAddress'] = '0x0000000000000000000000000000000000000000'
                 
-                print(sending_transaction_info[['wallet','contractAddress','valueInUSDHistory','totalValueInUSD']])
-                print(receiving_transaction_info[['wallet','contractAddress','valueInUSDHistory','totalValueInUSD']])
+                # print(sending_transaction_info[['wallet','contractAddress','valueInUSDHistory','totalValueInUSD']])
+                # print(receiving_transaction_info[['wallet','contractAddress','valueInUSDHistory','totalValueInUSD']])
 
                 profiling = pd.concat([sending_transfer_info, sending_transaction_info, receiving_transaction_info, receiving_transfer_info])
                 profiling = profiling.dropna()
