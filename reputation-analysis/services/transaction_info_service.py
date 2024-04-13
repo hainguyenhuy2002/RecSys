@@ -72,7 +72,7 @@ class GetWalletTransactionTransfer(BaseJob):
 
     def _execute_batch(self, works):
         for work in works:
-            cursor = self.mongo_searching_space.find()
+            cursor = self.mongo_searching_space.find({'_id':'0x1_0x005669a6b16aea164bef4daaf0c77fb9a9155a2d'})
             addresses = []
             other_lst = []
             for address in cursor[work-self.batch_size:work]:
@@ -90,7 +90,7 @@ class GetWalletTransactionTransfer(BaseJob):
                 if receiving_transaction_info.empty!=False:    
                     receiving_transaction_info['contractAddress'] = '0x0000000000000000000000000000000000000000'
                 
-                profiling = pd.concat([sending_transfer_info, sending_transaction_info, sending_transaction_info, receiving_transfer_info])
+                profiling = pd.concat([sending_transfer_info, sending_transaction_info, receiving_transaction_info, receiving_transfer_info])
                 profiling = profiling.dropna()
                 if (profiling.empty == False) &('contractAddress' in profiling.columns):
                     try:
