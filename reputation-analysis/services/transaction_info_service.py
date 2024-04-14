@@ -227,5 +227,5 @@ class GetWalletTransactionTransfer(BaseJob):
         return sending_transfer_info, receiving_transfer_info, elite_addresses
     def _end(self):
         super()._end()
-        write_file(f'address_info/{self.chain_id}', 'fail_addresses.json',self.fail_addresses)
+        write_file(f'address_info/chain_{self.chain_id}', 'fail_addresses.json',self.fail_addresses)
 

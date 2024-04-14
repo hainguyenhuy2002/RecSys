@@ -102,18 +102,19 @@ class GenerateData(BaseJob):
                                     file=dapps_users['_id']
                                 )
                             else:
-                                info_dict = info_df.to_dict(orient='records')
-                                info_df_lst.extend(info_dict)
+                                self.df_lst.append(info_df)
+                                # info_dict = info_df.to_dict(orient='records')
+                                # info_df_lst.extend(info_dict)
                         except Exception as e:
                             get_logger(e)
                             continue
                 except Exception as ex:
                     get_logger(ex)
-                    if info_df_lst != []:
-                        self.exporter.update_data(name=f'{self.chain_name}_{self.timestamp}', data=info_df_lst)
+                    # if info_df_lst != []:
+                    #     self.exporter.update_data(name=f'{self.chain_name}_{self.timestamp}', data=info_df_lst)
                     continue
-                if info_df_lst != []:
-                    self.exporter.update_data(name=f'{self.chain_name}_{self.timestamp}', data=info_df_lst)
+                # if info_df_lst != []:
+                #     self.exporter.update_data(name=f'{self.chain_name}_{self.timestamp}', data=info_df_lst)
 
     def _end(self):
         super()._end()
@@ -122,6 +123,13 @@ class GenerateData(BaseJob):
             if not os.path.exists(f'data/{self.dapps_name}/train'):
                 os.makedirs(f'data/{self.dapps_name}/train')
             df.to_parquet(f'data/{self.dapps_name}/train/train_{self.timestamp}.parquet')
+
+        if self.direction =='search':
+            df = pd.concat(self.df_lst).fillna(0)
+            if not os.path.exists(f'data/{self.dapps_name}/search'):
+                os.makedirs(f'data/{self.dapps_name}/search')
+            df.to_parquet(f'data/{self.dapps_name}/search/search_{self.timestamp}.parquet')
+
 
 
 
