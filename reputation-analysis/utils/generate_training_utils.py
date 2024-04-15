@@ -33,7 +33,7 @@ def get_token_balance(row, timestamp):
 
 def get_dapps_balance(dapps_name, row, timestamp):
     dapps_tokens = Dapps(dapps_name=dapps_name)
-    previous_2month = str(int(timestamp) - 2678400*2)
+#    previous_2month = str(int(timestamp) - 2678400*2)
     tokens_balance =[]
     if (row == 0) |(row == {}):
         tokens_balance.append(0)
@@ -45,8 +45,6 @@ def get_dapps_balance(dapps_name, row, timestamp):
                 else:
                     largest_key = largest_key_smaller_than(value_history, timestamp)
                     if largest_key ==0:
-                        value = 0
-                    elif largest_key <=previous_2month:
                         value = 0
                     else:
                         last_value = value_history[largest_key]
