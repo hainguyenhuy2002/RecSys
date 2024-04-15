@@ -4,6 +4,8 @@ import pandas as pd
 from multithread_processing.base_job import BaseJob
 from utils.logger_utils import get_logger, write_file
 from utils.generate_training_utils import get_df, get_balance_features, get_value_features, get_freq_features, search_balance_feature
+from constants.network_constants import Chains
+
 
 class GenerateData(BaseJob):
     def __init__(self, direction, importer, exporter, index_lst, timestamp, chain_name= None, dapps_name=None, Dapps_user_addresses=None, max_workers= 4, batch_size=500):
@@ -11,6 +13,7 @@ class GenerateData(BaseJob):
         self.exporter = exporter
         self.dapps_name = dapps_name
         self.chain_name = chain_name
+        self.chain_id = Chains.mapping[self.chain_name]
         self.batch_size = batch_size
         self.Dapps_user_addresses = Dapps_user_addresses
         self.direction = direction
@@ -35,6 +38,7 @@ class GenerateData(BaseJob):
                     transac_df = transac_df[transac_df['timestampHistory']<self.timestamp]
                     balance_df, text = get_balance_features(
                         dapps_name=self.dapps_name,
+                        chain_id=self.chain_id,
                         profile_elite=pd.DataFrame([dapps_balance]), 
                         timestamp=self.timestamp_str
                         )
