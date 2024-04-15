@@ -30,13 +30,13 @@ def generate_training_data(searching_address_searching, dapps_name, direction, t
         training_cursor = address_searching.find({'tags':{'$in':dapps_tags}})  
         for cur in training_cursor:
             Dapps_user_address.append(cur['_id'])
- 
+    
         logger.info('Successful get training addresses ( ˵ •̀ ᴗ •́˵) ( ˵ •̀ ᴗ •́˵)')
-
+        chain_name = searching_address_searching.split('_')[0]
         index_list = list(range(batch_size, len(Dapps_user_address), batch_size))
         index_list.append(len(Dapps_user_address))
         logger.info('༼ つ ◕_◕ ༽つ ༼ つ ◕_◕ ༽つ start to get training data༼ つ ◕_◕ ༽つ ༼ つ ◕_◕ ༽つ')
-        job =GenerateData(importer=address_searching, exporter= mongodb, dapps_name=dapps_name, direction=direction, index_lst=index_list, Dapps_user_addresses= Dapps_user_address, timestamp=time_stamp, max_workers=max_workers, batch_size=batch_size)
+        job =GenerateData(importer=address_searching, exporter= mongodb, dapps_name=dapps_name, chain_name=chain_name,direction=direction, index_lst=index_list, Dapps_user_addresses= Dapps_user_address, timestamp=time_stamp, max_workers=max_workers, batch_size=batch_size)
         job.run()
 
 
