@@ -126,7 +126,7 @@ class GenerateData(BaseJob):
             df = pd.concat(self.df_lst).fillna(0)
             if not os.path.exists(f'data/{self.dapps_name}/train'):
                 os.makedirs(f'data/{self.dapps_name}/train')
-            df.to_parquet(f'data/{self.dapps_name}/train/train_{self.timestamp}.parquet')
+            df.to_parquet(f'data/{self.dapps_name}/train/{self.chain_name}_train_{self.timestamp}.parquet')
 
         if self.direction =='search':
             df = pd.concat(self.df_lst).fillna(0)
