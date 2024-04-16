@@ -12,7 +12,7 @@ from services.get_history_price_service import GetTokenPrice
               help='chain to get token price')
 @click.option('-n', '--name', type=str,
               help='name of collection')
-@click.option('-f', '--failed', type=str, default=False, show_default=True,
+@click.option('-f', '--failed', type=str, default=None, show_default=True,
               help='Is token has failed addresses?')
 @click.option('-b', '--batch-size', type=int, 
               help='Batch size - number of addresses each worker processes')
@@ -24,7 +24,7 @@ def get_token_price(chain, name, failed, batch_size, max_workers):
     chain_id = Chains.mapping[chain]
     mongo_klg = MongoDBEntity()
     mongo_db = MongoDB()
-    if failed == False:
+    if failed == None:
         token_addresses = list(mongo_klg._db['configs'].find({'_id':f'top_tokens_{chain_id}'}))
         tokens = []
         for tok  in token_addresses[0]['tokens']:
