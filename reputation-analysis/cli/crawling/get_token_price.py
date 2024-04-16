@@ -24,7 +24,7 @@ def get_token_price(chain, name, failed, batch_size, max_workers):
     chain_id = Chains.mapping[chain]
     mongo_klg = MongoDBEntity()
     mongo_db = MongoDB()
-    if failed == None:
+    if failed == False:
         token_addresses = list(mongo_klg._db['configs'].find({'_id':f'top_tokens_{chain_id}'}))
         tokens = []
         for tok  in token_addresses[0]['tokens']:
