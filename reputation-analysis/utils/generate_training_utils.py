@@ -31,22 +31,20 @@ def get_token_balance(row, timestamp):
     return tokens_balance
         
 
-def get_dapps_balance(dapps_name, row, timestamp):
+def get_dapps_balance(dapps_name, chain_id, row, timestamp):
     dapps_tokens = Dapps(dapps_name=dapps_name)
-    previous_2month = str(int(timestamp) - 2678400*2)
+#    previous_2month = str(int(timestamp) - 2678400*2)
     tokens_balance =[]
     if (row == 0) |(row == {}):
         tokens_balance.append(0)
     else:
         for token, value_history in row.items():
-            if token in dapps_tokens.tokens:       
+            if token in dapps_tokens.tokens[chain_id]:       
                 if value_history == {}:
                     value = 0
                 else:
                     largest_key = largest_key_smaller_than(value_history, timestamp)
                     if largest_key ==0:
-                        value = 0
-                    elif largest_key <=previous_2month:
                         value = 0
                     else:
                         last_value = value_history[largest_key]
@@ -156,12 +154,12 @@ def get_df(data):
     df = pd.DataFrame(rows)
     return df
 
-def get_balance_features(dapps_name, profile_elite, timestamp):
+def get_balance_features(dapps_name, chain_id, profile_elite, timestamp):
     #balance
 
     #profile_elite['tokenChangeLogs'].fillna("0", inplace=True)
     #profile_elite['tokenBalances'] = profile_elite['tokenChangeLogs'].apply(lambda row: get_token_balance(row,timestamp))
-    profile_elite['aaveBalance'] = profile_elite['tokenChangeLogs'].apply(lambda row: get_dapps_balance(dapps_name, row, timestamp))
+    profile_elite['aaveBalance'] = profile_elite['tokenChangeLogs'].apply(lambda row: get_dapps_balance(dapps_name, chain_id, row, timestamp))
     profile_elite['overallBalance'] = profile_elite['balanceChangeLogs'].apply(lambda row: get_balance(row, timestamp))
     profile_elite['aaveAvgDeposit'] = profile_elite['depositChangeLogs'].apply(lambda row: average_value(row, timestamp))
     profile_elite['aaveAvgBorrow'] = profile_elite['borrowChangeLogs'].apply(lambda row: average_value(row, timestamp))

@@ -4,6 +4,8 @@ import pandas as pd
 from multithread_processing.base_job import BaseJob
 from utils.logger_utils import get_logger, write_file
 from utils.generate_training_utils import get_df, get_balance_features, get_value_features, get_freq_features, search_balance_feature
+from constants.network_constants import Chains
+
 
 class GenerateData(BaseJob):
     def __init__(self, direction, importer, exporter, index_lst, timestamp, chain_name= None, dapps_name=None, Dapps_user_addresses=None, max_workers= 4, batch_size=500):
@@ -11,6 +13,7 @@ class GenerateData(BaseJob):
         self.exporter = exporter
         self.dapps_name = dapps_name
         self.chain_name = chain_name
+        self.chain_id = Chains.mapping[self.chain_name]
         self.batch_size = batch_size
         self.Dapps_user_addresses = Dapps_user_addresses
         self.direction = direction
@@ -35,6 +38,7 @@ class GenerateData(BaseJob):
                     transac_df = transac_df[transac_df['timestampHistory']<self.timestamp]
                     balance_df, text = get_balance_features(
                         dapps_name=self.dapps_name,
+                        chain_id=self.chain_id,
                         profile_elite=pd.DataFrame([dapps_balance]), 
                         timestamp=self.timestamp_str
                         )
@@ -102,18 +106,19 @@ class GenerateData(BaseJob):
                                     file=dapps_users['_id']
                                 )
                             else:
-                                info_dict = info_df.to_dict(orient='records')
-                                info_df_lst.extend(info_dict)
+                                self.df_lst.append(info_df)
+                                # info_dict = info_df.to_dict(orient='records')
+                                # info_df_lst.extend(info_dict)
                         except Exception as e:
                             get_logger(e)
                             continue
                 except Exception as ex:
                     get_logger(ex)
-                    if info_df_lst != []:
-                        self.exporter.update_data(name=f'{self.chain_name}_{self.timestamp}', data=info_df_lst)
+                    # if info_df_lst != []:
+                    #     self.exporter.update_data(name=f'{self.chain_name}_{self.timestamp}', data=info_df_lst)
                     continue
-                if info_df_lst != []:
-                    self.exporter.update_data(name=f'{self.chain_name}_{self.timestamp}', data=info_df_lst)
+                # if info_df_lst != []:
+                #     self.exporter.update_data(name=f'{self.chain_name}_{self.timestamp}', data=info_df_lst)
 
     def _end(self):
         super()._end()
@@ -121,7 +126,14 @@ class GenerateData(BaseJob):
             df = pd.concat(self.df_lst).fillna(0)
             if not os.path.exists(f'data/{self.dapps_name}/train'):
                 os.makedirs(f'data/{self.dapps_name}/train')
-            df.to_parquet(f'data/{self.dapps_name}/train/train_{self.timestamp}.parquet')
+            df.to_parquet(f'data/{self.dapps_name}/train/{self.chain_name}_train_{self.timestamp}.parquet')
+
+        if self.direction =='search':
+            df = pd.concat(self.df_lst).fillna(0)
+            if not os.path.exists(f'data/{self.chain_name}/search'):
+                os.makedirs(f'data/{self.chain_name}/search')
+            df.to_parquet(f'data/{self.chain_name}/search/search_{self.timestamp}.parquet')
+
 
 
 
