@@ -26,9 +26,9 @@ def get_token_price(chain, name, failed, batch_size, max_workers):
     mongo_db = MongoDB()
     if failed == None:
         cursor =mongo_klg._db['smart_contracts'].find({"chainId": "0x1", "idCoingecko":{"$exists":True},  "price":{"$gt":0}, "marketCap":{"$gt":1000}})
-        tokens = []
+        tokens_list = []
         for c in cursor:
-            tokens.append(c['_id'])
+            tokens_list.append(c['idCoingecko'])
     else:
         try:
             tokens = []
@@ -43,14 +43,15 @@ def get_token_price(chain, name, failed, batch_size, max_workers):
 
         
 
-    token_list = []
-    for token in tokens:
-        token_info_dct = dict()
-        token_info = list(mongo_klg._db['smart_contracts'].find({'_id':f'{chain_id}_{token}'}))[0]
-        token_info_dct['_id'] = token_info['_id']
-        token_info_dct['address'] = token_info['address']
-        token_info_dct['idCoingecko'] = token_info['idCoingecko']
-        token_list.append(token_info_dct)
+        token_list = []
+        for token in tokens:
+            token_info_dct = dict()
+            token_info = list(mongo_klg._db['smart_contracts'].find({'_id':f'{chain_id}_{token}'}))[0]
+            token_info_dct['_id'] = token_info['_id']
+            token_info_dct['address'] = token_info['address']
+            token_info_dct['idCoingecko'] = token_info['idCoingecko']
+            token_list.append(token_info_dct)
+    
     job = GetTokenPrice(exporter=mongo_db, name=name, chain_id=chain_id, token_addresses=token_list,batch_size=batch_size,max_workers=max_workers)
 
 
