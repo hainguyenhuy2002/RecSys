@@ -25,8 +25,8 @@ def get_address(chain, name, hot_path, burn_mint_path, batch_size, max_workers):
         hot_wallets = json.load(file)
     hot_wallets_lst = []
     for exchange, data in hot_wallets.items():
-        if "0x1" in data["wallets"]:
-            hot_wallets_lst.extend(data["wallets"]["0x1"])
+        if chain_id in data["wallets"]:
+            hot_wallets_lst.extend(data["wallets"][chain_id])
 
     with open(burn_mint_path, 'r') as file:
         mint_burn = json.load(file)
