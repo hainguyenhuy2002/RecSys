@@ -22,6 +22,6 @@ class Dapps:
                 '0xa4b1':['0xba5ddd1f9d7f570dc94a51479a000e3bce967196'],
                 '0xa86a':['0x63a72806098bd3d9520cc43356dd78afe5d386d9']
             }
-            self.tags =['aave_v3_borrowers', 'aave_v2_borrowers', 'aave_v2_depositors', 'aave_v3_borrowers', 'aave_v3_depositors','stkaave_holders']
+            self.tags =['aave_v3_borrowers', 'aave_v2_borrowers', 'aave_v2_depositors', 'aave_v3_borrowers', 'aave_v3_depositors','stkaave_holders', 'aave_holders']
 
 
