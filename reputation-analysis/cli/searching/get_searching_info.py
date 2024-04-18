@@ -75,7 +75,7 @@ def get_searching_info(chain, input_hot, input_mint_burn, searching_db, name, st
 
 
     if token_price == None:
-        token_price = mongo_clustering._db['top_token_price_multichain'].find({'chainId':f'{chain_id}'})
+        token_price = mongo_clustering._db['token_price_multichain'].find({'chainId':f'{chain_id}'})
         historical_token_round_price = dict()
         for token in token_price:
             token_dct = dict()
