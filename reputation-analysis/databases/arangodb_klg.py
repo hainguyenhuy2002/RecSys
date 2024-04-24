@@ -32,27 +32,19 @@ class ArangoDB:
             connection_url = ArangoDBConfig.CONNECTION_URL
         _username, _password, _connection_url = get_connection_elements(connection_url)
 
-        http_client = DefaultHTTPClient()
-        http_client.REQUEST_TIMEOUT = 1000
-
+        # http_client = DefaultHTTPClient()
+        # http_client.REQUEST_TIMEOUT = 1000
+        print(_username)
+        print(_password)
+        print(_connection_url)
         try:
-            self.client = ArangoClient(hosts=_connection_url, http_client=http_client)
+            self.client = ArangoClient(hosts=_connection_url)
         except Exception as e:
             logger.exception(f"Failed to connect to ArangoDB: {_connection_url}: {e}")
             sys.exit(1)
 
         self._db = self._get_db(database, _username, _password)
-        self._prefix = prefix
 
-        if not prefix:
-            self._addresses_col = self._get_collections(ArangoDBCollections.addresses)
-            self._transfers_col = self._get_collections(ArangoDBCollections.transfers, edge=True)
-            self._transfers_graph = self._get_graph(graph_name=ArangoDBGraphs.transfers_graph)
-        else:
-            self._addresses_col = self._get_collections(ArangoDBCollectionsByChain(prefix).addresses)
-            self._transfers_col = self._get_collections(ArangoDBCollectionsByChain(prefix).transfers, edge=True)
-            self._transfers_graph = self._get_graph(graph_name=ArangoDBGraphsByChain(prefix).transfers_graph,
-                                                    edge_definitions=KnowledgeGraphModelByChain(prefix).edge_definitions)
 
     def _get_db(self, db_name, username, password):
         return self.client.db(db_name, username=username, password=password)
@@ -75,6 +67,26 @@ class ArangoDB:
     #####################
     #     Retrieve      #
     #####################
+    def get_num_send_receive(self, wallet):
+
+        # Define your AQL query with conditions
+        aql_query = '''
+            FOR doc IN ethereum_addresses
+            FILTER doc._id IN @value
+            RETURN { 
+                address: doc.address,
+                numberSent: doc.numberSent,
+                numberReceived: doc.numberReceived,
+            }
+        '''
+
+ #       bind_vars = {'value': f'ethereum_addresses/0x1_{wallet}'}
+        cursor = self._db.aql.execute(aql_query, bind_vars={'value':wallet})
+        cur = [doc for doc in cursor]
+        return cur
+
+
+
     def get_number_of_relationships(self):
         return len(self._transfers_col)
 
