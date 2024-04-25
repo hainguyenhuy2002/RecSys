@@ -164,5 +164,5 @@ last_synced.txt
 
 test/
 data/
-#notebook/
+notebook/
 .DS_Store
