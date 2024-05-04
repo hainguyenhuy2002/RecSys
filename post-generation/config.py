@@ -18,6 +18,6 @@ class LLMModelConfig:
     MODEL_API = os.getenv("REPLICATE_API")
     MODEL_KWARGS={
         "temperature": 0.75, 
-        "max_length": 500, 
+        "max_length": 1000, 
         "top_p": 1
         }

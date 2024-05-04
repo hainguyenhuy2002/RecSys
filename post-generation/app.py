@@ -1,5 +1,5 @@
 import os
-
+from flasgger import Swagger
 from flask_cors import CORS
 from flask import Flask, request
 from flask_restful import Resource, Api
@@ -9,9 +9,13 @@ from models.embedding_models import LargeLanguageModel
 from services.tweet_vector_query_service import tweet_vector_query
 from constant.prompt import RAGPrompt, NormalPrompt
 
+
+
+
 app = Flask(__name__)
-cors = CORS(app, resources={r"*": {"origins": "*"}})
 api = Api(app)
+swagger = Swagger(app)
+
 model = EmbeddingModel()._embed_model
 vector_store=PostgresDB().vetor_store
 llm = LargeLanguageModel()._embed_model
@@ -19,7 +23,7 @@ llm = LargeLanguageModel()._embed_model
 
 class PostGenerationWithRAG(Resource):
     def get(self):
-        return """ Welcome to post generation task, I am is LLM and I'll help to generate your marketing post """ 
+        return """ Welcome to post generation task, I am is LLM and I'll help to generate your marketing post """ , 200
     def post(self):
         #try:
             user_input = request.get_json()
@@ -30,7 +34,7 @@ class PostGenerationWithRAG(Resource):
                 vector_store=vector_store,
                 input=keywords,top_simi=10)
             if ('rag' in user_input):
-                return  simi_tweets  
+                return  simi_tweets, 201  
             else:
                 
                 ragprompt = RAGPrompt(
@@ -38,12 +42,12 @@ class PostGenerationWithRAG(Resource):
                     references=simi_tweets
                 ).prompt
                 output_post = llm(ragprompt)  
-                return output_post
+                return output_post, 201
         #except Exception as error:
          #   return {'error': error}
         
 
-api.add_resource(PostGenerationWithRAG,'/')
+api.add_resource(PostGenerationWithRAG,'/genpost')
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 1201))

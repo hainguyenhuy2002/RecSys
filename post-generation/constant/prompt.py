@@ -9,10 +9,13 @@ class RAGPrompt:
                 - tweet3 with the context: {references['tweet 2']}
                 - tweet4 with teh context: {references['tweet 3']}
                 - tweet5 with the  context: {references['tweet 4']}
+                - tweet6 with the context: {references['tweet 5']}
+                - tweet7 with teh context: {references['tweet 6']}
+                - tweet8 with the  context: {references['tweet 7']}
 
             Assitant:
                 - Write your answer is in the commentary form and should only containt the twitter post content, nothing more:
-                - Note: your tweet should follows a layout of these above 5 tweets, please create your own icons and hashtag for your tweets. 
+                - Note: your tweet should follows a layout of these above 8 tweets, please create your own icons and hashtag for your tweets. 
             Start!
         """
         

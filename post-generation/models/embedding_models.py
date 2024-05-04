@@ -1,8 +1,10 @@
 import os
-from langchain.llms import Replicate
+from langchain_community.llms import Replicate
 from utils.logger_utils import get_logger
 from config import EmbeddingModelConfig, LLMModelConfig
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+from flasgger import Swagger
+
 os.environ["REPLICATE_API_TOKEN"] =LLMModelConfig.MODEL_API
 
 
