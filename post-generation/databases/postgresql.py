@@ -2,7 +2,7 @@ from sqlalchemy.orm import sessionmaker
 from config import PostgresRAGDBConfig
 from utils.logger_utils import get_logger
 from utils.postgres_utils import extract_db_details
-# from llama_index.vector_stores.postgres import PGVectorStore
+from llama_index.vector_stores.postgres import PGVectorStore
 
 logger = get_logger('PostgreSQL thread safe')
 Session = sessionmaker()

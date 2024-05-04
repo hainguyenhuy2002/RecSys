@@ -1,9 +1,29 @@
+import os
+from langchain.llms import Replicate
+from utils.logger_utils import get_logger
+from config import EmbeddingModelConfig, LLMModelConfig
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
-from config import EmbeddingModels
+os.environ["REPLICATE_API_TOKEN"] =LLMModelConfig.MODEL_API
+
 
 class EmbeddingModel:
     def __init__(self, model_name: str = None):
-        if model_name ==None:
-            self.embed_model = HuggingFaceEmbedding(model_name=EmbeddingModels.MODEL_NAME)
+        if model_name == None:
+            self._embed_model = HuggingFaceEmbedding(model_name=EmbeddingModelConfig.MODEL_NAME)
         else:
-            self.embed_model = HuggingFaceEmbedding(model_name=model_name)
+            self._embed_model = HuggingFaceEmbedding(model_name=model_name)
+
+class LargeLanguageModel:
+    def __init__(self, model_name: str = None, model_kwargs: dict = None):
+        if (model_name == None) & (model_kwargs == None):
+            self._embed_model = Replicate(
+                model=LLMModelConfig.MODEL_NAME,
+                model_kwargs=LLMModelConfig.MODEL_KWARGS,
+            )
+        elif (model_name != None) & (model_kwargs != None):
+            self._embed_model = Replicate(
+                model=model_name,
+                model_kwargs=model_kwargs,
+            )
+        else:
+            get_logger("Invalid initial input parameter")

@@ -11,5 +11,13 @@ class MongoDBConfig:
     CONNECTION_URL = os.getenv("MONGODB_CONNECTION_URL")
     DATABASE = os.getenv("MONGODB_DATABASE")
 
-class EmbeddingModels:
+class EmbeddingModelConfig:
     MODEL_NAME = os.getenv("EMBEDDING_MODEL")
+class LLMModelConfig:
+    MODEL_NAME = os.getenv("LARGE_LANGUAGE_MODEL")
+    MODEL_API = os.getenv("REPLICATE_API")
+    MODEL_KWARGS={
+        "temperature": 0.75, 
+        "max_length": 300, 
+        "top_p": 1
+        }

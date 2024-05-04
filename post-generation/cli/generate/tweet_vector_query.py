@@ -23,19 +23,22 @@ class Test(Resource):
         except Exception as error:
             return {'error': error}
 
-class GetPredictionOutput(Resource):
-    def get(self):
-        return {"error":"Invalid Method."}
+# class GetPredictionOutput(Resource):
+#     def get(self):
+#         return {"error":"Invalid Method."}
 
-    def post(self):
-        try:
-            data = request.get_json()
-            predict = prediction.predict_mpg(data)
-            predictOutput = predict
-            return {'predict':predictOutput}
+#     def post(self):
+#         try:
+#             data = request.get_json()
+#             predict = prediction.predict_mpg(data)
+#             predictOutput = predict
+#             return {'predict':predictOutput}
 
-        except Exception as error:
-            return {'error': error}
+#         except Exception as error:
+#             return {'error': error}
 
 api.add_resource(Test,'/')
-api.add_resource(GetPredictionOutput,'/getPredictionOutput')
+#api.add_resource(GetPredictionOutput,'/getPredictionOutput')
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port)
