@@ -40,7 +40,8 @@ class MongoDB:
 
     def get_tweet(self):
         tweets_lst = []
-        for da in self._tweets:
+        cursor = self._tweets.find()
+        for da in cursor:
             da_dct ={}
             da_dct['authorName'] = da['authorName']
             da_dct['timestamp'] = da['timestamp']

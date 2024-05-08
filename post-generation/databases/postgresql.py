@@ -1,5 +1,5 @@
 from sqlalchemy.orm import sessionmaker
-from config import PostgresRAGDBConfig
+from config import PostgresRAGDBConfig, EmbeddingModelConfig
 from utils.logger_utils import get_logger
 from utils.postgres_utils import extract_db_details
 from llama_index.vector_stores.postgres import PGVectorStore
@@ -20,22 +20,8 @@ class PostgresDB:
                                 password=self.password,
                                 port=self.port,
                                 user=self.user,
-                                table_name=PostgresRAGDBConfig.EMBEDDING_TABLE,
-                                embed_dim=384)
+                                table_name=PostgresRAGDBConfig.RAG_TABLE,
+                                embed_dim=int(EmbeddingModelConfig.EMBEDDING_DIMENSION))
 
-    @staticmethod
-    
-    def upload_vector_db(self, vector_data):
-        vector_store=self.vetor_store
-        vector_store.add(vector_data)
 
-    # def query_vector_db(self, EmbedModel, input):
-    #     query_embedding = EmbedModel.get_query_embedding(input)
-    #     query_mode = "default"
-    #     vector_store_query = VectorStoreQuery(
-    #     query_embedding=query_embedding, similarity_top_k=3, mode=query_mode
-    #     )
 
-    #     query_result = vector_store.query(vector_store_query)
-    #     for i in range(0, 3):
-    #         print(query_result.nodes[i].get_content())
