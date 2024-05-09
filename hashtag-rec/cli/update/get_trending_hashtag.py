@@ -73,7 +73,7 @@ class UpdateTrendingKeyWords(CLIJob):
         trends_info['_id'] = self.dapps_name
         now_time = int(time.time()) -(int(time.time()) %86400000)
         trends_info[f'{now_time}'] = trends
-        trends_info['LastTimeStamp'] = now_time
+        trends_info['lastTimestamp'] = now_time
         self.db.update_docs(
             collection_name=self.name, 
             data=[trends_info]
