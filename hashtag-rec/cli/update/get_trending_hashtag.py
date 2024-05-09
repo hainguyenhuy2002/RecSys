@@ -1,29 +1,81 @@
 import click
 import json
-import json
-import re
 import pandas as pd
-import textdistance as td
-from keybert import KeyBERT
+import time
+
+from databases.mongodb import MongoDB
+from jobs.cli_job import CLIJob
 from collections import Counter
-from keyphrase_vectorizers import KeyphraseCountVectorizer
 from constant.twitter_constant import Dapps
+from constant.time_constant import TimeConstants
 from utils.logger_utils import get_logger
+from utils.preprocess_text_utils import preprocess_tweet
+
 @click.command(context_settings=dict(help_option_names=['-h', '--help']))
-@click.option('-c', '--chain', default='bsc', show_default=True, type=str,
-              help='Network name example bsc or polygon')
-@click.option('-i', '--input_path', type=str,
-              help='Path to input addresses')
-@click.option('-sv', '--saving_path', type=str,
-              help='Path to save time_amount file')
-@click.option('-b', '--batch_size', type=int, 
-              help='Batch size - number of addresses each worker processes')
-@click.option('-w', '--max_workers', default=8, show_default=True, type=int,
-              help='The number of workers')
+@click.option('-i', '--interval', default=TimeConstants.A_DAY, show_default=True, type=int)
+@click.option('-pe', '--period', default=TimeConstants.A_DAY, show_default=True, type=int)
+@click.option('-li', '--limit', default=None, type=int)
+@click.option('-d', '--dapps-name', default='trava', show_default=True, type=str,
+              help='name of dapps to update keywords')
+@click.option('-n', '--name', default='trava', show_default=True, type=str,
+              help='name of collection to update')
+@click.option('-k', '--kw-num', default=30, show_default=True, type=int,
+              help='number of generating keyWords')
 
-def check_address_contract(chain, input_path, saving_path, batch_size, max_workers):
-    #pretrain model
-    kw_model = KeyBERT(model='all-mpnet-base-v2')
 
-    
-    pass
+def get_trending_hashtag(interval, period, limit, dapps_name, name, kw_num):
+    db = MongoDB()
+    dapps = Dapps(dapps_name=dapps_name)
+    dapps_followers = dapps.following
+    job = UpdateTrendingKeyWords(
+        interval=interval,
+        period=period,
+        limit=limit,
+        db=db,
+        dapps_followers=dapps_followers,
+        dapps_name=dapps_name,
+        name=name,
+        kw_num=kw_num
+        )
+    job.run()
+class UpdateTrendingKeyWords(CLIJob):
+    def __init__(self, interval, period, limit, db, dapps_followers, dapps_name, name, kw_num):
+        super().__init__(interval, period, limit, retry=False)
+        self.db = db
+        self.dapps_name = dapps_name
+        self.name = name
+        self.kw_num = kw_num
+        self.dapps_followers = dapps_followers
+
+    def _execute(self):
+        log = get_logger("Trending keywords process")
+        log.info("Start to get tweets info ...")
+        lattest_tweets = self.db.get_latest_tweets()
+        log.info("Sucessful!")
+        df_twitter = pd.DataFrame(lattest_tweets)
+        log.info("Start to preprocess key words ...")
+
+        df_clean = preprocess_tweet(df_twitter)
+        dapps_trending = df_clean[df_clean['authorName'].isin(self.dapps_followers)]
+        log.info("Sucessful!")
+        log.info("Start to flatten to dictionary form and update to Mongo")
+        trending_keyword = dapps_trending.groupby('keyWordsClean').agg({'count':'count'}).reset_index()
+        trending_keyword = trending_keyword.sort_values('count', ascending=False).reset_index(drop=True)
+        trendings = trending_keyword.iloc[0:self.kw_num]
+        trending_dct = trending_keyword.to_dict()
+        trends = dict()
+        for i in range(0, len(trendings)):
+            keywords = trending_dct['keyWordsClean'][i]
+            count = trending_dct['count'][i]
+            trends[f'{keywords}'] = count
+        
+        trends_info = dict()
+        trends_info['_id'] = self.dapps_name
+        now_time = int(time.time()) -(int(time.time()) %86400000)
+        trends_info[f'{now_time}'] = trends
+        trends_info['LastTimeStamp'] = now_time
+        self.db.update_docs(
+            collection_name=self.name, 
+            data=[trends_info]
+            )
+        log.info("Sucessful!")

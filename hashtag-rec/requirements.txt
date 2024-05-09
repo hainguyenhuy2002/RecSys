@@ -2,4 +2,6 @@ pandas
 textdistance
 keybert
 keyphrase-vectorizers
+click==8.0.1
+python-dotenv
 
