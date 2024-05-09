@@ -8,7 +8,7 @@ def format_prices(prices):
         formatted_prices[timestamp] = price_value
     return formatted_prices
 
-def get_historical_prices(token_id, days=10, vs_currency='usd'):
+def get_historical_prices(token_id, days=90, vs_currency='usd'):
     url = f'https://api.coingecko.com/api/v3/coins/{token_id}/market_chart?vs_currency={vs_currency}&days={days}'
     response = requests.get(url)
     if response.status_code == 200:
