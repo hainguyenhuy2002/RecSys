@@ -1,12 +1,19 @@
 import click
 import json
 import pandas as pd
+from cli_scheduler.scheduler_job import SchedulerJob
 
 from utils.logger_utils import get_logger
 from constants.network_constants import Chains
+from constants.time_constants import TimeConstants
 from databases.mongodb_entity import MongoDBEntity
 from databases.mongodb import MongoDB
 from services.get_history_price_service import GetTokenPrice     
+
+
+logger = get_logger('Get token price Scheduler')
+
+
 @click.command(context_settings=dict(help_option_names=['-h', '--help']))
 @click.option('-c', '--chain', type=str,
               help='chain to get token price')
@@ -19,8 +26,13 @@ from services.get_history_price_service import GetTokenPrice
 @click.option('-w', '--max-workers', default=8, show_default=True, type=int,
               help='The number of workers')
 
-def get_token_price(chain, name, failed, batch_size, max_workers):
-    logger = get_logger("Start to get tokens history")
+@click.option('--interval', default=TimeConstants.DAYS_7, show_default=True, type=int,
+              help='Interval to repeat the job')
+@click.option('--delay', default=0, show_default=True, type=int, help='Time (in seconds) to delay')
+@click.option('--run-now', default=True, show_default=True, type=bool,
+              help='False to wait until interval then run')
+
+def get_token_price(chain, name, failed, batch_size, max_workers, interval, delay, run_now):
     chain_id = Chains.mapping[chain]
     mongo_klg = MongoDBEntity()
     mongo_db = MongoDB()
@@ -51,5 +63,53 @@ def get_token_price(chain, name, failed, batch_size, max_workers):
             token_info_dct['idCoingecko'] = token_info['idCoingecko']
             token_list.append(token_info_dct)
     
-    job = GetTokenPrice(exporter=mongo_db, name=name, chain_id=chain_id, token_addresses=token_list,batch_size=batch_size,max_workers=max_workers)
+    job = GetTokenPriceSchedulerJob(
+        interval=interval,
+        delay=delay,
+        run_now=run_now,
+        mongodb=mongo_db, 
+        name=name, 
+        chain_id=chain_id, 
+        token_list=token_list,
+        batch_size=batch_size,
+        max_workers=max_workers)
     job.run()
+
+
+class GetTokenPriceSchedulerJob(SchedulerJob):
+    def __init__(self,
+                 # scheduler job
+                 interval,
+                 delay,
+                 run_now,
+                 # loader job
+                 mongodb,
+                 name,
+                 chain_id,
+                 token_list,
+                 batch_size,
+                 max_workers,
+                 ):
+        self.chain_id = chain_id
+        scheduler = f"^{run_now}@{interval}/{delay}#true"
+        super().__init__(scheduler)
+
+        self.mongodb = mongodb
+        self.name = name
+        self.chain_id = chain_id
+        self.token_list = token_list
+        self.batch_size = batch_size
+        self.max_workers = max_workers
+
+    def _execute(self, *args, **kwargs):
+        job = GetTokenPrice(exporter=self.mongodb, 
+                            name=self.name, 
+                            chain_id=self.chain_id, 
+                            token_addresses=self.token_list,
+                            batch_size=self.batch_size,
+                            max_workers=self.max_workers)
+        job.run()
+
+
+
+

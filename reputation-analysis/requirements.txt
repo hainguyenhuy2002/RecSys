@@ -20,3 +20,4 @@ tqdm==4.66.1
 texttable    
 web3
 psycopg2-binary 
+python-cli-scheduler
