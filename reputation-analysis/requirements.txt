@@ -20,3 +20,5 @@ tqdm==4.66.1
 texttable    
 web3
 psycopg2-binary 
+
+## post generation requirements
