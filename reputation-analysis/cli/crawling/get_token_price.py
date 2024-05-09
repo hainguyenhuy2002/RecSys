@@ -42,7 +42,6 @@ def get_token_price(chain, name, failed, batch_size, max_workers, interval, dela
         token_list = []
         for c in cursor:
             token_list.append({key: c.get(key) for key in columns})
-        print(token_list)
     else:
         try:
             tokens = []
