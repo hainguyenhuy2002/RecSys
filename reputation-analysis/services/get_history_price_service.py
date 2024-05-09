@@ -31,7 +31,7 @@ class GetTokenPrice(BaseJob):
                     historical_token_round_price['chainId'] = self.chain_id
                     historical_token_round_price['address'] = address
                     historical_token_round_price['idCoingecko'] = idCoin
-                    historical_token_round_price['priceHistory'] = {str(timestamp - (timestamp % 86400000)): value for timestamp, value in historical_token_price[f'{idCoin}'].items()}
+                    historical_token_round_price['priceHistory'] = {str(timestamp - (timestamp % 86400000000)): value for timestamp, value in historical_token_price[f'{idCoin}'].items()}
                     history_lst.append(historical_token_round_price)
                 else:
                     write_file(
@@ -49,6 +49,7 @@ class GetTokenPrice(BaseJob):
                 continue
 
         if len(history_lst)>0:
-            self.exporter.update_data(name=self.name, data=history_lst)    
+          #  self.exporter.update_data(name=self.name, data=history_lst)    
+            self.exporter.update_docs(collection_name=self.name, data=history_lst, merge=True)
     def _end(self):
         super()._end()
