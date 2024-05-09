@@ -8,7 +8,7 @@ from utils.logger_utils import write_file
 
 class GetTokenPrice(BaseJob):
     def __init__(self, exporter, chain_id, name, token_addresses: list,
-                 max_workers= 4, batch_size=500):
+                 max_workers= 2, batch_size=2):
         self.token_history = dict()
         self.exporter = exporter
         self.name = name
