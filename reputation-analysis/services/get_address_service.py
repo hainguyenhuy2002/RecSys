@@ -9,12 +9,11 @@ from multithread_processing.base_job import BaseJob
 from utils.logger_utils import get_logger
 
 class GetAddress(BaseJob):
-    def __init__(self, importer, arangoDb, exporter, hot_wallets, chain_id, name, flagged_lst: list, max_workers= 4, batch_size=500):
+    def __init__(self, importer, arangoDb, exporter, hot_wallets, name, flagged_lst: list, max_workers= 4, batch_size=500):
         self.mongo_klg = importer
         self.exporter = exporter
         self.arangoDb = arangoDb
         self.hot_wallets = hot_wallets
-        self.chain_id = chain_id
         self.name = name
 
         now = datetime.now()
@@ -29,7 +28,7 @@ class GetAddress(BaseJob):
             wallet_lst: List[Dict] = list()
           #  wallets_name = []
             try:
-                query =  {"flagged":work, "chainId":f"{self.chain_id}", "balanceInUSD":{"$exists":"True"}, "balanceInUSD":{"$gt":0}}
+                query =  {"flagged":work, "balanceInUSD":{"$exists":"True"}, "balanceInUSD":{"$gt":0}}
                 wallets = self.mongo_klg.find(query,{'_id':1,'flagged':1,'balanceChangeLogs':1,'address':1,'tokenChangeLogs':1,'type':1, 
                                                         'balanceInUSD':1,'tags':1,'depositChangeLogs':1,'depositInUSD':1,'borrowChangeLogs':1,
                                                             'borrowInUSD':1, 'lendings':1,'createdAt':1,'theFirstToTimestamp':1,
@@ -40,7 +39,7 @@ class GetAddress(BaseJob):
                     else:
                         if 'dailyAllTransactions' in wallet:
                             numTransaction = sum(value for key, value in wallet['dailyAllTransactions'].items() if key >= str(self.three_months_ago))
-                            if 0<numTransaction <= 3000:
+                            if 0<numTransaction <= 5000:
                                 wallet['numTransaction'] = numTransaction
 
                                 if 'type' not in wallet:

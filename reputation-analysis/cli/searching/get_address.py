@@ -6,8 +6,6 @@ from databases.mongodb import MongoDB
 from databases.arangodb_klg import ArangoDB
 from constants.network_constants import Chains
 @click.command(context_settings=dict(help_option_names=['-h', '--help']))
-@click.option('-c', '--chain', type=str,
-              help='chain name')
 @click.option('-n', '--name', type=str,
               help='Folder path to save training data file')
 @click.option('-h', '--hot_path', type=str,
@@ -18,31 +16,33 @@ from constants.network_constants import Chains
               help='Batch size - number of addresses each worker processes')
 @click.option('-w', '--max-workers', default=8, show_default=True, type=int,
               help='The number of workers')
-def get_address(chain, name, hot_path, burn_mint_path, batch_size, max_workers):
+def get_address(name, hot_path, burn_mint_path, batch_size, max_workers):
     
-    chain_id = Chains.mapping[chain]
     with open(hot_path, 'r') as file:
         hot_wallets = json.load(file)
     hot_wallets_lst = []
     for exchange, data in hot_wallets.items():
-        if chain_id in data["wallets"]:
-            hot_wallets_lst.extend(data["wallets"][chain_id])
+        for chain_id, addresses in data['wallets'].items():
+            hot_wallets_lst.extend(addresses)
 
     with open(burn_mint_path, 'r') as file:
         mint_burn = json.load(file)
 
-    mint_burn_lst = mint_burn[f'{chain_id}']    
+    mint_burn_lst = []
+    for chain_id, addresses in mint_burn.items():
+        mint_burn_lst.extend(addresses)
+    
     hot_wallets_lst.extend(mint_burn_lst)
+    hot_wallets_lst = list(set(hot_wallets_lst))
     mongoKlg = MongoDBEntity()
     mongoKlg_wallets = mongoKlg.wallets
     mongoSubgraph = MongoDB()
     arangoDb = ArangoDB()
-    flagged_lst = [i for i in range(1,3997)]
+    flagged_lst = [i for i in range(1,4098)]
     job = GetAddress(importer=mongoKlg_wallets,
                      arangoDb= arangoDb,
                      exporter=mongoSubgraph,
                      hot_wallets=hot_wallets_lst,
-                     chain_id=chain_id,
                      name=name,
                      flagged_lst=flagged_lst, 
                      max_workers=max_workers, 
