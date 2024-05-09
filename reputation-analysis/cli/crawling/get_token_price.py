@@ -28,7 +28,7 @@ def get_token_price(chain, name, failed, batch_size, max_workers):
         cursor =mongo_klg._db['smart_contracts'].find({"chainId": "0x1", "idCoingecko":{"$exists":True},  "price":{"$gt":0}, "marketCap":{"$gt":1000}})
         columns = ['_id','address','idCoingecko']
         token_list = []
-        for c in cursor:
+        for c in cursor[0:4]:
             token_list.append({key: c.get(key) for key in columns})
     else:
         try:
@@ -42,8 +42,6 @@ def get_token_price(chain, name, failed, batch_size, max_workers):
             logger.info(f"{chain} does not have failed top tokens addresses")
             return
 
-        
-
         token_list = []
         for token in tokens:
             token_info_dct = dict()
@@ -54,9 +52,4 @@ def get_token_price(chain, name, failed, batch_size, max_workers):
             token_list.append(token_info_dct)
     
     job = GetTokenPrice(exporter=mongo_db, name=name, chain_id=chain_id, token_addresses=token_list,batch_size=batch_size,max_workers=max_workers)
-
-
-
-
-
     job.run()
