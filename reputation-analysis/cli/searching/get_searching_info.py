@@ -91,7 +91,7 @@ def get_searching_info(chain, input_hot, input_mint_burn, searching_db, name, st
 
     logger.info("Start to get the mapping timestamp dictonary")
     block_timestamp_mappings = mongo.get_block_number_to_timestamp(start_block=start_block, end_block=end_block)
-    # logger.info("Sucessful mapping timestamp dictionary")           
+    logger.info("Sucessful mapping timestamp dictionary")           
     # with open('data/block_timestamp_mapping.json','w') as jfile:
     #     json.dump(block_timestamp_mappings, jfile, indent=4)
     # with open('data/block_timestamp_mapping.json','r') as jfile:
@@ -111,7 +111,7 @@ def get_searching_info(chain, input_hot, input_mint_burn, searching_db, name, st
     hot_wallets_lst.extend(mint_burn_lst)
 
     num_documents = mongo_available_addresses.count_documents({'chainId':{'$in':[chain_id]}})
-    print(num_documents)
+    logger.info(num_documents)
     index_list = list(range(batch_size, num_documents, batch_size))
     index_list.append(num_documents) 
 
