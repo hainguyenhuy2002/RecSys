@@ -38,14 +38,14 @@ from services.web3_service  import web3_service
               help='ending block to query')
 @click.option('-tp', '--token_price', type=str,
               help='path to token price history')
-@click.option('-so', '--sources', type=str, default=None, show_default=True,
-              help='ending block to query')
+@click.option('-nt', '--name_token_db', type=str, default=None, show_default=True,
+              help='name of token database')
 @click.option('-b', '--batch-size', type=int, default=TimeConstants.AN_HOUR, show_default=True,
               help='Batch size - number of addresses each worker processes')
 @click.option('-w', '--max-workers', default=8, show_default=True, type=int,
               help='The number of workers')
 
-def get_searching_info(chain, input_hot, input_mint_burn, searching_db, name, start, end, start_block, end_block, token_price, sources, batch_size, max_workers):
+def get_searching_info(chain, input_hot, input_mint_burn, searching_db, name, start, end, start_block, end_block, token_price, name_token_db, batch_size, max_workers):
     logger = get_logger('User infromation exporter')
     if (start_block == None) | (end_block ==None):
         logger.info("Start map timestamp to block number")
@@ -75,7 +75,7 @@ def get_searching_info(chain, input_hot, input_mint_burn, searching_db, name, st
 
 
     if token_price == None:
-        token_price = mongo_clustering._db['token_price_multichain'].find({'chainId':f'{chain_id}'})
+        token_price = mongo_clustering._db[f'{name_token_db}'].find({'chainId':f'{chain_id}'})
         historical_token_round_price = dict()
         for token in token_price:
             token_dct = dict()
@@ -110,21 +110,21 @@ def get_searching_info(chain, input_hot, input_mint_burn, searching_db, name, st
     mint_burn_lst = mint_burn[f'{chain_id}']    
     hot_wallets_lst.extend(mint_burn_lst)
 
-    num_documents = mongo_available_addresses.estimated_document_count()
+    num_documents = mongo_available_addresses.count_documents({'chainId':{'$in':[chain_id]}})
+    print(num_documents)
     index_list = list(range(batch_size, num_documents, batch_size))
     index_list.append(num_documents) 
-    if sources != None:
-        sources = [sources]
-        print(sources)
+
     job = GetWalletTransactionTransfer(chain=chain, 
-                             mongo_transaction= mongo,
-                             postgres= postgres,
+                             mongo_transaction=mongo,
+                             postgres=postgres,
                              mongo_clustering=mongo_clustering,
                              mongo_searching_space=mongo_available_addresses,
                              historical_token_price=historical_token_round_price,
                              block_timestamp_mappings=block_timestamp_mappings,
-                             special_wallets= hot_wallets_lst,
-                             index_lst= index_list,
+                             special_wallets=hot_wallets_lst,
+                             index_lst=index_list,
+                             chain_id =chain_id,
                  #            direction=direction,
                              filename=name, 
                              start_date=start, 
@@ -132,6 +132,5 @@ def get_searching_info(chain, input_hot, input_mint_burn, searching_db, name, st
                              start_block=start_block,
                              end_block=end_block,
                              max_workers=max_workers, 
-                             batch_size=batch_size,
-                             sources=sources)
+                             batch_size=batch_size)
     job.run()

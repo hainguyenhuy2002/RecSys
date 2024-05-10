@@ -38,8 +38,8 @@ def rename_key(list_of_dicts, old_key, new_key):
 
 class GetWalletTransactionTransfer(BaseJob):
     def __init__(self, chain, mongo_transaction, postgres, mongo_clustering, mongo_searching_space, historical_token_price,
-                 block_timestamp_mappings, special_wallets, index_lst: list, filename: str, 
-                 start_date, end_date, start_block, end_block, max_workers= 4, batch_size=500, sources: List[str] = None):
+                 block_timestamp_mappings, special_wallets, chain_id, index_lst: list, filename: str, 
+                 start_date, end_date, start_block, end_block, max_workers= 4, batch_size=500):
         
         self.profile_info = list()
         self.mongo_transaction = mongo_transaction
@@ -48,7 +48,8 @@ class GetWalletTransactionTransfer(BaseJob):
         self.mongo_searching_space = mongo_searching_space
         self.historical_token_price = historical_token_price
         self.block_timestamp_mappings = block_timestamp_mappings
-        self.special_wallets  = special_wallets
+        self.special_wallets = special_wallets
+        self.chain_id = chain_id
 ## Get deposit, borrow, balance info
         
         # self.reputation_df = reputation_df
@@ -59,10 +60,6 @@ class GetWalletTransactionTransfer(BaseJob):
         self.end_block = end_block
         self.direction = ['from','to']
         self.filename = filename
-
-        if not sources:
-            sources = ['mongo', 'postgres']
-        self.sources = sources
         self.chain_id = Chains.mapping[chain]
         self.native_token_address = f'0x0000000000000000000000000000000000000000'
         self.fail_addresses = []
@@ -72,7 +69,7 @@ class GetWalletTransactionTransfer(BaseJob):
 
     def _execute_batch(self, works):
         for work in works:
-            cursor = self.mongo_searching_space.find()
+            cursor = self.mongo_searching_space.find({'chainId':{'$in':[self.chain_id]}})
             addresses = []
             other_lst = []
             for address in cursor[work-self.batch_size:work]:
