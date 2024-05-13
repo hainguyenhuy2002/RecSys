@@ -1,18 +1,20 @@
-import json
 import os
-from datetime import datetime, timedelta
+import json
 import calendar
-from pymongo import MongoClient
 import pandas as pd
+from pymongo import MongoClient
 from typing import Dict, Set, List
-from multithread_processing.base_job import BaseJob
+from datetime import datetime, timedelta
 from utils.logger_utils import get_logger
+from services.transaction_info_service_v2 import GetTransactionInfoService
+from multithread_processing.base_job import BaseJob
+
+
 
 class GetAddress(BaseJob):
-    def __init__(self, importer, arangoDb, exporter, hot_wallets, name, flagged_lst: list, max_workers= 4, batch_size=500):
+    def __init__(self, importer, exporter, hot_wallets, name, flagged_lst: list, max_workers= 4, batch_size=500):
         self.mongo_klg = importer
         self.exporter = exporter
-        self.arangoDb = arangoDb
         self.hot_wallets = hot_wallets
         self.name = name
 
@@ -30,7 +32,6 @@ class GetAddress(BaseJob):
                 query =  {"flagged":work, "balanceInUSD":{"$exists":"True"}, "balanceInUSD":{"$gt":0}}
                 wallets = self.mongo_klg.find(query,{'_id':1,
                                                      'chainId':1,   
-                                                    'flagged':1,
                                                     'balanceChangeLogs':1,
                                                     'address':1,
                                                     'tokenChangeLogs':1,
@@ -57,13 +58,25 @@ class GetAddress(BaseJob):
                                     wallet['type'] = 0
                                 wallet_lst.append(wallet)
                 if len(wallet_lst) !=0:
-                    # wallet_sent_receive = self.arangoDb.get_num_send_receive(wallets_name)
-                    # sent_receive_df = pd.DataFrame(wallet_sent_receive)
-                    # sent_receive_df = sent_receive_df.fillna(0)
-                    # address_df = pd.DataFrame(wallet_lst)
-                    # final_df = address_df.merge(sent_receive_df, on='address', how='inner')
-                    # final_df = final_df[(final_df['numberSent']<=200) & (final_df['numberReceived']<=200)]
-                    # address_info =final_df.to_dict(orient='records') 
+                    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
                     self._export_users_available(wallet_lst= wallet_lst, name=self.name)
             except Exception as e:
                 print(e)

@@ -6,7 +6,7 @@ import lightgbm as lgb
 from IPython.utils import io
 from imblearn.over_sampling import SMOTE
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import fbeta_score, precision_recall_curve, classification_report, f1_score,precision_recall_curve, auc
+from sklearn.metrics import fbeta_score
 
 
 def contains_smaller_value(lst, threshold):
