@@ -29,45 +29,42 @@ class GetAddress(BaseJob):
     def _execute_batch(self, works):
         for work in works:
             wallet_lst: List[Dict] = list()
-            try:
-                query =  {"flagged":work, "balanceInUSD":{"$exists":"True"}, "balanceInUSD":{"$gt":0}}
-                wallets = self.mongo_klg.find(query,{'_id':1,
-                                                        'chainId':1,   
-                                                    'balanceChangeLogs':1,
-                                                    'address':1,
-                                                    'tokenChangeLogs':1,
-                                                    'type':1,
-                                                    'balanceInUSD':1,
-                                                    'tags':1,
-                                                    'depositChangeLogs':1,
-                                                    'depositInUSD':1,
-                                                    'borrowChangeLogs':1,
-                                                    'borrowInUSD':1, 
-                                                    'lendings':1,
-                                                    'createdAt':1, 
-                                                    'dailyAllTransactions':1})
-                for wallet in wallets:
-                    if wallet['address'] in self.hot_wallets:
-                        continue
-                    else:
-                        if 'dailyAllTransactions' in wallet:
-                            numTransaction = sum(value for key, value in wallet['dailyAllTransactions'].items() if key >= str(self.three_months_ago))
-                            if 0<numTransaction <= 5000:
-                                wallet['numTransaction'] = numTransaction
-                                if 'type' not in wallet:
-                                    wallet['type'] = 0
-                                wallet_lst.append(wallet)
-                if len(wallet_lst) !=0:
-                    jobs = chunk_list(
-                        wallet_lst, 
-                        chunk_size=self.wallets_per_job
-                        )
-                    for job in jobs:
-                        #self._export_users_available(wallet_lst= job, name=f'tracking_{self.name}')
-                        self.exchange_service._generate_exchange_info(job)
-            except Exception as e:
-                get_logger(e)
-                continue
+            query =  {"flagged":work, "balanceInUSD":{"$exists":"True"}, "balanceInUSD":{"$gt":0}}
+            wallets = self.mongo_klg.find(query,{'_id':1,
+                                                    'chainId':1,   
+#                                                    'balanceChangeLogs':1,
+                                                'address':1,
+#                                                   'tokenChangeLogs':1,
+                                                'type':1,
+#                                                   'balanceInUSD':1,
+                                                'tags':1,
+                                        #        'depositChangeLogs':1,
+                                        #        'depositInUSD':1,
+                                        #        'borrowChangeLogs':1,
+                                        #        'borrowInUSD':1, 
+                                        #       'lendings':1,
+                                        #        'createdAt':1, 
+                                                'dailyAllTransactions':1})
+            for wallet in wallets:
+                if wallet['address'] in self.hot_wallets:
+                    continue
+                else:
+                    if 'dailyAllTransactions' in wallet:
+                        numTransaction = sum(value for key, value in wallet['dailyAllTransactions'].items() if key >= str(self.three_months_ago))
+                        if 0<numTransaction <= 5000:
+                            wallet['numTransaction'] = numTransaction
+                            if 'type' not in wallet:
+                                wallet['type'] = 0
+                            wallet_lst.append(wallet)
+            if len(wallet_lst) !=0:
+                jobs = chunk_list(
+                    wallet_lst, 
+                    chunk_size=self.wallets_per_job
+                    )
+                for job in jobs:
+                    #self._export_users_available(wallet_lst= job, name=f'tracking_{self.name}')
+                    self.exchange_service._generate_exchange_info(job)
+
     def _export_users_available(self, wallet_lst,name):
         self.exporter.update_data(name=name, data=wallet_lst)
     def _end(self):
