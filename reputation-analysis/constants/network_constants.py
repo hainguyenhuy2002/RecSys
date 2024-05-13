@@ -20,6 +20,7 @@ BSC_VENUS_ADDRESS = '0xfd36e2c2a6789db23113685031d7f16329158384'
 
 
 class Chains:
+
     bsc = '0x38'
     ethereum = '0x1'
     fantom = '0xfa'
@@ -29,6 +30,7 @@ class Chains:
     avalanche = '0xa86a'
     none_wrapped_token = [arbitrum, fantom, optimism]
     all = [bsc, ethereum, fantom, polygon, arbitrum, optimism, avalanche]
+    alls = [bsc, ethereum, polygon]
     all_name = ['bsc', 'ethereum', 'polygon']
 
     mapping = {
@@ -40,7 +42,13 @@ class Chains:
         'optimism': optimism,
         'avalanche': avalanche
     }
+    reverse_mapping = {
+        '0x38': 'bsc',
+        '0x1': 'ethereum',
+        '0x89': 'polygon',
+        '0xfa': 'fantom'
 
+    }
     names = {
         bsc: 'bsc',
         ethereum: "ethereum",

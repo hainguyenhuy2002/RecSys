@@ -1,5 +1,9 @@
 import requests
 import time
+
+from utils.list_dict_utils import update_dict_of_dict
+from utils.logger_utils import get_logger
+
 def format_prices(prices):
     formatted_prices = {}
     for price in prices:
@@ -29,3 +33,29 @@ def get_historical_prices(token_id, days=90, vs_currency='usd'):
     formatted_prices = format_prices(prices)
     prices_dict = {token_id: formatted_prices}
     return prices_dict
+
+def query_historical_prices(mongo_community, token_price, chains):
+    logger = get_logger("Query token historical price job")
+    try:
+        token_price = mongo_community._db[f'{token_price}'].find()
+        historical_token_price = dict()
+
+        for chain_id in chains:
+                historical_token_price[f'{chain_id}'] = {}
+
+        for token in token_price:
+            token_info =dict()
+            token_dct = dict()
+            address = token['address']
+            price_history = token['priceHistory']
+            chain_id = token['chainId']
+            token_dct[f'{address}'] = price_history
+            token_info[f'{chain_id}'] = token_dct
+
+            historical_token_price = update_dict_of_dict(historical_token_price, token_info)
+        logger.info("Done!!!")
+
+    except Exception as e:
+        logger.info("Error in query token historical price job")
+        logger.info(e)
+    return historical_token_price
