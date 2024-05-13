@@ -1,5 +1,3 @@
-import os
-import json
 import pandas as pd 
 from multithread_processing.base_job import BaseJob
 from typing import List

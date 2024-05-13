@@ -1,5 +1,7 @@
 import bisect
 import time
+import json
+
 from itertools import islice
 
 
@@ -17,6 +19,7 @@ def filter_none_keys(input_dict: dict):
 
 def flatten_and_concat(tuples):
     flattened = [item for sublist in tuples for item in sublist]
+    
     return tuple(flattened)
 
 def largest_key_smaller_than(dictionary, value):
@@ -34,6 +37,7 @@ def extend_abi(abi: list, added_abi: list):
             continue
 
         abi.append(abi_)
+
     return abi
 
 
@@ -48,6 +52,7 @@ def sorted_dict(d: dict, reverse=False):
 def sort_log(log):
     log = to_change_logs(log)
     log = sorted_dict(log)
+
     return log
 
 
@@ -55,6 +60,7 @@ def sort_log_dict(log_dict):
     for key in log_dict:
         log = log_dict[key]
         log_dict[key] = sort_log(log)
+
     return log_dict
 
 
@@ -118,4 +124,27 @@ def flatten_dict(d):
                 out.update({str(key): array})
         else:
             out[str(key)] = val
+    
     return out
+
+def rename_key(list_of_dicts, old_key, new_key):
+    return [{new_key if k == old_key else k: v for k, v in d.items()} for d in list_of_dicts]
+
+def get_special_wallet_list(hot_path, burn_mint_path):
+    with open(hot_path, 'r') as file:
+        hot_wallets = json.load(file)
+    hot_wallets_lst = []
+    for exchange, data in hot_wallets.items():
+        for chain_id, addresses in data['wallets'].items():
+            hot_wallets_lst.extend(addresses)
+
+    with open(burn_mint_path, 'r') as file:
+        mint_burn = json.load(file)
+    mint_burn_lst = []
+    for chain_id, addresses in mint_burn.items():
+        mint_burn_lst.extend(addresses)
+    
+    hot_wallets_lst.extend(mint_burn_lst)
+    hot_wallets_lst = list(set(hot_wallets_lst))
+    
+    return hot_wallets_lst

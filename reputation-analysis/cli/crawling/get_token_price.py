@@ -37,7 +37,7 @@ def get_token_price(chain, name, failed, batch_size, max_workers, interval, dela
     mongo_klg = MongoDBEntity()
     mongo_db = MongoDB()
     if failed == None:
-        cursor =mongo_klg._db['smart_contracts'].find({"chainId": chain_id, "idCoingecko":{"$exists":True},  "price":{"$gt":0}, "marketCap":{"$gt":5000}})
+        cursor =mongo_klg._db['smart_contracts'].find({"chainId": chain_id, "idCoingecko":{"$exists":True},  "price":{"$gt":0}, "marketCap":{"$gt":1000000}})
         columns = ['_id','address','idCoingecko']
         token_list = []
         for c in cursor:

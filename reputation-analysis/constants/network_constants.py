@@ -29,6 +29,8 @@ class Chains:
     avalanche = '0xa86a'
     none_wrapped_token = [arbitrum, fantom, optimism]
     all = [bsc, ethereum, fantom, polygon, arbitrum, optimism, avalanche]
+    all_name = ['bsc', 'ethereum', 'polygon']
+
     mapping = {
         'bsc': bsc,
         'ethereum': ethereum,
