@@ -37,49 +37,50 @@ class GetTransactionInfoService():
     
         multichain_other_fields = update_list_of_dict(other_lst)
         for chain_id, addresses in multichain_address.items():
-            chain = Chains.reverse_mapping[chain_id]
-            other_info = rename_key(multichain_other_fields[chain_id], 'address','wallet') 
-            sending_transfer_info, receiving_transfer_info, transfer_elite_addresses = self._wallet_transfer_info(
-                postgre=PostgresDB(chain_id=chain_id),
-                start_block=self.multichain_transaction[chain_id]['start_block'],
-                end_block=self.multichain_transaction[chain_id]['end_block'],
-                historical_token_price=self.historical_token_price[chain_id],
-                block_timestamp_mappings=self.multichain_transaction[chain_id]['block_timestamp_mappings'],
-                works=addresses
-                ) #postgres
-
-            if len(transfer_elite_addresses)!=0:
-                sending_transaction_info, receiving_transaction_info = self._wallet_transaction_info(
-                    mongo_transaction=MongoDBMain(chain=chain),
-                    start_date=self.multichain_transaction[chain_id]['start'],
-                    end_date=self.multichain_transaction[chain_id]['end'],
+            if chain_id in self.multichain_transaction:
+                chain = Chains.reverse_mapping[chain_id]
+                other_info = rename_key(multichain_other_fields[chain_id], 'address','wallet') 
+                sending_transfer_info, receiving_transfer_info, transfer_elite_addresses = self._wallet_transfer_info(
+                    postgre=PostgresDB(chain_id=chain_id),
+                    start_block=self.multichain_transaction[chain_id]['start_block'],
+                    end_block=self.multichain_transaction[chain_id]['end_block'],
                     historical_token_price=self.historical_token_price[chain_id],
+                    block_timestamp_mappings=self.multichain_transaction[chain_id]['block_timestamp_mappings'],
                     works=addresses
-                ) #mongo
+                    ) #postgres
 
-                if sending_transaction_info.empty==False:
-                    sending_transaction_info['contractAddress'] = self.native
-                if receiving_transaction_info.empty==False:    
-                    receiving_transaction_info['contractAddress'] = self.native
-                
-                profiling = pd.concat([sending_transfer_info, sending_transaction_info, receiving_transaction_info, receiving_transfer_info])
-                profiling = profiling.dropna()
-                if (profiling.empty == False) &('contractAddress' in profiling.columns):
-                    try:
-                        profile_info = profiling.groupby(['wallet','interactedWallet','contractAddress']).agg({"timestampHistory":flatten_and_concat, "valueInUSDHistory":flatten_and_concat,"amountHistory":flatten_and_concat}).reset_index()
-                        profile_info_dict = update_format(profile_info)
-                        dict_lookup = {item['wallet']: item for item in profile_info_dict}
-                        for update in other_info:
-                            wallet = update['wallet']
-                            if (wallet in dict_lookup):
-                                dict_lookup[wallet].update(update)
-                        self.mongo_community.update_data(name=self.filename, data=profile_info_dict)
-                    except Exception as e:
-                        profiling.to_csv(f"data/log_file/address_info/{self.chain_id}/checking.csv", index=False)
-                        print('oh no having error in combinning 2 dataframe')
-                        print(e)
-            else:
-                self.fail_addresses.extend(addresses)
+                if len(transfer_elite_addresses)!=0:
+                    sending_transaction_info, receiving_transaction_info = self._wallet_transaction_info(
+                        mongo_transaction=MongoDBMain(chain=chain),
+                        start_date=self.multichain_transaction[chain_id]['start'],
+                        end_date=self.multichain_transaction[chain_id]['end'],
+                        historical_token_price=self.historical_token_price[chain_id],
+                        works=addresses
+                    ) #mongo
+
+                    if sending_transaction_info.empty==False:
+                        sending_transaction_info['contractAddress'] = self.native
+                    if receiving_transaction_info.empty==False:    
+                        receiving_transaction_info['contractAddress'] = self.native
+                    
+                    profiling = pd.concat([sending_transfer_info, sending_transaction_info, receiving_transaction_info, receiving_transfer_info])
+                    profiling = profiling.dropna()
+                    if (profiling.empty == False) &('contractAddress' in profiling.columns):
+                        try:
+                            profile_info = profiling.groupby(['wallet','interactedWallet','contractAddress']).agg({"timestampHistory":flatten_and_concat, "valueInUSDHistory":flatten_and_concat,"amountHistory":flatten_and_concat}).reset_index()
+                            profile_info_dict = update_format(profile_info)
+                            dict_lookup = {item['wallet']: item for item in profile_info_dict}
+                            for update in other_info:
+                                wallet = update['wallet']
+                                if (wallet in dict_lookup):
+                                    dict_lookup[wallet].update(update)
+                            self.mongo_community.update_data(name=self.filename, data=profile_info_dict)
+                        except Exception as e:
+                            profiling.to_csv(f"data/log_file/address_info/{self.chain_id}/checking.csv", index=False)
+                            print('oh no having error in combinning 2 dataframe')
+                            print(e)
+                else:
+                    self.fail_addresses.extend(addresses)
      
 
     def _wallet_transaction_info(self, mongo_transaction, start_date, end_date, historical_token_price, works): 
