@@ -3,7 +3,7 @@ import time
 import json
 
 from itertools import islice
-
+from utils.logger_utils  import get_logger
 
 def filter_none_keys(input_dict: dict):
     none_keys = list()
@@ -131,20 +131,51 @@ def rename_key(list_of_dicts, old_key, new_key):
     return [{new_key if k == old_key else k: v for k, v in d.items()} for d in list_of_dicts]
 
 def get_special_wallet_list(hot_path, burn_mint_path):
-    with open(hot_path, 'r') as file:
-        hot_wallets = json.load(file)
-    hot_wallets_lst = []
-    for exchange, data in hot_wallets.items():
-        for chain_id, addresses in data['wallets'].items():
-            hot_wallets_lst.extend(addresses)
+    logger =get_logger("Getting special wallets jobs")
+    try:
+        with open(hot_path, 'r') as file:
+            hot_wallets = json.load(file)
+        hot_wallets_lst = []
+        for exchange, data in hot_wallets.items():
+            for chain_id, addresses in data['wallets'].items():
+                hot_wallets_lst.extend(addresses)
 
-    with open(burn_mint_path, 'r') as file:
-        mint_burn = json.load(file)
-    mint_burn_lst = []
-    for chain_id, addresses in mint_burn.items():
-        mint_burn_lst.extend(addresses)
-    
-    hot_wallets_lst.extend(mint_burn_lst)
-    hot_wallets_lst = list(set(hot_wallets_lst))
-    
+        with open(burn_mint_path, 'r') as file:
+            mint_burn = json.load(file)
+        mint_burn_lst = []
+        for chain_id, addresses in mint_burn.items():
+            mint_burn_lst.extend(addresses)
+        
+        hot_wallets_lst.extend(mint_burn_lst)
+        hot_wallets_lst = list(set(hot_wallets_lst))
+        logger.info("Done!!!!")
+    except:
+        logger.info("Error in getting special wallet job")
+
     return hot_wallets_lst
+
+def update_dict_of_dict(dict1, dict2):
+    for key, value in dict2.items():
+        if key in dict1:
+            dict1[key].update(value)
+        else:
+            dict1[key] = value
+
+    return dict1
+
+def update_list_of_dict(list_of_dicts):
+    result = {}
+    for d in list_of_dicts:
+        if len(d) ==2:  #if d only contains address, chainId fields
+            if d['chainId'] not in result:
+                result[d['chainId']] = []
+            result[d['chainId']].append(d['address'])
+        else: #if d contains more fields
+            if d['chainId'] not in result:
+                result[d['chainId']] = []
+            result[d['chainId']].append(d)
+
+    return result
+
+def chunk_list(input_list, chunk_size):  # get sublist from list of list
+    return [input_list[i:i+chunk_size] for i in range(0, len(input_list), chunk_size)]

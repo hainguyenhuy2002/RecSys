@@ -1,6 +1,10 @@
+import time
+import pymongo
+
 from typing import List, Dict
 from pymongo import MongoClient
 from constants.mongodb_main_constants import MongoMainCollections
+from constants.time_constants import TimeConstants
 from config import MongoDBMainConfig
 from utils.logger_utils import get_logger
 
@@ -84,8 +88,25 @@ class MongoDBMain:
             addresses_info = list()
         return addresses_info
 
+    def get_largest_block(self):
+        uppper_time =1715472000 #12/05/2024
+        query = {'timestamp':{'$lte':uppper_time}}
+        projection =  {'timestamp':1,'number':1}
+        cursor = self._db.blocks.find(query, projection=projection).sort('timestamp',pymongo.DESCENDING).limit(1)
+        return {block['number']: block['timestamp'] for block in cursor}
+
+    def get_previous_3month_block(self):
+        time_now = time.time()
+        time_now =1715472000 #12/05/2024
+        lower_time = int(time_now) - 3*TimeConstants.DAYS_30
+        query = {'timestamp':{'$gte':lower_time}}
+        projection =  {'timestamp':1,'number':1}
+        cursor = self._db.blocks.find(filter=query,
+                                      projection=projection).sort('timestamp',pymongo.ASCENDING).limit(1)
+        return {block['number']: block['timestamp'] for block in cursor}
 
     def get_block_number_to_timestamp(self, start_block, end_block) -> Dict[int, int]:
         cursor = self.get_blocks_in_range(start_block=start_block, end_block=end_block,
                                           projection=['number', 'timestamp'])
         return {block['number']: block['timestamp'] for block in cursor}
+

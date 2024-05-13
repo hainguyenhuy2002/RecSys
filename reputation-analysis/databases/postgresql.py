@@ -39,19 +39,19 @@ def get_valueInUSD(row, token_history, token_lst, block_timestamp_mappings):
         return None
 
 class PostgresDB:
-    def __init__(self, connection_url: str = None):
+    def __init__(self, chain_id, connection_url: str = None):
         # Set up the database connection and create the table
         if not connection_url:
             connection_url = PostgresDBConfig.CONNECTION_URL
         Session.configure(bind=create_engine(connection_url))
+        self.chain_id = chain_id
 
-    @staticmethod
-    def query_addresses(addresses, special_addresses, direction, opposite_direction, from_block, to_block, chain_id, block_timestamp_mappings ,price_history):
+    def query_addresses(self, addresses, special_addresses, direction, opposite_direction, from_block, to_block, block_timestamp_mappings ,price_history):
         token_lst = [token for token, _ in price_history.items()]
-        if not chain_id:
+        if not self.chain_id:
             schema = PostgresDBConfig.SCHEMA
         else:
-            schema = f"chain_{chain_id}"
+            schema = f"chain_{self.chain_id}"
         addresses_values = ', '.join([f"'{cls}'" for cls in addresses])
         special_addresses_values = ', '.join([f"'{cls}'" for cls in special_addresses])
 
