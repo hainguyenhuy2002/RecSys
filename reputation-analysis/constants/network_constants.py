@@ -46,8 +46,6 @@ class Chains:
         '0x38': 'bsc',
         '0x1': 'ethereum',
         '0x89': 'polygon',
-        '0xfa': 'fantom'
-
     }
     names = {
         bsc: 'bsc',
