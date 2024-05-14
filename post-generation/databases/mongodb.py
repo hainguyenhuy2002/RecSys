@@ -1,6 +1,12 @@
 from pymongo import MongoClient, UpdateOne, InsertOne
 import pandas as pd
 from config import MongoDBConfig
+from constant import time_constant
+import os
+import time
+from dotenv import load_dotenv
+
+load_dotenv()
 
 WALLETS_COL = 'depositWallets'
 
@@ -33,6 +39,16 @@ class MongoDB:
 
     def get_documents_by_ids(self, col_name: str, ids: list):
         return self._db[col_name].find({'_id': {'$in': ids}})
+    
+    # get documents that is in 7 days latest
+    
+    def get_documents_by_time(self, col_name: str):
+        interval = time_constant.TimeConstants.A_DAY
+        timestamp = int(time.time())
+        time_interval = timestamp - int(interval)
+
+        return self._db[col_name].find({'timestamp': {'$gt': time_interval}})
+    
 
     #######################
     #   get tweets info   #
@@ -40,7 +56,7 @@ class MongoDB:
 
     def get_tweet(self):
         tweets_lst = []
-        cursor = self._tweets.find()
+        cursor = self.get_documents_by_time('tweets')
         for da in cursor:
             da_dct ={}
             da_dct['authorName'] = da['authorName']
@@ -53,6 +69,21 @@ class MongoDB:
             tweets_lst.append(da_dct)
             df_twitter = pd.DataFrame(tweets_lst)
         return df_twitter
+    
+    # get messages discord info
+    def get_message(self):
+        messages_lst = []
+        cursor = self._tweets.find()
+        for da in cursor:
+            da_dct ={}
+            da_dct['_id'] = da['_id']
+            da_dct['project'] = da['project']
+            da_dct['channel'] = da['channel']
+            # da_dct['timestamp'] = da['timestamp']
+            da_dct['content'] = 'Project: '+da['project']+'; Channel: '+da['channel']+'; Content: ' +da['message']
+            messages_lst.append(da_dct)
+            df_message = pd.DataFrame(messages_lst)
+        return df_message
 
     #######################
     #   updates   #

@@ -1,39 +1,78 @@
 import click
 import pandas as pd
 import numpy as np
+import time
+import logging
 from llama_index.core.schema import TextNode
 from databases.mongodb import MongoDB
 from databases.postgresql import PostgresDB
 from models.embedding_models import EmbeddingModel
+from constant.time_constant import TimeConstants
+from services.cli_job import CLIJob
 from utils.logger_utils import get_logger
 @click.command(context_settings=dict(help_option_names=['-h', '--help']))
+@click.option('-i', '--interval', default=TimeConstants.A_DAY, type=int, help='Sleep time')
 
-def upload_vector_db():
-    logg = get_logger("Embedding storage")
-    logg.info("Start to connect model and database ...")
-    embed_model = EmbeddingModel()
-    mongo_db = MongoDB()
-    posgre_db = PostgresDB()
-    logg.info("Start to get tweet data ...")
+def upload_vector_db(interval):
+    job = UploadVectorDB(interval=interval)
+    job.run()
 
-    df_tweet = mongo_db.get_tweet()
-    logg.info("Sucessful get tweet")
-    nodes = []
-    logg.info("Start to get embed tweets ...")
+class UploadVectorDB(CLIJob):
+    def __init__(self, interval=None, end_timestamp=None, retry=True):
+        super().__init__(interval, end_timestamp, retry)
 
-    for index, row in df_tweet.iterrows():
-        node = TextNode(text=row['content'], id_=f"{row['authorName']}_{row['timestamp']}")
-        nodes.append(node)
+    def _pre_start(self):
+        logg = get_logger("Embedding storage")
+        logg.info("Start to connect model and database ...")
 
+        progress_logger = logging.getLogger('ProgressLogger')
+        progress_logger.setLevel(logging.WARNING)
+        execute_logger = logging.getLogger('Time Execute')
+        execute_logger.setLevel(logging.WARNING)
 
-    logg.info("Sucessful embed tweets")
+    def _start(self):
+        ...
 
-    for node in nodes:
-        node_embedding = embed_model._embed_model.get_text_embedding(
-            node.get_content(metadata_mode="all")
-        )
-        node.embedding = node_embedding
+    def _execute(self, *args, **kwargs):
+        self.upload_vector_database_twitter()
 
-    logg.info("Sucessful upload vectordb")
+    def upload_vector_database_twitter(self):
+        embed_model = EmbeddingModel()
+        mongo_db = MongoDB()
+        posgre_db = PostgresDB()
 
-    posgre_db.vetor_store.add(nodes)
+        df_tweet = mongo_db.get_tweet()
+        
+        nodes = []
+
+        for index, row in df_tweet.iterrows():
+            node = TextNode(text=row['content'], id_=f"{row['authorName']}_{row['timestamp']}")
+            nodes.append(node)
+
+        for node in nodes:
+            node_embedding = embed_model._embed_model.get_text_embedding(
+                node.get_content(metadata_mode="all")
+            )
+            node.embedding = node_embedding
+
+        posgre_db.vetor_store.add(nodes)
+
+    def upload_vector_database_discord():
+        embed_model = EmbeddingModel()
+        mongo_db = MongoDB()
+        posgre_db = PostgresDB()
+
+        df_message = mongo_db.get_message()
+        nodes = []
+
+        for index, row in df_message.iterrows():
+            node = TextNode(text=row['content'], id_=row['_id'])
+            nodes.append(node)
+
+        for node in nodes:
+            node_embedding = embed_model._embed_model.get_text_embedding(
+                node.get_content(metadata_mode="all")
+            )
+            node.embedding = node_embedding
+
+        posgre_db.vetor_store.add(nodes)
