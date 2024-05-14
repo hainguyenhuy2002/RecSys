@@ -79,15 +79,16 @@ class GetTransactionInfoService():
                             )
                             profile_max_timestamp['lattestTimestamp'] = profile_max_timestamp['timestampHistory'].apply(lambda x: max(x))
                             max_timestamp = profile_max_timestamp['timestampHistory'].to_dict()
-
-
+                            print(max_timestamp)
                             profile_info_dict = update_format(profile_info)
                             dict_lookup = {item['wallet']: item for item in profile_info_dict}
                             for update in other_info:
                                 wallet = update['wallet']
                                 if (wallet in dict_lookup):
+                                    max_time_dct = dict()
+                                    max_time_dct['lattestTimestamp'] = max_timestamp[wallet]
                                     dict_lookup[wallet].update(update)  # Update in here
-                                    dict_lookup[wallet].update(max_timestamp[wallet]) 
+                                    dict_lookup[wallet].update(max_time_dct) 
                             print(profile_info_dict)
                             self.mongo_community.update_data(name=self.filename, data=profile_info_dict)
                         except Exception as e:

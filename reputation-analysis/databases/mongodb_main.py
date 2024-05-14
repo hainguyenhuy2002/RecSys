@@ -98,7 +98,7 @@ class MongoDBMain:
     def get_previous_3month_block(self):
         time_now = time.time()
         time_now =1709109000 #12/05/2024
-        lower_time = int(time_now) - 3*TimeConstants.MINUTES_15
+        lower_time = int(time_now) - TimeConstants.MINUTES_15
         query = {'timestamp':{'$gte':lower_time}}
         projection =  {'timestamp':1,'number':1}
         cursor = self._db.blocks.find(filter=query,
