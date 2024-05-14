@@ -31,19 +31,10 @@ class GetAddress(BaseJob):
             wallet_lst: List[Dict] = list()
             query =  {"flagged":work, "balanceInUSD":{"$exists":"True"}, "balanceInUSD":{"$gt":0}}
             wallets = self.mongo_klg.find(query,{'_id':1,
-                                                    'chainId':1,   
-#                                                    'balanceChangeLogs':1,
+                                                'chainId':1,   
                                                 'address':1,
-#                                                   'tokenChangeLogs':1,
                                                 'type':1,
-#                                                   'balanceInUSD':1,
                                                 'tags':1,
-                                        #        'depositChangeLogs':1,
-                                        #        'depositInUSD':1,
-                                        #        'borrowChangeLogs':1,
-                                        #        'borrowInUSD':1, 
-                                        #       'lendings':1,
-                                        #        'createdAt':1, 
                                                 'dailyAllTransactions':1})
             for wallet in wallets:
                 if wallet['address'] in self.hot_wallets:
