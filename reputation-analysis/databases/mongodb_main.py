@@ -41,36 +41,9 @@ class MongoDBMain:
         
     def get_transaction_info(self, start_date, end_date, direction, opposite_direction, special_addresses, addresses, price_history):
         addresses_info = list()
-        #failed_addresses = list()
         try:
             query = {"block_timestamp" : {"$gte": start_date, "$lte": end_date},f'{direction}_address': {'$in': addresses}, 
                                                     f'{opposite_direction}_address':{'$nin': special_addresses}}
-            query_counting ={f'{direction}_address': {'$in': addresses}}
-            # counting = self._transaction.count_documents(query_counting)
-
-            # if counting >=20000:
-            #     for address in addresses:
-            #         query_v2 = {"block_timestamp" : {"$gte": start_date, "$lte": end_date}, f'{direction}_address': address, 
-            #                                         f'{opposite_direction}_address':{'$nin': special_addresses}}
-            #         query_counting_v2 ={f'{direction}_address': address}
-            #         counting_v2 = self._transaction.count_documents(query_counting_v2)
-            #         if counting_v2 >1500:
-            #             failed_addresses.append(address)
-            #             continue
-            #         else:
-            #             transactions_data =self._transaction.find(query_v2,{'from_address':1, 'to_address':1, 'value':1, 'block_timestamp':1})
-            #             for transaction in transactions_data:
-            #                 single_transaction_info = dict(transaction) 
-            #                 if single_transaction_info['value'] == '0':
-            #                     continue
-            #                 else:
-            #                     round_timestamp = ((single_transaction_info['block_timestamp']  - single_transaction_info['block_timestamp']  % 86400))  #change to timestamp daily, not times 1000
-            #                     single_transaction_info['valueInUSD'] = (int(single_transaction_info['value']) * price_history[f'{round_timestamp}']) /10**18
-            #                     single_transaction_info['amount'] = int(single_transaction_info['value']) /10**18
-            #                     addresses_info.append(single_transaction_info)    
-            #     #print(failed_addresses)
-            #     #logger.info(failed_addresses)               
-            # else:
             transactions_data =self._transaction.find(query,{'from_address':1, 'to_address':1, 'value':1, 'block_timestamp':1})
             for transaction in transactions_data:
                 single_transaction_info = dict(transaction) 

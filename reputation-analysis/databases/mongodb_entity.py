@@ -1,6 +1,7 @@
+import pymongo
+
 from typing import List, Dict
 from pymongo import MongoClient
-
 from config import MongoDBEntityConfig
 from utils.logger_utils import get_logger
 
@@ -32,6 +33,13 @@ class MongoDBEntity:
         _projection = ['priceChangeLogs']
         return self._smart_contracts_col.find(filter=_filter, projection=_projection)
 
-
+    def get_largest_flag(self):
+        query = {'flagged':{"$exists":"True"}}
+        projection =  {'flagged':1}
+        cursor = self.wallets.find(query, projection=projection).sort('flagged',pymongo.DESCENDING).limit(1)
+        for cur in cursor:
+            largest_flag = cur['flagged']
+        return largest_flag
+    
 if __name__ == '__main__':
     klg = MongoDBEntity()
