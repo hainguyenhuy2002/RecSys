@@ -57,7 +57,6 @@ class GetTransactionInfoService():
                         historical_token_price=self.historical_token_price[chain_id],
                         works=addresses
                     ) #mongo
-
                     if sending_transaction_info.empty==False:
                         sending_transaction_info['contractAddress'] = self.native
                     if receiving_transaction_info.empty==False:    
@@ -67,13 +66,28 @@ class GetTransactionInfoService():
                     profiling = profiling.dropna()
                     if (profiling.empty == False) &('contractAddress' in profiling.columns):
                         try:
-                            profile_info = profiling.groupby(['wallet','interactedWallet','contractAddress']).agg({"timestampHistory":flatten_and_concat, "valueInUSDHistory":flatten_and_concat,"amountHistory":flatten_and_concat}).reset_index()
+                            profile_info = profiling.groupby(
+                                ['wallet','interactedWallet','contractAddress']) \
+                                .agg({"timestampHistory":flatten_and_concat,
+                                       "valueInUSDHistory":flatten_and_concat,
+                                       "amountHistory":flatten_and_concat}
+                                    ).reset_index()
+                            
+                            profile_timestamp = profile_info[['wallet','timestampHistory']].copy()
+                            profile_max_timestamp = profile_timestamp.groupby('wallet').agg(
+                                {"timestampHistory":flatten_and_concat}
+                            )
+                            profile_max_timestamp['lattestTimestamp'] = profile_max_timestamp['timestampHistory'].apply(lambda x: max(x))
+                            max_timestamp = profile_max_timestamp['timestampHistory'].to_dict()
+
+
                             profile_info_dict = update_format(profile_info)
                             dict_lookup = {item['wallet']: item for item in profile_info_dict}
                             for update in other_info:
                                 wallet = update['wallet']
                                 if (wallet in dict_lookup):
-                                    dict_lookup[wallet].update(update)
+                                    dict_lookup[wallet].update(update)  # Update in here
+                                    dict_lookup[wallet].update(max_timestamp[wallet]) 
                             self.mongo_community.update_data(name=self.filename, data=profile_info_dict)
                         except Exception as e:
                             profiling.to_csv(f"data/log_file/address_info/{chain_id}/checking.csv", index=False)
@@ -84,7 +98,6 @@ class GetTransactionInfoService():
      
 
     def _wallet_transaction_info(self, mongo_transaction, start_date, end_date, historical_token_price, works): 
-
         for direction in self.direction:
             if direction == 'from':
                 opposite_direction ='to'
@@ -167,7 +180,6 @@ class GetTransactionInfoService():
                     block_timestamp_mappings=block_timestamp_mappings, 
                     price_history = historical_token_price
                     )
-                
                 elite_sender = list(set(works)- set(failed_sender))
                 if len(elite_sender) ==0:
                     return  pd.DataFrame(), pd.DataFrame(), []
@@ -184,8 +196,7 @@ class GetTransactionInfoService():
                                 .agg({"block_number":tuple, 
                                       'amount':tuple, 
                                       "valueInUSD": ['sum',tuple]}
-                        )
-
+                                    )
                         wallet_transfer_info.columns = ['{}_{}'.format(col[0], col[1]) for col in wallet_transfer_info.columns]
                         sending_transfer_info = wallet_transfer_info.reset_index().rename(
                                                 columns={"from_address": "wallet",
@@ -224,9 +235,12 @@ class GetTransactionInfoService():
                                                                 'amount':tuple, "valueInUSD": ['sum',tuple]})
                         wallet_transfer_info.columns = ['{}_{}'.format(col[0], col[1]) for col in wallet_transfer_info.columns]
                         receiving_transfer_info = wallet_transfer_info.reset_index()\
-                                        .rename(columns={"to_address": "wallet","from_address":"interactedWallet", 
-                                                         "block_number_tuple":"timestampHistory","valueInUSD_tuple":"valueInUSDHistory",            
-                                                         "valueInUSD_sum":"totalValueInUSD", "amount_tuple":"amountHistory"})
+                                        .rename(columns={"to_address": "wallet",
+                                                         "from_address":"interactedWallet", 
+                                                         "block_number_tuple":"timestampHistory",
+                                                         "valueInUSD_tuple":"valueInUSDHistory",            
+                                                         "valueInUSD_sum":"totalValueInUSD", 
+                                                         "amount_tuple":"amountHistory"})
                     else: 
                         receiving_transfer_info = pd.DataFrame()
 
