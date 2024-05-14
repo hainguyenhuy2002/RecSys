@@ -95,6 +95,7 @@ def get_address_v2(name, wallets_per_job, hot_path, burn_mint_path, token_price,
     #     multichain_transaction = json.load(rfile)
 
     flagged_lst = [i for i in range(1,4123)]
+    flagged_lst = [1,2,3,4]
     exchange_service = GetTransactionInfoService(
                              mongo_community=mongo_community,
                              historical_token_price=historical_token_price,
