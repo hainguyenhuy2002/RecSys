@@ -88,6 +88,7 @@ class GetTransactionInfoService():
                                 if (wallet in dict_lookup):
                                     dict_lookup[wallet].update(update)  # Update in here
                                     dict_lookup[wallet].update(max_timestamp[wallet]) 
+                            print(profile_info_dict)
                             self.mongo_community.update_data(name=self.filename, data=profile_info_dict)
                         except Exception as e:
                             profiling.to_csv(f"data/log_file/address_info/{chain_id}/checking.csv", index=False)
