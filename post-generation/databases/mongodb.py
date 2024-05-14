@@ -1,9 +1,11 @@
 from pymongo import MongoClient, UpdateOne, InsertOne
 import pandas as pd
 from config import MongoDBConfig
-from constant import time_constant
+from constant.time_constant import TimeConstants
 import os
 import time
+from utils.time_utils import round_timestamp
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -43,8 +45,8 @@ class MongoDB:
     # get documents that is in 7 days latest
     
     def get_documents_by_time(self, col_name: str):
-        interval = time_constant.TimeConstants.A_DAY
-        timestamp = int(time.time())
+        interval = TimeConstants.DAYS_2
+        timestamp = round_timestamp(int(time.time()), TimeConstants.A_DAY)
         time_interval = timestamp - int(interval)
 
         return self._db[col_name].find({'timestamp': {'$gt': time_interval}})
@@ -60,7 +62,7 @@ class MongoDB:
         for da in cursor:
             da_dct ={}
             da_dct['authorName'] = da['authorName']
-            da_dct['timestamp'] = da['timestamp']
+            da_dct['_id'] = da['_id']
             if 'quotedTweet' in da:
                 additional_text = da['quotedTweet']['text']
                 da_dct['content'] = 'Author: '+da['authorName']+'; Content: ' +da['text'] + '\n\n' + additional_text

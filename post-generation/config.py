@@ -14,6 +14,7 @@ class MongoDBConfig:
 class EmbeddingModelConfig:
     MODEL_NAME = os.getenv("EMBEDDING_MODEL")
     EMBEDDING_DIMENSION = os.getenv("EMBEDDING_DIMENSION")
+    
 class LLMModelConfig:
     MODEL_NAME = os.getenv("LARGE_LANGUAGE_MODEL")
     MODEL_API = os.getenv("REPLICATE_API")
