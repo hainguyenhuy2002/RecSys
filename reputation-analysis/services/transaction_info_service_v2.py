@@ -78,8 +78,7 @@ class GetTransactionInfoService():
                                 {"timestampHistory":flatten_and_concat}
                             )
                             profile_max_timestamp['lattestTimestamp'] = profile_max_timestamp['timestampHistory'].apply(lambda x: max(x))
-                            max_timestamp = profile_max_timestamp['timestampHistory'].to_dict()
-                            print(max_timestamp)
+                            max_timestamp = profile_max_timestamp['lattestTimestamp'].to_dict()
                             profile_info_dict = update_format(profile_info)
                             dict_lookup = {item['wallet']: item for item in profile_info_dict}
                             for update in other_info:
@@ -89,7 +88,6 @@ class GetTransactionInfoService():
                                     max_time_dct['lattestTimestamp'] = max_timestamp[wallet]
                                     dict_lookup[wallet].update(update)  # Update in here
                                     dict_lookup[wallet].update(max_time_dct) 
-                            print(profile_info_dict)
                             self.mongo_community.update_data(name=self.filename, data=profile_info_dict)
                         except Exception as e:
                             profiling.to_csv(f"data/log_file/address_info/{chain_id}/checking.csv", index=False)
