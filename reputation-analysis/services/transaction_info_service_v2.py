@@ -76,7 +76,7 @@ class GetTransactionInfoService():
                             profile_timestamp = profile_info[['wallet','timestampHistory']].copy()
                             profile_max_timestamp = profile_timestamp.groupby('wallet').agg(
                                 {"timestampHistory":flatten_and_concat}
-                            ).reset_index()
+                            )
                             profile_max_timestamp['lattestTimestamp'] = profile_max_timestamp['timestampHistory'].apply(lambda x: max(x))
                             max_timestamp = profile_max_timestamp['timestampHistory'].to_dict()
 
