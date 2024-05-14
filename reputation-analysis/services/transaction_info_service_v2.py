@@ -76,7 +76,7 @@ class GetTransactionInfoService():
                                     dict_lookup[wallet].update(update)
                             self.mongo_community.update_data(name=self.filename, data=profile_info_dict)
                         except Exception as e:
-                            profiling.to_csv(f"data/log_file/address_info/{self.chain_id}/checking.csv", index=False)
+                            profiling.to_csv(f"data/log_file/address_info/{chain_id}/checking.csv", index=False)
                             print('oh no having error in combinning 2 dataframe')
                             print(e)
                 else:
@@ -239,5 +239,5 @@ class GetTransactionInfoService():
         return sending_transfer_info, receiving_transfer_info, elite_addresses
     def _end(self):
         super()._end()
-        write_file(f'address_info/chain_{self.chain_id}', 'fail_addresses.json',self.fail_addresses)
+        write_file(f'address_info/', 'fail_addresses.json',self.fail_addresses)
 
