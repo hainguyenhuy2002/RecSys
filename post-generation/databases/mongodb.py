@@ -63,6 +63,7 @@ class MongoDB:
             da_dct ={}
             da_dct['authorName'] = da['authorName']
             da_dct['_id'] = da['_id']
+            da_dct['timestamp'] = da['timestamp']
             if 'quotedTweet' in da:
                 additional_text = da['quotedTweet']['text']
                 da_dct['content'] = 'Author: '+da['authorName']+'; Content: ' +da['text'] + '\n\n' + additional_text
@@ -71,21 +72,6 @@ class MongoDB:
             tweets_lst.append(da_dct)
             df_twitter = pd.DataFrame(tweets_lst)
         return df_twitter
-    
-    # get messages discord info
-    def get_message(self):
-        messages_lst = []
-        cursor = self._tweets.find()
-        for da in cursor:
-            da_dct ={}
-            da_dct['_id'] = da['_id']
-            da_dct['project'] = da['project']
-            da_dct['channel'] = da['channel']
-            # da_dct['timestamp'] = da['timestamp']
-            da_dct['content'] = 'Project: '+da['project']+'; Channel: '+da['channel']+'; Content: ' +da['message']
-            messages_lst.append(da_dct)
-            df_message = pd.DataFrame(messages_lst)
-        return df_message
 
     #######################
     #   updates   #

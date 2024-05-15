@@ -9,7 +9,7 @@ from databases.mongodb import MongoDB
 from databases.postgresql import PostgresDB
 from models.embedding_models import EmbeddingModel
 from constant.time_constant import TimeConstants
-from services.cli_job import CLIJob
+from jobs.cli_job import CLIJob
 from utils.logger_utils import get_logger
 @click.command(context_settings=dict(help_option_names=['-h', '--help']))
 @click.option('-i', '--interval', default=TimeConstants.A_DAY, type=int, help='Sleep time')
@@ -54,10 +54,12 @@ class UploadVectorDB(CLIJob):
         self.logg.info("Start to process tweet data ...")
         
         nodes = []
+        nodes_with_timestamp = {}
 
         for index, row in df_tweet.iterrows():
             node = TextNode(text=row['content'], id_=f"{row['authorName']}_{row['_id']}", )
             nodes.append(node)
+            nodes_with_timestamp[node.id_] = row['timestamp']
 
         for node in nodes:
             node_embedding = embed_model._embed_model.get_text_embedding(
@@ -65,41 +67,9 @@ class UploadVectorDB(CLIJob):
             )
             node.embedding = node_embedding
             node.metadata = node_to_metadata_dict(node)
-        
+ 
         self.logg.info("Successfully process tweet data ...")
         self.logg.info("Start to upload tweet data ...")
-            
-        posgre_db.upsert_nodes(nodes)
-        self.logg.info("Successfully upload tweet data ...")
 
-    def upload_vector_database_discord(self):
-        embed_model = EmbeddingModel()
-        mongo_db = MongoDB()
-        posgre_db = PostgresDB()
-
-        self.logg.info("Start to get tweet data ...")
-
-        df_message = mongo_db.get_message()
-
-        self.logg.info("Successfully get tweet data ...")
-        self.logg.info("Start to process tweet data ...")
-
-        nodes = []
-
-        for index, row in df_message.iterrows():
-            node = TextNode(text=row['content'], id_=row['_id'])
-            nodes.append(node)
-        
-        for node in nodes:
-            node_embedding = embed_model._embed_model.get_text_embedding(
-                node.get_content(metadata_mode="all")
-            )
-            node.embedding = node_embedding
-            node.metadata = node_to_metadata_dict(node)
-
-        self.logg.info("Successfully process tweet data ...")
-        self.logg.info("Start to upload tweet data ...")
-            
-        posgre_db.upsert_nodes(nodes)
-
+        posgre_db.upsert_nodes(nodes, nodes_with_timestamp)
         self.logg.info("Successfully upload tweet data ...")

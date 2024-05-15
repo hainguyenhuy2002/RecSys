@@ -20,6 +20,7 @@ class Columns:
     METADATA = 'metadata_'
     NODE_ID = 'node_id'
     EMBEDDING = 'embedding'
+    TIMESTAMP = 'timestamp'
 
 
 class PostgresDB:
@@ -76,31 +77,66 @@ class PostgresDB:
             self.session.close()
 
     # update database, if a node with the same id exists, update it
-    def upsert_nodes(self, nodes):
+    def upsert_nodes(self, nodes, nodes_with_timestamp):
         if not self.table_exists(f'data_{PostgresRAGDBConfig.RAG_TABLE}'):
             self.vetor_store.add(nodes)
+
+            # Add a column to store the timestamp of the node
+            try:
+                add_timestamp_column_query = text(f"""
+                ALTER TABLE data_{PostgresRAGDBConfig.RAG_TABLE}
+                ADD COLUMN {Columns.TIMESTAMP} BIGINT
+                """)
+                self.session.execute(add_timestamp_column_query)
+                self.session.commit()
+                logger.info("Timestamp column added successfully.")
+            except SQLAlchemyError as e:
+                logger.error(f"Error adding timestamp column: {e}")
+                self.session.rollback()
+            finally:
+                self.session.close()
+
+            # Insert the timestamp values into the database
+            try:
+                update_timestamp_query = text(f"""
+                UPDATE data_{PostgresRAGDBConfig.RAG_TABLE}
+                SET {Columns.TIMESTAMP} = :timestamp
+                WHERE {Columns.NODE_ID} = :node_id
+                """)
+                for node_id, timestamp in nodes_with_timestamp.items():
+                    self.session.execute(update_timestamp_query, {'timestamp': timestamp, 'node_id': node_id})
+                    self.session.commit()
+            except SQLAlchemyError as e:
+                logger.error(f"Error updating timestamp values: {e}")
+                self.session.rollback()
+            finally:
+                self.session.close()
+
         else:
             """Upsert a list of nodes into the database. If the node_id exists, overwrite the existing entry."""
             try:
                 # Prepare the insert query with ON CONFLICT clause
                 insert_query = text(f"""
-                INSERT INTO data_{PostgresRAGDBConfig.RAG_TABLE} ({Columns.TEXT}, {Columns.METADATA}, {Columns.NODE_ID}, {Columns.EMBEDDING})
-                VALUES (:text, :metadata_, :node_id, :embedding)
+                INSERT INTO data_{PostgresRAGDBConfig.RAG_TABLE} ({Columns.TEXT}, {Columns.METADATA}, {Columns.NODE_ID}, {Columns.EMBEDDING}), {Columns.TIMESTAMP}
+                VALUES (:text, :metadata_, :node_id, :embedding, :timestamp)
                 ON CONFLICT ({Columns.NODE_ID}) DO UPDATE
                 SET {Columns.TEXT} = EXCLUDED.{Columns.TEXT},
                     {Columns.METADATA} = EXCLUDED.{Columns.METADATA},
-                    {Columns.EMBEDDING} = EXCLUDED.{Columns.EMBEDDING}
+                    {Columns.EMBEDDING} = EXCLUDED.{Columns.EMBEDDING},
+                    {Columns.TIMESTAMP} = EXCLUDED.{Columns.TIMESTAMP}
                 """)
 
                 # Prepare the list of dictionaries for each node
                 values_to_insert = []
                 for node in nodes:
                     metadata_json = json.dumps(node.metadata)
+                    timestamp = nodes_with_timestamp[node]
                     values_to_insert.append({
                         'text': node.text,
                         'metadata_': metadata_json,
                         'node_id': node.id_,
-                        'embedding': node.embedding
+                        'embedding': node.embedding,
+                        'timestamp': timestamp
                     })
 
                 # Execute the query with multiple values
