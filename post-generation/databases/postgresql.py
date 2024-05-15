@@ -117,7 +117,7 @@ class PostgresDB:
             try:
                 # Prepare the insert query with ON CONFLICT clause
                 insert_query = text(f"""
-                INSERT INTO data_{PostgresRAGDBConfig.RAG_TABLE} ({Columns.TEXT}, {Columns.METADATA}, {Columns.NODE_ID}, {Columns.EMBEDDING}), {Columns.TIMESTAMP}
+                INSERT INTO data_{PostgresRAGDBConfig.RAG_TABLE} ({Columns.TEXT}, {Columns.METADATA}, {Columns.NODE_ID}, {Columns.EMBEDDING}, {Columns.TIMESTAMP})
                 VALUES (:text, :metadata_, :node_id, :embedding, :timestamp)
                 ON CONFLICT ({Columns.NODE_ID}) DO UPDATE
                 SET {Columns.TEXT} = EXCLUDED.{Columns.TEXT},
@@ -130,7 +130,7 @@ class PostgresDB:
                 values_to_insert = []
                 for node in nodes:
                     metadata_json = json.dumps(node.metadata)
-                    timestamp = nodes_with_timestamp[node]
+                    timestamp = nodes_with_timestamp[node.id_]
                     values_to_insert.append({
                         'text': node.text,
                         'metadata_': metadata_json,
