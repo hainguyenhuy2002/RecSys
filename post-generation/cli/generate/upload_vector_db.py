@@ -18,18 +18,21 @@ def upload_vector_db(interval):
     job = UploadVectorDB(interval=interval)
     job.run()
 
+def configure_loggers():
+    logg = get_logger("Embedding storage")
+    progress_logger = logging.getLogger('ProgressLogger')
+    progress_logger.setLevel(logging.WARNING)
+    execute_logger = logging.getLogger('Time Execute')
+    execute_logger.setLevel(logging.WARNING)
+    return logg, progress_logger, execute_logger
+
 class UploadVectorDB(CLIJob):
     def __init__(self, interval=None, end_timestamp=None, retry=True):
         super().__init__(interval, end_timestamp, retry)
+        self.logg, self.progress_logger, self.execute_logger = configure_loggers()
 
     def _pre_start(self):
-        logg = get_logger("Embedding storage")
-        logg.info("Start to connect model and database ...")
-
-        progress_logger = logging.getLogger('ProgressLogger')
-        progress_logger.setLevel(logging.WARNING)
-        execute_logger = logging.getLogger('Time Execute')
-        execute_logger.setLevel(logging.WARNING)
+        self.logg.info("Start to connect model and database ...")
 
     def _start(self):
         ...
@@ -43,7 +46,12 @@ class UploadVectorDB(CLIJob):
         mongo_db = MongoDB()
         posgre_db = PostgresDB()
 
+        self.logg.info("Start to get tweet data ...")
+
         df_tweet = mongo_db.get_tweet()
+
+        self.logg.info("Successfully get tweet data ...")
+        self.logg.info("Start to process tweet data ...")
         
         nodes = []
 
@@ -57,15 +65,25 @@ class UploadVectorDB(CLIJob):
             )
             node.embedding = node_embedding
             node.metadata = node_to_metadata_dict(node)
+        
+        self.logg.info("Successfully process tweet data ...")
+        self.logg.info("Start to upload tweet data ...")
             
         posgre_db.upsert_nodes(nodes)
+        self.logg.info("Successfully upload tweet data ...")
 
     def upload_vector_database_discord(self):
         embed_model = EmbeddingModel()
         mongo_db = MongoDB()
         posgre_db = PostgresDB()
 
+        self.logg.info("Start to get tweet data ...")
+
         df_message = mongo_db.get_message()
+
+        self.logg.info("Successfully get tweet data ...")
+        self.logg.info("Start to process tweet data ...")
+
         nodes = []
 
         for index, row in df_message.iterrows():
@@ -78,5 +96,10 @@ class UploadVectorDB(CLIJob):
             )
             node.embedding = node_embedding
             node.metadata = node_to_metadata_dict(node)
+
+        self.logg.info("Successfully process tweet data ...")
+        self.logg.info("Start to upload tweet data ...")
             
         posgre_db.upsert_nodes(nodes)
+
+        self.logg.info("Successfully upload tweet data ...")

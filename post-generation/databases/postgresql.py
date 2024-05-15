@@ -104,9 +104,14 @@ class PostgresDB:
                     })
 
                 # Execute the query with multiple values
-                self.session.execute(insert_query, values_to_insert)
-                self.session.commit()
-                logger.info(f"{len(nodes)} nodes upserted successfully.")
+                # Log the percentage of nodes upserted at every 10% increment
+                chunk_size = max(1, len(values_to_insert) // 10)  # Ensure chunk_size is at least 1
+                for i in range(0, len(values_to_insert), chunk_size):
+                    self.session.execute(insert_query, values_to_insert[i:i + chunk_size])
+                    self.session.commit()
+                    percentage_done = (i // chunk_size + 1) * 10
+                    logger.info(f"Upserted {percentage_done}% of nodes.")
+
             except SQLAlchemyError as e:
                 logger.error(f"Error upserting nodes: {e}")
                 self.session.rollback()
