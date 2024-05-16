@@ -5,6 +5,7 @@ class TimeConstants:
     A_HOUR = 3600
     A_DAY = 86400
     DAYS_2 = 2 * A_DAY
+    DAYS_3 = 3 * A_DAY
     DAYS_7 = 7 * A_DAY
     DAYS_30 = 30 * A_DAY
     DAYS_31 = 31 * A_DAY

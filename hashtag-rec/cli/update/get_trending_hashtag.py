@@ -15,7 +15,7 @@ from utils.preprocess_text_utils import preprocess_tweet
 @click.option('-i', '--interval', default=TimeConstants.A_DAY, show_default=True, type=int)
 @click.option('-pe', '--period', default=TimeConstants.A_DAY, show_default=True, type=int)
 @click.option('-li', '--limit', default=None, type=int)
-@click.option('-d', '--dapps-name', default='trava', show_default=True, type=str,
+@click.option('-d', '--dapps-name', default='world', show_default=True, type=str,
               help='name of dapps to update keywords')
 @click.option('-n', '--name', default='trava', show_default=True, type=str,
               help='name of collection to update')
@@ -56,7 +56,10 @@ class UpdateTrendingKeyWords(CLIJob):
         log.info("Start to preprocess key words ...")
 
         df_clean = preprocess_tweet(df_twitter)
-        dapps_trending = df_clean[df_clean['authorName'].isin(self.dapps_followers)]
+        if len(self.dapps_followers)> 0:
+            dapps_trending = df_clean[df_clean['authorName'].isin(self.dapps_followers)]
+        else:
+            dapps_trending = df_clean.copy()
         log.info("Sucessful!")
         log.info("Start to flatten to dictionary form and update to Mongo")
         trending_keyword = dapps_trending.groupby('keyWordsClean').agg({'count':'count'}).reset_index()

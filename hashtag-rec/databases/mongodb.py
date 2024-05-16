@@ -15,7 +15,7 @@ class MongoDB:
             connection_url = MongoDBConfig.CONNECTION_URL
         
 
-        self.previous_7days = int(time.time() -TimeConstants.DAYS_7)
+        self.previous_3days = int(time.time() -TimeConstants.DAYS_3)
 
         self.connection_url = connection_url.split('@')[-1]
         self.connection = MongoClient(connection_url)
@@ -59,7 +59,7 @@ class MongoDB:
         self._db[f"{name}"].bulk_write(bulk_updates)
 
     def get_latest_tweets(self):
-        data = self._db['tweets'].find({'timestamp':{'$gte':self.previous_7days}})
+        data = self._db['tweets'].find({'timestamp':{'$gte':self.previous_3days}})
         data_lst = []
         for da in data:
             da_dct ={}

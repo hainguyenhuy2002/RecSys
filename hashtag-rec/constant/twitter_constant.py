@@ -1,5 +1,7 @@
 class Dapps:
     def __init__(self, dapps_name=None):
+        if dapps_name == 'world':
+            self.following = []
         if dapps_name =='trava':
             self.following = \
             [
