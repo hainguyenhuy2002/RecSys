@@ -100,20 +100,21 @@ class QueryTokenPriceSchedulerJob(SchedulerJob):
                 idCoin = c['idCoingecko']
                 address = c['address']
                 id = c['_id']
-                historical_token_price = c['priceChangeLogs']
-                if (historical_token_price!= {}):
-                    if int(max(historical_token_price)) <(time.time() -TimeConstants.DAYS_3):
-                        continue
-                    else:
-                        historical_token_round_price = dict()
-                        historical_token_round_price['_id'] = id
-                        historical_token_round_price['chainId'] = chain_id
-                        historical_token_round_price['address'] = address
-                        historical_token_round_price['idCoingecko'] = idCoin
-                        historical_token_round_price['priceHistory'] = {get_daily_timestamp(int(timestamp)*1000): value \
-                                                                        for timestamp, value in historical_token_price.items()}
-                        token_list.append(historical_token_round_price)
-                
+                if 'priceChangeLogs' in c:
+                    historical_token_price = c['priceChangeLogs']
+                    if (historical_token_price!= {}):
+                        if int(max(historical_token_price)) <(time.time() -TimeConstants.DAYS_3):
+                            continue
+                        else:
+                            historical_token_round_price = dict()
+                            historical_token_round_price['_id'] = id
+                            historical_token_round_price['chainId'] = chain_id
+                            historical_token_round_price['address'] = address
+                            historical_token_round_price['idCoingecko'] = idCoin
+                            historical_token_round_price['priceHistory'] = {get_daily_timestamp(int(timestamp)*1000): value \
+                                                                            for timestamp, value in historical_token_price.items()}
+                            token_list.append(historical_token_round_price)
+                    
             self.mongodb.update_docs(collection_name=self.name, data=token_list, merge=True)  
 
 
