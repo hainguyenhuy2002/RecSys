@@ -65,8 +65,8 @@ class MongoDB:
             da_dct['_id'] = da['_id']
             da_dct['timestamp'] = da['timestamp']
             if 'quotedTweet' in da:
-                additional_text = da['quotedTweet']['text']
-                da_dct['content'] = 'Author: '+da['authorName']+'; Content: ' +da['text'] + '\n\n' + additional_text
+                #additional_text = da['quotedTweet']['text']
+                da_dct['content'] = 'Author: '+da['authorName']+'; Content: ' +da['text']
             else:
                 da_dct['content'] = 'Author: '+da['authorName']+'; Content: ' +da['text']
             tweets_lst.append(da_dct)
