@@ -28,6 +28,9 @@ class Chains:
     arbitrum = '0xa4b1'
     optimism = '0xa'
     avalanche = '0xa86a'
+    tron = '0x2b6653dc'
+
+
     none_wrapped_token = [arbitrum, fantom, optimism]
     all = [bsc, ethereum, fantom, polygon, arbitrum, optimism, avalanche]
     alls = [bsc, ethereum, polygon]

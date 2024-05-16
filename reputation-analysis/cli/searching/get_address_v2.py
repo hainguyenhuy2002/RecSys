@@ -93,8 +93,8 @@ def get_address_v2(name, wallets_per_job, hot_path, burn_mint_path, token_price,
 
     # with open("data/special_wallets/multichain_transaction.json","r") as rfile:
     #     multichain_transaction = json.load(rfile)
-
-    flagged_lst = [i for i in range(1,4124)]
+    largest_flag = mongo_klg_wallets.get_largest_flag() +1
+    flagged_lst = [i for i in range(1, largest_flag)]
     exchange_service = GetTransactionInfoService(
                              mongo_community=mongo_community,
                              historical_token_price=historical_token_price,

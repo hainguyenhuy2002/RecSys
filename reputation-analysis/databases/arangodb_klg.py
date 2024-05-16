@@ -79,13 +79,9 @@ class ArangoDB:
                 numberReceived: doc.numberReceived,
             }
         '''
-
- #       bind_vars = {'value': f'ethereum_addresses/0x1_{wallet}'}
         cursor = self._db.aql.execute(aql_query, bind_vars={'value':wallet})
         cur = [doc for doc in cursor]
         return cur
-
-
 
     def get_number_of_relationships(self):
         return len(self._transfers_col)
