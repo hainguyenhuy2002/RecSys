@@ -17,12 +17,12 @@ logger = get_logger('Get token price Scheduler')
 
 
 @click.command(context_settings=dict(help_option_names=['-h', '--help']))
+@click.option('-c', '--chain', type=str, default=None, show_default=True,
+              help='chain name')
 @click.option('-n', '--name', type=str,
               help='name of collection')
 @click.option('-f', '--failed', type=str, default=None, show_default=True,
               help='Is token has failed addresses?')
-@click.option('-cr', '--crawl', type=bool, default=True, show_default=True,
-              help='crawl price??')
 @click.option('-b', '--batch-size', type=int, 
               help='Batch size - number of addresses each worker processes')
 @click.option('-w', '--max-workers', default=8, show_default=True, type=int,
@@ -34,56 +34,67 @@ logger = get_logger('Get token price Scheduler')
 @click.option('--run-now', default=True, show_default=True, type=bool,
               help='False to wait until interval then run')
 
-def get_token_price(name, failed, crawl, batch_size, max_workers, interval, delay, run_now):
-    chains = Chains.all
-    logger.info(f"Get token price from chains: {chains}")
-    for chain_id in chains:
+def get_token_price(chain, name, failed, batch_size, max_workers, interval, delay, run_now):
+    mongodb = MongoDB()
+    mongo_klg = MongoDBEntity()
+    if chain!= None:
+        chain_id = Chains.mapping[chain]
         logger.info(f"Get top token price in {chain_id}")
-        #chain_id = Chains.mapping[chain]
-        mongo_klg = MongoDBEntity()
-        mongo_db = MongoDB()
-        if crawl == True:
-            if failed == None:
-                cursor =mongo_klg._db['smart_contracts'].find({"chainId": chain_id, "idCoingecko":{"$exists":True},  "price":{"$gt":0}, "marketCap":{"$gt":1000000}})
-                columns = ['_id','address','idCoingecko']
-                token_list = []
-                for c in cursor:
-                    token_list.append({key: c.get(key) for key in columns})
-            else:
-                try:
-                    tokens = []
-                    with open(f'data/log_file/failed_tokens/failed_{chain_id}_tokens/failed_tokens.json') as file:
-                        for failed_token in file:
-                            failed_addresses = json.loads(failed_token)
-                            tokens.append(failed_addresses)
-                except Exception as e:
-                    logger.info(e)
-                    logger.info(f"{chain_id} does not have failed top tokens addresses")
-                    return
+        job = CrawlTokenPriceSchedulerJob(
+            interval=interval,
+            delay=delay,
+            run_now=run_now,
+            failed=failed,
+            mongodb=mongodb, 
+            mongo_klg=mongo_klg,
+            name=name, 
+            chain_id=chain_id, 
+            batch_size=batch_size,
+            max_workers=max_workers)
+        job.run()
 
-                token_list = []
-                for token in tokens:
-                    token_info_dct = dict()
-                    token_info = list(mongo_klg._db['smart_contracts'].find({'_id':f'{chain_id}_{token}'}))[0]
-                    token_info_dct['_id'] = token_info['_id']
-                    token_info_dct['address'] = token_info['address']
-                    token_info_dct['idCoingecko'] = token_info['idCoingecko']
-                    token_list.append(token_info_dct)
-            
-            job = GetTokenPriceSchedulerJob(
-                interval=interval,
-                delay=delay,
-                run_now=run_now,
-                mongodb=mongo_db, 
-                name=name, 
-                chain_id=chain_id, 
-                token_list=token_list,
-                batch_size=batch_size,
-                max_workers=max_workers)
-            job.run()
-        else:
-            cursor =mongo_klg._db['smart_contracts'].find({"chainId": chain_id, "idCoingecko":{"$exists":True},  "price":{"$gt":0}, "marketCap":{"$gt":1000000}})
-            columns = ['_id','address','idCoingecko','priceChangeLogs']
+    else:
+        job=QueryTokenPriceSchedulerJob(
+            interval=interval,
+            delay=delay,
+            run_now=run_now,
+            mongodb=mongodb, 
+            mongo_klg=mongo_klg,
+            name=name, 
+            batch_size=batch_size,
+            max_workers=max_workers
+        )
+        job.run()
+
+
+class QueryTokenPriceSchedulerJob(SchedulerJob):
+    def __init__(self,
+                    # scheduler job
+                    interval,
+                    delay,
+                    run_now,
+                    # loader job
+                    mongo_klg,
+                    mongodb,
+                    name,
+                    batch_size,
+                    max_workers,
+                    ):
+            scheduler = f"^{run_now}@{interval}/{delay}#true"
+            super().__init__(scheduler)
+            self.mongodb = mongodb
+            self.mongo_klg = mongo_klg
+            self.name = name
+            self.batch_size = batch_size
+            self.max_workers = max_workers
+
+    def _execute(self, *args, **kwargs):
+        chains = Chains.all
+        logger.info(f"Get token price from chains: {chains}")
+        for chain_id in chains:
+            logger.info(f"Get top token price in {chain_id}")
+            cursor =self.mongo_klg._db['smart_contracts'].find({"chainId": chain_id, "idCoingecko":{"$exists":True},  \
+                                                                "price":{"$gt":0}, "marketCap":{"$gt":1000000}}) 
             token_list = []
             for c in cursor:
                 idCoin = c['idCoingecko']
@@ -103,14 +114,14 @@ def get_token_price(name, failed, crawl, batch_size, max_workers, interval, dela
                                                                         for timestamp, value in historical_token_price.items()}
                         token_list.append(historical_token_round_price)
                 
-            mongo_db.update_docs(collection_name=name, data=token_list, merge=True)    
+            self.mongodb.update_docs(collection_name=self.name, data=token_list, merge=True)  
 
 
 
-    
 
 
-class GetTokenPriceSchedulerJob(SchedulerJob):
+
+class CrawlTokenPriceSchedulerJob(SchedulerJob):
     def __init__(self,
                  # scheduler job
                  interval,
@@ -118,28 +129,56 @@ class GetTokenPriceSchedulerJob(SchedulerJob):
                  run_now,
                  # loader job
                  mongodb,
+                 mongo_klg,
                  name,
+                 failed,
                  chain_id,
-                 token_list,
                  batch_size,
                  max_workers,
                  ):
-        self.chain_id = chain_id
         scheduler = f"^{run_now}@{interval}/{delay}#true"
         super().__init__(scheduler)
-
         self.mongodb = mongodb
+        self.mongo_klg = mongo_klg
         self.name = name
+        self.failed = failed
         self.chain_id = chain_id
-        self.token_list = token_list
         self.batch_size = batch_size
         self.max_workers = max_workers
 
+
     def _execute(self, *args, **kwargs):
+        cursor =self.mongo_klg._db['smart_contracts'].find({"chainId": self.chain_id, "idCoingecko":{"$exists":True},  "price":{"$gt":0}, "marketCap":{"$gt":1000000}})
+        token_list = []
+        columns = ['_id','address','idCoingecko']
+        if self.failed == None:
+            for c in cursor:
+                token_list.append({key: c.get(key) for key in columns})
+        else:
+            try:
+                tokens = []
+                with open(f'data/log_file/failed_tokens/failed_{self.chain_id}_tokens/failed_tokens.json') as file:
+                    for failed_token in file:
+                        failed_addresses = json.loads(failed_token)
+                        tokens.append(failed_addresses)
+            except Exception as e:
+                logger.info(e)
+                logger.info(f"{self.chain_id} does not have failed top tokens addresses")
+                return
+
+            for token in tokens:
+                token_info_dct = dict()
+                token_info = list(self.mongo_klg._db['smart_contracts'].find({'_id':f'{self.chain_id}_{token}'}))[0]
+                token_info_dct['_id'] = token_info['_id']
+                token_info_dct['address'] = token_info['address']
+                token_info_dct['idCoingecko'] = token_info['idCoingecko']
+                token_list.append(token_info_dct)
+
+
         job = GetTokenPrice(exporter=self.mongodb, 
                             name=self.name, 
                             chain_id=self.chain_id, 
-                            token_addresses=self.token_list,
+                            token_addresses=token_list,
                             batch_size=self.batch_size,
                             max_workers=self.max_workers)
         job.run()
