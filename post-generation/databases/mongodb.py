@@ -42,7 +42,7 @@ class MongoDB:
     def get_documents_by_ids(self, col_name: str, ids: list):
         return self._db[col_name].find({'_id': {'$in': ids}})
     
-    # get documents that is in 7 days latest
+    # get documents that is in 2 days latest
     
     def get_documents_by_time(self, col_name: str):
         interval = TimeConstants.DAYS_2
