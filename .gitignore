@@ -121,12 +121,12 @@ celerybeat.pid
 
 # Environments
 .env
-.venv
+post-generation/.venv
 env/
-venv/
+post-generation/venv/
 ENV/
-env.bak/
-venv.bak/
+post-generation/env.bak/
+post-generation/venv.bak/
 
 # Spyder project settings
 .spyderproject
@@ -161,7 +161,7 @@ cython_debug/
 
 # Sync files
 last_synced.txt
-
+reputation-analsiss/
 test/
-data/
+post-generation/data/
 .DS_Store
