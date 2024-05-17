@@ -27,6 +27,9 @@ from utils.logger_utils import get_logger
               help='Batch size - number of addresses each worker processes')
 @click.option('-w', '--max-workers', default=8, show_default=True, type=int,
               help='The number of workers')
+
+
+
 def get_address_v2(name, wallets_per_job, hot_path, burn_mint_path, token_price, batch_size, max_workers):
     logger = get_logger("Start to get addresses exchange info")
     ## get chains

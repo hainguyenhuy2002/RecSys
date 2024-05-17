@@ -44,6 +44,8 @@ class GetAddress(BaseJob):
                         numTransaction = sum(value for key, value in wallet['dailyAllTransactions'].items() if key >= str(self.three_months_ago))
                         if 0<numTransaction <= 5000:
                             wallet['numTransaction'] = numTransaction
+                            
+
                             if 'type' not in wallet:
                                 wallet['type'] = 0
                             wallet_lst.append(wallet)
