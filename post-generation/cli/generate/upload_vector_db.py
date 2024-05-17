@@ -11,6 +11,7 @@ from models.embedding_models import EmbeddingModel
 from constant.time_constant import TimeConstants
 from jobs.cli_job import CLIJob
 from utils.logger_utils import get_logger
+from utils.preprocess_utils import get_lemma
 @click.command(context_settings=dict(help_option_names=['-h', '--help']))
 @click.option('-i', '--interval', default=TimeConstants.A_DAY, type=int, help='Sleep time')
 
@@ -50,20 +51,22 @@ class UploadVectorDB(CLIJob):
 
         df_tweet = mongo_db.get_tweet()
 
-        self.logg.info("Successfully get tweet data ...")
+        self.logg.info(f"Successfully get tweet data: {len(df_tweet)} tweets")
+
         self.logg.info("Start to process tweet data ...")
-        
+        df_tweet['tweet_length'] = df_tweet['content'].apply(len)
+        df_tweet_filter =df_tweet[(df_tweet['tweet_length']>200)].reset_index(drop=True)        
         nodes = []
         nodes_with_timestamp = {}
 
-        for index, row in df_tweet.iterrows():
+        for index, row in df_tweet_filter.iterrows():
             node = TextNode(text=row['content'], id_=f"{row['authorName']}_{row['_id']}", )
             nodes.append(node)
             nodes_with_timestamp[node.id_] = row['timestamp']
 
         for node in nodes:
             node_embedding = embed_model._embed_model.get_text_embedding(
-                node.get_content(metadata_mode="all")
+                get_lemma(node.get_content(metadata_mode="all"))
             )
             node.embedding = node_embedding
             node.metadata = node_to_metadata_dict(node)
