@@ -29,20 +29,18 @@ class PostgresDB:
         if not connection_url:
             connection_url = PostgresRAGDBConfig.CONNECTION_URL
         self.db_name, self.host, self.password, self.port, self.user = extract_db_details(connection_url)
-        self.vetor_store = PGVectorStore.from_params(
-                                database=self.db_name,
-                                host=self.host,
-                                password=self.password,
-                                port=self.port,
-                                user=self.user,
-                                table_name=PostgresRAGDBConfig.RAG_TABLE,
-                                embed_dim=int(EmbeddingModelConfig.EMBEDDING_DIMENSION)
-                                )
+        self.vector_store = PGVectorStore.from_params(
+            database=self.db_name,
+            host=self.host,
+            password=self.password,
+            port=self.port,
+            user=self.user,
+            table_name=PostgresRAGDBConfig.RAG_TABLE,
+            embed_dim=int(EmbeddingModelConfig.EMBEDDING_DIMENSION)
+        )
         self.engine = create_engine(connection_url)
         self.session = Session(bind=self.engine)
         self.embedding_model = EmbeddingModel()
-        if self.table_exists(f'data_{PostgresRAGDBConfig.RAG_TABLE}'):
-            self.ensure_unique_constraint()
 
     def table_exists(self, table_name):
         """Check if a table exists in the database."""
@@ -51,53 +49,31 @@ class PostgresDB:
 
     def ensure_unique_constraint(self):
         """Ensure the node_id column has a unique constraint."""
-        try:
-            check_constraint_query = text(f"""
-            SELECT conname
-            FROM pg_constraint
-            WHERE conname = '{Columns.NODE_ID}'
+        with self.session.begin():
+            alter_query = text(f"""
+            ALTER TABLE data_{PostgresRAGDBConfig.RAG_TABLE}
+            ADD CONSTRAINT {PostgresRAGDBConfig.RAG_TABLE}_node_id UNIQUE ({Columns.NODE_ID})
             """)
-            result = self.session.execute(check_constraint_query).fetchone()
-            print(result)
+            self.session.execute(alter_query)
+            logger.info("Unique constraint on node_id added successfully.")
 
-            if not result:
-                alter_query = text(f"""
-                ALTER TABLE data_{PostgresRAGDBConfig.RAG_TABLE}
-                ADD CONSTRAINT {Columns.NODE_ID} UNIQUE ({Columns.NODE_ID})
-                """)
-                self.session.execute(alter_query)
-                self.session.commit()
-                logger.info("Unique constraint on node_id added successfully.")
-            else:
-                logger.info("Unique constraint on node_id already exists.")
-        except SQLAlchemyError as e:
-            logger.error(f"Error ensuring unique constraint on node_id: {e}")
-            self.session.rollback()
-        finally:
-            self.session.close()
-
-    # update database, if a node with the same id exists, update it
-    def upsert_nodes(self, nodes, nodes_with_timestamp):
-        if not self.table_exists(f'data_{PostgresRAGDBConfig.RAG_TABLE}'):
-            self.vetor_store.add(nodes)
-
-            # Add a column to store the timestamp of the node
-            try:
+    def add_timestamp_column(self):
+        """Add a timestamp column to the table if it doesn't already exist."""
+        try:
+            with self.session.begin():
                 add_timestamp_column_query = text(f"""
                 ALTER TABLE data_{PostgresRAGDBConfig.RAG_TABLE}
-                ADD COLUMN {Columns.TIMESTAMP} BIGINT
+                ADD COLUMN IF NOT EXISTS {Columns.TIMESTAMP} BIGINT
                 """)
                 self.session.execute(add_timestamp_column_query)
-                self.session.commit()
                 logger.info("Timestamp column added successfully.")
-            except SQLAlchemyError as e:
-                logger.error(f"Error adding timestamp column: {e}")
-                self.session.rollback()
-            finally:
-                self.session.close()
+        except SQLAlchemyError as e:
+            logger.error(f"Error adding timestamp column: {e}")
 
-            # Insert the timestamp values into the database
-            try:
+    def update_timestamps(self, nodes_with_timestamp):
+        """Update the timestamp values for the nodes."""
+        try:
+            with self.session.begin():
                 update_timestamp_query = text(f"""
                 UPDATE data_{PostgresRAGDBConfig.RAG_TABLE}
                 SET {Columns.TIMESTAMP} = :timestamp
@@ -105,15 +81,26 @@ class PostgresDB:
                 """)
                 for node_id, timestamp in nodes_with_timestamp.items():
                     self.session.execute(update_timestamp_query, {'timestamp': timestamp, 'node_id': node_id})
-                    self.session.commit()
-            except SQLAlchemyError as e:
-                logger.error(f"Error updating timestamp values: {e}")
-                self.session.rollback()
-            finally:
-                self.session.close()
+        except SQLAlchemyError as e:
+            logger.error(f"Error updating timestamp values: {e}")
 
+    def upsert_nodes(self, nodes, nodes_with_timestamp):
+        if not self.table_exists(f'data_{PostgresRAGDBConfig.RAG_TABLE}'):
+            self.vector_store.add(nodes)
+            try:
+                self.ensure_unique_constraint()
+            except SQLAlchemyError as e:
+                logger.error(f"Error ensuring unique constraint: {e}")
+
+            self.add_timestamp_column()
+            self.update_timestamps(nodes_with_timestamp)
         else:
             """Upsert a list of nodes into the database. If the node_id exists, overwrite the existing entry."""
+            try:
+                self.ensure_unique_constraint()
+            except SQLAlchemyError as e:
+                logger.error(f"Error ensuring unique constraint: {e}")
+
             try:
                 # Prepare the insert query with ON CONFLICT clause
                 insert_query = text(f"""
@@ -143,15 +130,12 @@ class PostgresDB:
                 # Log the percentage of nodes upserted at every 10% increment
                 chunk_size = max(1, len(values_to_insert) // 10)  # Ensure chunk_size is at least 1
                 for i in range(0, len(values_to_insert), chunk_size):
-                    self.session.execute(insert_query, values_to_insert[i:i + chunk_size])
-                    self.session.commit()
-                    percentage_done = (i // chunk_size + 1) * 10
-                    logger.info(f"Upserted {percentage_done}% of nodes.")
+                    with self.session.begin():
+                        self.session.execute(insert_query, values_to_insert[i:i + chunk_size])
+
+                        # Log 10% increments
+                        percentage_done = round((i + chunk_size) / len(values_to_insert) * 100)
+                        logger.info(f"Upserted {percentage_done}% of nodes.")
 
             except SQLAlchemyError as e:
                 logger.error(f"Error upserting nodes: {e}")
-                self.session.rollback()
-            finally:
-                self.session.close()
-
-                
