@@ -97,7 +97,6 @@ class GetTransactionInfoService():
                                     dict_lookup[wallet].update(update)  # Update in here
                                     dict_lookup[wallet].update(max_time_dct) 
                                     dict_lookup[wallet].update(tags_dct)
-                            print(profile_info_dict)
                             self.mongo_community.update_docs(collection_name=self.filename, data=profile_info_dict, merge=True)
                         except Exception as e:
                             profiling.to_csv(f"data/log_file/address_info/{chain_id}/checking.csv", index=False)
