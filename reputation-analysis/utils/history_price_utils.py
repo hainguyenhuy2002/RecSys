@@ -5,7 +5,10 @@ from utils.list_dict_utils import update_dict_of_dict
 from utils.logger_utils import get_logger
 
 def get_daily_timestamp(timestamp):
-    return str(timestamp -timestamp%86400000)
+    if len(str(timestamp)) ==10:
+        return str(timestamp -timestamp%86400)
+    elif len(str(timestamp)) == 13:
+        return str(timestamp -timestamp%86400000)
 
 def format_prices(prices):
     formatted_prices = {}

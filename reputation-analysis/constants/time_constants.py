@@ -12,4 +12,5 @@ class TimeConstants:
     DAYS_7 = 7 * A_DAY
     DAYS_30 = 30 * A_DAY
     DAYS_31 = 31 * A_DAY
+    MONTHS_3 = 90 * A_DAY
     A_YEAR = 365 * A_DAY

@@ -32,9 +32,9 @@ class Chains:
 
 
     none_wrapped_token = [arbitrum, fantom, optimism]
-    all = [bsc, ethereum, fantom, polygon, arbitrum, optimism, avalanche]
-    alls = [bsc, ethereum, polygon]
-    all_name = ['bsc', 'ethereum', 'polygon']
+#    all = [bsc, ethereum, fantom, polygon, arbitrum, optimism, avalanche]
+    alls = [bsc, ethereum, polygon, fantom, arbitrum, optimism, avalanche]
+    all_name = ['bsc', 'ethereum', 'polygon', 'fantom', 'arbitrum', 'optimism', 'avalanche']
 
     mapping = {
         'bsc': bsc,
@@ -49,6 +49,10 @@ class Chains:
         '0x38': 'bsc',
         '0x1': 'ethereum',
         '0x89': 'polygon',
+        '0xfa': 'fantom',
+        '0xa4b1': 'arbitrum',
+        '0xa': 'optimism',
+        '0xa86a': 'avalanche'
     }
     names = {
         bsc: 'bsc',

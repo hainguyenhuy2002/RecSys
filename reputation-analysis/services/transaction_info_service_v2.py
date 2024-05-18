@@ -1,8 +1,10 @@
 import pandas as pd 
+import time 
 
 from constants.network_constants import NATIVE_TOKEN
 from utils.logger_utils import write_file
 from utils.list_dict_utils import flatten_and_concat, rename_key, update_list_of_dict
+from utils.history_price_utils import get_daily_timestamp
 from utils.upload_utils import update_format
 from databases.mongodb_main import MongoDBMain
 from databases.postgresql import PostgresDB
@@ -85,10 +87,18 @@ class GetTransactionInfoService():
                                 wallet = update['wallet']
                                 if (wallet in dict_lookup):
                                     max_time_dct = dict()
+                                    tags_dct = dict()
+                                    tags_time = dict()
                                     max_time_dct['lattestTimestamp'] = max_timestamp[wallet]
+                                    now_time = time.time()
+                                    now_daily_time = get_daily_timestamp(int(now_time))
+                                    tags_time[f'{now_daily_time}'] = update['tags']
+                                    tags_dct['tags'] = tags_time
                                     dict_lookup[wallet].update(update)  # Update in here
                                     dict_lookup[wallet].update(max_time_dct) 
-                            self.mongo_community.update_data(name=self.filename, data=profile_info_dict)
+                                    dict_lookup[wallet].update(tags_dct)
+                            print(profile_info_dict)
+                            self.mongo_community.update_docs(collection_name=self.filename, data=profile_info_dict, merge=True)
                         except Exception as e:
                             profiling.to_csv(f"data/log_file/address_info/{chain_id}/checking.csv", index=False)
                             print('oh no having error in combinning 2 dataframe')
@@ -114,19 +124,19 @@ class GetTransactionInfoService():
                 if len(address_info_lst) !=0:
                     addresses_info_df = pd.DataFrame(address_info_lst)
                     wallet_transaction_info = addresses_info_df.groupby(['from_address', 'to_address'])\
-                                                                        .agg({"block_timestamp":tuple,  
-                                                                            'amount':tuple, 
-                                                                            "valueInUSD": ['sum', tuple]})
+                                                                        .agg({"block_timestamp":list,  
+                                                                            'amount':list, 
+                                                                            "valueInUSD": ['sum', list]})
                     
                     wallet_transaction_info.columns = ['{}_{}'.format(col[0], col[1]) for col in wallet_transaction_info.columns]
                     sending_transaction_info = wallet_transaction_info.reset_index()\
                                         .rename(
                                             columns={"from_address": "wallet",
                                                      "to_address":"interactedWallet",
-                                                     "block_timestamp_tuple":"timestampHistory",
-                                                     "valueInUSD_tuple":"valueInUSDHistory", 
+                                                     "block_timestamp_list":"timestampHistory",
+                                                     "valueInUSD_list":"valueInUSDHistory", 
                                                      "valueInUSD_sum":"totalValueInUSD", 
-                                                     "amount_tuple":"amountHistory"})
+                                                     "amount_list":"amountHistory"})
                 
                 if (len(address_info_lst) ==0 ):
                     sending_transaction_info = pd.DataFrame()
@@ -146,19 +156,19 @@ class GetTransactionInfoService():
                 if len(address_info_lst) !=0:
                     addresses_info_df = pd.DataFrame(address_info_lst)
                     wallet_transaction_info = addresses_info_df.groupby(['from_address', 'to_address'])\
-                                                                        .agg({"block_timestamp":tuple,  
-                                                                              'amount':tuple, 
-                                                                              "valueInUSD": ['sum', tuple]})
+                                                                        .agg({"block_timestamp":list,  
+                                                                              'amount':list, 
+                                                                              "valueInUSD": ['sum', list]})
                     
                     wallet_transaction_info.columns = ['{}_{}'.format(col[0], col[1]) for col in wallet_transaction_info.columns]
                     receiving_transaction_info = wallet_transaction_info.reset_index()\
                                         .rename(
                                             columns={"to_address": "wallet",
                                                      "from_address":"interactedWallet", 
-                                                     "block_timestamp_tuple":"timestampHistory", 
-                                                     "valueInUSD_tuple":"valueInUSDHistory", 
+                                                     "block_timestamp_list":"timestampHistory", 
+                                                     "valueInUSD_list":"valueInUSDHistory", 
                                                      "valueInUSD_sum":"totalValueInUSD", 
-                                                     "amount_tuple":"amountHistory"})
+                                                     "amount_list":"amountHistory"})
                     
                 if (len(address_info_lst) ==0 ):
                     receiving_transaction_info = pd.DataFrame()
@@ -193,18 +203,18 @@ class GetTransactionInfoService():
                                      )
                         wallet_transfer_info = transfer_concat.groupby(
                             ['from_address', 'to_address', 'contractAddress'])  \
-                                .agg({"block_number":tuple, 
-                                      'amount':tuple, 
-                                      "valueInUSD": ['sum',tuple]}
+                                .agg({"block_number":list, 
+                                      'amount':list, 
+                                      "valueInUSD": ['sum',list]}
                                     )
                         wallet_transfer_info.columns = ['{}_{}'.format(col[0], col[1]) for col in wallet_transfer_info.columns]
                         sending_transfer_info = wallet_transfer_info.reset_index().rename(
                                                 columns={"from_address": "wallet",
                                                          "to_address":"interactedWallet", 
-                                                         "block_number_tuple":"timestampHistory", 
-                                                         "valueInUSD_tuple":"valueInUSDHistory",
+                                                         "block_number_list":"timestampHistory", 
+                                                         "valueInUSD_list":"valueInUSDHistory",
                                                          "valueInUSD_sum":"totalValueInUSD", 
-                                                         "amount_tuple":"amountHistory"})
+                                                         "amount_list":"amountHistory"})
                     else:
                         sending_transfer_info = pd.DataFrame()
 
@@ -231,16 +241,16 @@ class GetTransactionInfoService():
                                                                           "contract_address":"contractAddress"})
                         
                         wallet_transfer_info = transfer_concat.groupby(['from_address', 'to_address', 'contractAddress']).\
-                                                                agg({"block_number":tuple, 
-                                                                'amount':tuple, "valueInUSD": ['sum',tuple]})
+                                                                agg({"block_number":list, 
+                                                                'amount':list, "valueInUSD": ['sum',list]})
                         wallet_transfer_info.columns = ['{}_{}'.format(col[0], col[1]) for col in wallet_transfer_info.columns]
                         receiving_transfer_info = wallet_transfer_info.reset_index()\
                                         .rename(columns={"to_address": "wallet",
                                                          "from_address":"interactedWallet", 
-                                                         "block_number_tuple":"timestampHistory",
-                                                         "valueInUSD_tuple":"valueInUSDHistory",            
+                                                         "block_number_list":"timestampHistory",
+                                                         "valueInUSD_list":"valueInUSDHistory",            
                                                          "valueInUSD_sum":"totalValueInUSD", 
-                                                         "amount_tuple":"amountHistory"})
+                                                         "amount_list":"amountHistory"})
                     else: 
                         receiving_transfer_info = pd.DataFrame()
 
