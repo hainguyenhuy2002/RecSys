@@ -62,16 +62,15 @@ class MongoDBMain:
         return addresses_info
 
     def get_largest_block(self):
-        uppper_time =1715472000 #12/05/2024
+        uppper_time =int(time.time()) - TimeConstants.A_DAY #17s/05/2024
         query = {'timestamp':{'$lte':uppper_time}}
         projection =  {'timestamp':1,'number':1}
         cursor = self._db.blocks.find(query, projection=projection).sort('timestamp',pymongo.DESCENDING).limit(1)
         return {block['number']: block['timestamp'] for block in cursor}
 
     def get_previous_3month_block(self):
-        time_now = time.time()
-        time_now =1715472000 #12/05/2024
-        lower_time = int(time_now) - 3*TimeConstants.DAYS_30
+        time_now = int(time.time()) - TimeConstants.A_DAY
+        lower_time = int(time_now) - TimeConstants.MONTHS_3
         query = {'timestamp':{'$gte':lower_time}}
         projection =  {'timestamp':1,'number':1}
         cursor = self._db.blocks.find(filter=query,

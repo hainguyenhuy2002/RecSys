@@ -20,7 +20,7 @@ def filter_none_keys(input_dict: dict):
 def flatten_and_concat(tuples):
     flattened = [item for sublist in tuples for item in sublist]
     
-    return tuple(flattened)
+    return flattened
 
 def largest_key_smaller_than(dictionary, value):
     keys = sorted(dictionary.keys())

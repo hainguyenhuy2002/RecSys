@@ -6,7 +6,6 @@ from services.transaction_info_service_v2 import GetTransactionInfoService
 from databases.mongodb_entity import MongoDBEntity
 from databases.mongodb import MongoDB
 from databases.mongodb_main import MongoDBMain
-from databases.postgresql import PostgresDB
 from constants.network_constants import Chains
 from utils.list_dict_utils import get_special_wallet_list
 from utils.history_price_utils import query_historical_prices
@@ -81,22 +80,15 @@ def get_address_v2(name, wallets_per_job, hot_path, burn_mint_path, token_price,
             chain_info['start_block'] = start_block 
             chain_info['end_block'] = end_block
             chain_info['block_timestamp_mappings'] = block_timestamp_mappings
-            #chain_info['mongo_transaction'] = mongo_transaction
-            #chain_info['postgre'] = postgre
-
             chain_info_update[f'{chain_id}'] = chain_info
-
             multichain_transaction.update(chain_info_update)
         logger.info("Done!!!")
-        with open("data/special_wallets/multichain_transaction.json","w") as file:
-            json.dump(multichain_transaction, file, indent=4)
-       # print(multichain_transaction)
+
     except:
         logger.info("Error in multichain transaction info job")
 
-    # with open("data/special_wallets/multichain_transaction.json","r") as rfile:
-    #     multichain_transaction = json.load(rfile)
-    largest_flag = mongo_klg_wallets.get_largest_flag() +1
+
+    largest_flag = mongo_klg.get_largest_flag() +1
     flagged_lst = [i for i in range(1, largest_flag)]
     exchange_service = GetTransactionInfoService(
                              mongo_community=mongo_community,
