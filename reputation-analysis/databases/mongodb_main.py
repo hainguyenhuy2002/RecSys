@@ -65,7 +65,10 @@ class MongoDBMain:
         uppper_time =int(time.time()) - TimeConstants.A_DAY #17s/05/2024
         query = {'timestamp':{'$lte':uppper_time}}
         projection =  {'timestamp':1,'number':1}
-        cursor = self._db.blocks.find(query, projection=projection).sort('timestamp',pymongo.DESCENDING).limit(1)
+        cursor = self._db.blocks.find(query, 
+                                      projection=projection) \
+                                        .sort('timestamp',pymongo.DESCENDING) \
+                                        .limit(1)
         return {block['number']: block['timestamp'] for block in cursor}
 
     def get_previous_3month_block(self):
@@ -74,7 +77,19 @@ class MongoDBMain:
         query = {'timestamp':{'$gte':lower_time}}
         projection =  {'timestamp':1,'number':1}
         cursor = self._db.blocks.find(filter=query,
-                                      projection=projection).sort('timestamp',pymongo.ASCENDING).limit(1)
+                                      projection=projection). \
+                                        sort('timestamp',pymongo.ASCENDING).limit(1)
+        return {block['number']: block['timestamp'] for block in cursor}
+
+    def get_previous_1month_block(self):
+        time_now = int(time.time()) - TimeConstants.A_DAY
+        lower_time = int(time_now) - TimeConstants.DAYS_31
+        query = {'timestamp':{'$gte':lower_time}}
+        projection =  {'timestamp':1,'number':1}
+        cursor = self._db.blocks.find(filter=query,
+                                      projection=projection) \
+                                        .sort('timestamp',pymongo.ASCENDING) \
+                                        .limit(1)
         return {block['number']: block['timestamp'] for block in cursor}
 
     def get_block_number_to_timestamp(self, start_block, end_block) -> Dict[int, int]:
