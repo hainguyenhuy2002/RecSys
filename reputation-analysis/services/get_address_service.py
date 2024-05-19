@@ -46,6 +46,8 @@ class GetAddress(BaseJob):
                             wallet['numTransaction'] = numTransaction
                             if 'type' not in wallet:
                                 wallet['type'] = 0
+                            if 'tags' not in wallet:
+                                wallet['tags'] = []
                             wallet_lst.append(wallet)
             if len(wallet_lst) !=0:
                 jobs = chunk_list(
