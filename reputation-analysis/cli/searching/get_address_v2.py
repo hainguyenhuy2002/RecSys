@@ -67,12 +67,20 @@ def get_address_v2(name, wallets_per_job, hot_path, burn_mint_path, token_price,
             chain_info = dict()
             mongo_transaction = MongoDBMain(chain=chain)
             #postgre = PostgresDB(chain_id=chain_id)
-            for start_block, start in mongo_transaction.get_previous_3month_block().items():
-                start_block = start_block
-                start = start
-            for end_block, end in mongo_transaction.get_largest_block().items():
-                end_block = end_block
-                end = end
+            if chain in ['bsc', 'ethereum', 'polygon']:
+                for start_block, start in mongo_transaction.get_previous_3month_block().items():
+                    start_block = start_block
+                    start = start
+                for end_block, end in mongo_transaction.get_largest_block().items():
+                    end_block = end_block
+                    end = end
+            else:
+                for start_block, start in mongo_transaction.get_previous_1month_block().items():
+                    start_block = start_block
+                    start = start
+                for end_block, end in mongo_transaction.get_largest_block().items():
+                    end_block = end_block
+                    end = end
 
             block_timestamp_mappings = mongo_transaction.get_block_number_to_timestamp(start_block=start_block, end_block=end_block)
             chain_info['start'] = start
@@ -82,7 +90,9 @@ def get_address_v2(name, wallets_per_job, hot_path, burn_mint_path, token_price,
             chain_info['block_timestamp_mappings'] = block_timestamp_mappings
             chain_info_update[f'{chain_id}'] = chain_info
             multichain_transaction.update(chain_info_update)
-        logger.info("Done!!!")
+        
+        successful_chains = multichain_transaction.keys()
+        logger.info("Successful to get chain info of {successful_chains}!!!")
 
     except:
         logger.info("Error in multichain transaction info job")
