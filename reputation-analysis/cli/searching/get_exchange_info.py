@@ -2,7 +2,7 @@ import click
 import json
 
 from services.get_address_service import GetAddress
-from services.transaction_info_service_v2 import GetTransactionInfoService
+from services.transaction_info_service import GetTransactionInfoService
 from databases.mongodb_entity import MongoDBEntity
 from databases.mongodb import MongoDB
 from databases.mongodb_main import MongoDBMain
@@ -29,7 +29,7 @@ from utils.logger_utils import get_logger
 
 
 
-def get_address_v2(name, wallets_per_job, hot_path, burn_mint_path, token_price, batch_size, max_workers):
+def get_exchange_info(name, wallets_per_job, hot_path, burn_mint_path, token_price, batch_size, max_workers):
     logger = get_logger("Start to get addresses exchange info")
     ## get chains
     chain_names = Chains.all_name

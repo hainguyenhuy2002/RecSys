@@ -91,6 +91,17 @@ class MongoDBMain:
                                         .sort('timestamp',pymongo.ASCENDING) \
                                         .limit(1)
         return {block['number']: block['timestamp'] for block in cursor}
+    
+    def get_previous_2day_block(self):
+        time_now = int(time.time()) - TimeConstants.A_DAY
+        lower_time = int(time_now) - TimeConstants.DAYS_2
+        query = {'timestamp':{'$gte':lower_time}}
+        projection =  {'timestamp':1,'number':1}
+        cursor = self._db.blocks.find(filter=query,
+                                      projection=projection) \
+                                        .sort('timestamp',pymongo.ASCENDING) \
+                                        .limit(1)
+        return {block['number']: block['timestamp'] for block in cursor}
 
     def get_block_number_to_timestamp(self, start_block, end_block) -> Dict[int, int]:
         cursor = self.get_blocks_in_range(start_block=start_block, end_block=end_block,
