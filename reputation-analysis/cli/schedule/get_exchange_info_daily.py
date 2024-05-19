@@ -27,8 +27,11 @@ from constants.time_constants import TimeConstants
 
 
 
-def get_exchange_info_daily(name, wallets_per_job, hot_path, burn_mint_path, token_price, batch_size, max_workers):
-    job = CrawlTokenPriceSchedulerJob(name=name,
+def get_exchange_info_daily(name, wallets_per_job, hot_path, burn_mint_path, token_price, batch_size, max_workers, interval, delay, run_now):
+    job = CrawlTokenPriceSchedulerJob(interval=interval,
+                                      delay=delay,
+                                      run_now=run_now,
+                                      name=name,
                                       wallets_per_job=wallets_per_job,
                                       hot_path=hot_path,
                                       burn_mint_path=burn_mint_path,
