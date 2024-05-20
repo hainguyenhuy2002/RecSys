@@ -39,8 +39,8 @@ def get_exchange_info_service(name, wallets_per_job, hot_path, burn_mint_path, t
 
     ## connect to mongo main, timestamp, get the multichain info 
     logger.info("Getting multichain info: chainId, start/end timestamp, start/end block")
+    multichain_transaction = dict()
     if daily == False:
-        multichain_transaction = dict()
         try:
             for chain in chain_names:
                 chain_id = Chains.mapping[chain]
