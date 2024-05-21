@@ -3,7 +3,7 @@ import time
 
 from constants.network_constants import NATIVE_TOKEN
 from utils.logger_utils import write_file
-from utils.list_dict_utils import flatten_and_concat, rename_key, update_list_of_dict
+from utils.list_dict_utils import flatten_and_concat, rename_key, update_list_of_dict, chunk_list
 from utils.history_price_utils import get_daily_timestamp
 from utils.upload_utils import update_format
 from databases.mongodb_main import MongoDBMain
@@ -97,7 +97,10 @@ class GetTransactionInfoService():
                                     dict_lookup[wallet].update(update)  # Update in here
                                     dict_lookup[wallet].update(max_time_dct) 
                                     dict_lookup[wallet].update(tags_dct)
-                            self.mongo_community.update_docs(collection_name=self.filename, data=profile_info_dict, merge=True)
+
+                            update_jobs = chunk_list(input_list=profile_info_dict, chunk_size=200)
+                            for job in update_jobs:
+                                self.mongo_community.update_docs(collection_name=self.filename, data=job, merge=True)
                         except Exception as e:
                             profiling.to_csv(f"data/log_file/address_info/{chain_id}/checking.csv", index=False)
                             print('oh no having error in combinning 2 dataframe')
