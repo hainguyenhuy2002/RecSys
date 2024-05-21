@@ -14,9 +14,11 @@ from utils.logger_utils import get_logger
 from utils.preprocess_utils import get_lemma
 @click.command(context_settings=dict(help_option_names=['-h', '--help']))
 @click.option('-i', '--interval', default=TimeConstants.A_DAY, type=int, help='Sleep time')
+@click.option('-s', '--social', default='twitter', type=str, help='social type')
 
-def upload_vector_db(interval):
-    job = UploadVectorDB(interval=interval)
+def upload_vector_db(interval, social):
+    job = UploadVectorDB(interval=interval,
+                         social=social)
     job.run()
 
 def configure_loggers():
@@ -28,10 +30,10 @@ def configure_loggers():
     return logg, progress_logger, execute_logger
 
 class UploadVectorDB(CLIJob):
-    def __init__(self, interval=None, end_timestamp=None, retry=True):
+    def __init__(self, interval=None, end_timestamp=None, retry=True, social='twitter'):
         super().__init__(interval, end_timestamp, retry)
         self.logg, self.progress_logger, self.execute_logger = configure_loggers()
-
+        self.social = social
     def _pre_start(self):
         self.logg.info("Start to connect model and database ...")
 
@@ -39,7 +41,10 @@ class UploadVectorDB(CLIJob):
         ...
 
     def _execute(self, *args, **kwargs):
-        self.upload_vector_database_twitter()
+        if self.social == 'twitter':
+            self.upload_vector_database_twitter()
+        if self.social == 'telegram':
+            self.upload_vector_database_tele()
         # self.upload_vector_database_discord()
 
     def upload_vector_database_twitter(self):
@@ -82,13 +87,13 @@ class UploadVectorDB(CLIJob):
         mongo_db = MongoDB()
         posgre_db = PostgresDB()
 
-        self.logg.info("Start to get tweet data ...")
+        self.logg.info("Start to get tele data ...")
 
         df_tele = mongo_db.get_tele()
 
-        self.logg.info(f"Successfully get tweet data: {len(df_tele)} messages")
+        self.logg.info(f"Successfully get tele data: {len(df_tele)} messages")
 
-        self.logg.info("Start to process tweet data ...")
+        self.logg.info("Start to process tele data ...")
         df_tele['message_length'] = df_tele['message'].apply(len)
         df_tele_filter =df_tele[(df_tele['message_length']>200)].reset_index(drop=True)        
         nodes = []
@@ -106,8 +111,8 @@ class UploadVectorDB(CLIJob):
             node.embedding = node_embedding
             node.metadata = node_to_metadata_dict(node)
  
-        self.logg.info("Successfully process tweet data ...")
-        self.logg.info("Start to upload tweet data ...")
+        self.logg.info("Successfully process tele data ...")
+        self.logg.info("Start to upload tele data ...")
 
         posgre_db.upsert_nodes(nodes, nodes_with_timestamp)
-        self.logg.info("Successfully upload tweet data ...")
+        self.logg.info("Successfully upload tele data ...")

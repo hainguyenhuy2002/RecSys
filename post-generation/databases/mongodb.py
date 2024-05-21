@@ -45,7 +45,7 @@ class MongoDB:
     # get documents that is in 7 days latest
     
     def get_documents_by_time(self, col_name: str):
-        interval = TimeConstants.DAYS_2
+        interval = TimeConstants.DAYS_7
         timestamp = round_timestamp(int(time.time()), TimeConstants.A_DAY)
         time_interval = timestamp - int(interval)
 
@@ -78,11 +78,13 @@ class MongoDB:
         teles_lst = []
         cursor = self.get_documents_by_time('telegram_messages_announcement')
         for da in cursor:
-            da_dct ={}
-            da_dct['message'] = da['message']
-            da_dct['_id'] = da['_id']
-            teles_lst.append(da_dct)
-            df_tele = pd.DataFrame(teles_lst)
+            if 'message' in da:
+                da_dct ={}
+                da_dct['message'] = da['message']
+                da_dct['timestamp'] = da['timestamp']
+                da_dct['_id'] = da['_id']
+                teles_lst.append(da_dct)
+                df_tele = pd.DataFrame(teles_lst)
         return df_tele
 
 
