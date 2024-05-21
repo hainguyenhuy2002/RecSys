@@ -127,6 +127,11 @@ post-generation/venv/
 ENV/
 post-generation/env.bak/
 post-generation/venv.bak/
+reputation-analysis/venv
+reputation-analysis/.venv
+reputation-analysis/venv
+
+
 venv
 /.venv
 /venv
