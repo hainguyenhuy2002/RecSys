@@ -127,6 +127,9 @@ post-generation/venv/
 ENV/
 post-generation/env.bak/
 post-generation/venv.bak/
+venv
+/.venv
+/venv
 
 # Spyder project settings
 .spyderproject
@@ -161,7 +164,7 @@ cython_debug/
 
 # Sync files
 last_synced.txt
-reputation-analsiss/
+reputation-analsis/
 test/
 post-generation/data/
 .DS_Store
