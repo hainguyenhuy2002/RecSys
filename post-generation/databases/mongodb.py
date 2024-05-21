@@ -73,6 +73,20 @@ class MongoDB:
             df_twitter = pd.DataFrame(tweets_lst)
         return df_twitter
 
+
+    def get_tele(self):
+        teles_lst = []
+        cursor = self.get_documents_by_time('telegram_messages_announcement')
+        for da in cursor:
+            da_dct ={}
+            da_dct['message'] = da['message']
+            da_dct['_id'] = da['_id']
+            teles_lst.append(da_dct)
+            df_tele = pd.DataFrame(teles_lst)
+        return df_tele
+
+
+
     #######################
     #   updates   #
     #######################

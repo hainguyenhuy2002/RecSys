@@ -76,3 +76,38 @@ class UploadVectorDB(CLIJob):
 
         posgre_db.upsert_nodes(nodes, nodes_with_timestamp)
         self.logg.info("Successfully upload tweet data ...")
+
+    def upload_vector_database_tele(self):
+        embed_model = EmbeddingModel()
+        mongo_db = MongoDB()
+        posgre_db = PostgresDB()
+
+        self.logg.info("Start to get tweet data ...")
+
+        df_tele = mongo_db.get_tele()
+
+        self.logg.info(f"Successfully get tweet data: {len(df_tele)} messages")
+
+        self.logg.info("Start to process tweet data ...")
+        df_tele['message_length'] = df_tele['message'].apply(len)
+        df_tele_filter =df_tele[(df_tele['message_length']>200)].reset_index(drop=True)        
+        nodes = []
+        nodes_with_timestamp = {}
+
+        for index, row in df_tele_filter.iterrows():
+            node = TextNode(text=row['message'], id_=f"{row['_id']}", )
+            nodes.append(node)
+            nodes_with_timestamp[node.id_] = row['timestamp']
+ 
+        for node in nodes:
+            node_embedding = embed_model._embed_model.get_text_embedding(
+                get_lemma(node.get_content(metadata_mode="all"))
+            )
+            node.embedding = node_embedding
+            node.metadata = node_to_metadata_dict(node)
+ 
+        self.logg.info("Successfully process tweet data ...")
+        self.logg.info("Start to upload tweet data ...")
+
+        posgre_db.upsert_nodes(nodes, nodes_with_timestamp)
+        self.logg.info("Successfully upload tweet data ...")
