@@ -92,7 +92,7 @@ def get_exchange_info(name, wallets_per_job, hot_path, burn_mint_path, token_pri
             multichain_transaction.update(chain_info_update)
         
         successful_chains = multichain_transaction.keys()
-        logger.info("Successful to get chain info of {successful_chains}!!!")
+        logger.info(f"Successful to get chain info of {successful_chains}!!!")
 
     except:
         logger.info("Error in multichain transaction info job")
