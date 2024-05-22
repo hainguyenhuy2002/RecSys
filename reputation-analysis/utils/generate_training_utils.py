@@ -154,9 +154,9 @@ def get_df(data):
     df = pd.DataFrame(rows)
     return df
 
-def get_balance_features(dapps_name, chain_id, profile_elite, timestamp):
+def get_balance_features(dapps_name, chain_id, dapps_balance, timestamp):
     #balance
-
+    profile_elite = pd.DataFrame([dapps_balance])
     #profile_elite['tokenChangeLogs'].fillna("0", inplace=True)
     #profile_elite['tokenBalances'] = profile_elite['tokenChangeLogs'].apply(lambda row: get_token_balance(row,timestamp))
     profile_elite['aaveBalance'] = profile_elite['tokenChangeLogs'].apply(lambda row: get_dapps_balance(dapps_name, chain_id, row, timestamp))
