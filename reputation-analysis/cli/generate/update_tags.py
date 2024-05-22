@@ -39,9 +39,10 @@ class UpdateTagsServices(BaseJob):
             cursor = self.mongodb._db[f'{self.col}'].find()
             address_lst =[]
             for cur in cursor[work-self.batch_size: work]:
-                for timestamp, tags in cur['tags'].items():
-                    cur['lattestTags'] = tags
-                    address_lst.append(cur)
+                if 'tags' in cur:
+                    for timestamp, tags in cur['tags'].items():
+                        cur['lattestTags'] = tags
+                        address_lst.append(cur)
             self.mongodb.update_docs(collection_name=self.col,
                                      data=address_lst, merge=True)
         
