@@ -101,7 +101,7 @@ class GetTransactionInfoService():
 
                             update_jobs = chunk_list(input_list=profile_info_dict, chunk_size=200)
                             for job in update_jobs:
-                                self.mongo_community.update_docs(collection_name=self.filename, data=job, merge=True)
+                                self.mongo_community.update_data(name=self.filename, data=job, merge=True)
                         except Exception as e:
                             profiling.to_csv(f"data/log_file/address_info/{chain_id}/checking.csv", index=False)
                             print('oh no having error in combinning 2 dataframe')

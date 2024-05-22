@@ -23,7 +23,8 @@ def flatten_and_concat(tuples):
     return flattened
 
 def largest_key_smaller_than(dictionary, value):
-    keys = sorted(dictionary.keys())
+    keys = sorted(list(map(int, dictionary.keys())))#change list of string to list of int
+    #keys = sorted(dictionary.keys())
     index = bisect.bisect_left(keys, value) - 1
     if index >= 0:
         return keys[index]

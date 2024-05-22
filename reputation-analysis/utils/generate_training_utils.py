@@ -64,7 +64,7 @@ def get_balance(my_dict, timestamp):
         if largest_key == 0:
             last_value = 0
         else:
-            last_value = my_dict[largest_key]
+            last_value = my_dict[str(largest_key)]
         return last_value
     
 def average_value(dictionary, timestamp):
@@ -182,10 +182,15 @@ def get_balance_features(dapps_name, chain_id, dapps_balance, timestamp):
 
     Dapps_balance = profile_elite[['_id','overallBalance','reputationScore']]
     return Dapps_balance, 'acceptable'
-def search_balance_feature(profile_elite, timestamp):
+def search_balance_feature(dapps_balance, timestamp):
+    if 'balanceChangeLogs' in dapps_balance:
     # profile_elite['tokenChangeLogs'].fillna("0", inplace=True)
     # profile_elite['tokenBalances'] = profile_elite['tokenChangeLogs'].apply(lambda row: get_token_balance(row, timestamp))
-    profile_elite['overallBalance'] = profile_elite['balanceChangeLogs'].apply(lambda row: get_balance(row, timestamp))
+        profile_elite = pd.DataFrame([dapps_balance])
+        profile_elite['overallBalance'] = profile_elite['balanceChangeLogs'].apply(lambda row: get_balance(row, timestamp))
+    elif 'balanceInUSD' in dapps_balance:
+        profile_elite = pd.DataFrame([dapps_balance])
+        profile_elite['overallBalance'] = profile_elite['balanceInUSD']
 
 #    profile_elite['tokenBalanceStd'] = profile_elite['tokenBalances'].apply(np.std)
     Dapps_balance = profile_elite[['_id','overallBalance']]

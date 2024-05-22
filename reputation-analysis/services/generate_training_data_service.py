@@ -100,7 +100,7 @@ class GenerateData(BaseJob):
                         try:
                             dapps_transac = {key: dapps_users.get(key) for key in transact_lst}
                             wallet_id = dapps_transac['_id']
-                            klg_cursor = self.klg._db.wallets.find({'_id':f'{wallet_id}'})
+                            klg_cursor = self.klg._db.wallets.find({'_id':f'{wallet_id}'}, {'_id':1,'balanceInUSD':1,'balanceChangeLogs':1})
                             #dapps_balance =  {key: dapps_users.get(key) for key in balance_lst}
                             dapps_balance = list(klg_cursor)[0]
                             transac_df = get_df(dapps_transac)
@@ -108,7 +108,7 @@ class GenerateData(BaseJob):
                             transac_df = transac_df[transac_df['timestampHistory']<self.timestamp]
                             value_df = get_value_features(transac_df)
                             freq_df = get_freq_features(transac_df)
-                            balance_df = search_balance_feature(pd.DataFrame([dapps_balance]), self.timestamp_str)
+                            balance_df = search_balance_feature(dapps_balance, self.timestamp)
                             info_df = value_df.merge(freq_df, on='_id',how = 'inner')
                             info_df = info_df.merge(balance_df, on='_id', how='inner')
                             if info_df.empty:
@@ -122,10 +122,11 @@ class GenerateData(BaseJob):
                                 # info_dict = info_df.to_dict(orient='records')
                                 # info_df_lst.extend(info_dict)
                         except Exception as e:
-                            get_logger(e)
+                            print(e)
+                            print(dapps_users)
                             continue
                 except Exception as ex:
-                    get_logger(ex)
+                    print(ex)
                     # if info_df_lst != []:
                     #     self.exporter.update_data(name=f'{self.chain_name}_{self.timestamp}', data=info_df_lst)
                     continue
