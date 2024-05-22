@@ -8,13 +8,11 @@ from constants.network_constants import Chains
 
 
 class GenerateData(BaseJob):
-    def __init__(self, direction, importer, exporter, klg, index_lst, timestamp, chain_name= None, dapps_name=None, Dapps_user_addresses=None, max_workers= 4, batch_size=500):
+    def __init__(self, direction, importer, exporter, klg, index_lst, timestamp, dapps_name=None, Dapps_user_addresses=None, max_workers= 4, batch_size=500):
         self.importer = importer
         self.exporter = exporter
         self.klg = klg 
         self.dapps_name = dapps_name
-        self.chain_name = chain_name
-        self.chain_id = Chains.mapping[self.chain_name]
         self.batch_size = batch_size
         self.Dapps_user_addresses = Dapps_user_addresses
         self.direction = direction
@@ -35,14 +33,21 @@ class GenerateData(BaseJob):
                 for dapps_users in cursor[work-self.batch_size: work]:
                     dapps_transac = {key: dapps_users.get(key) for key in transact_lst}
                     wallet_id = dapps_transac['_id']
-                    klg_cursor = self.klg._db.wallets.find({'_id':f'{wallet_id}'})
+                    chain_id = wallet_id.split('_')[0]
+                    klg_cursor = self.klg._db.wallets.find({'_id':f'{wallet_id}'},{'_id':1,
+                                                                                   'balanceChangeLogs':1,
+                                                                                   'depositChangeLogs':1,
+                                                                                   'borrowChangeLogs':1,
+                                                                                   'tokenChangeLogs':1})
+
                     #dapps_balance =  {key: dapps_users.get(key) for key in balance_lst}
                     dapps_balance = list(klg_cursor)[0]
+                    print(dapps_balance)
                     transac_df = get_df(dapps_transac)
                     transac_df = transac_df[transac_df['timestampHistory']<self.timestamp]
                     balance_df, text = get_balance_features(
                         dapps_name=self.dapps_name,
-                        chain_id=self.chain_id,
+                        chain_id=chain_id,
                         profile_elite=pd.DataFrame([dapps_balance]), 
                         timestamp=self.timestamp_str
                         )
@@ -108,7 +113,7 @@ class GenerateData(BaseJob):
                             info_df = info_df.merge(balance_df, on='_id', how='inner')
                             if info_df.empty:
                                 write_file(
-                                    folder_direction=f'{self.chain_name}_search/{self.timestamp}/search',
+                                    folder_direction=f'search/{self.timestamp}/search',
                                     name='failed_addresses.json', 
                                     file=dapps_users['_id']
                                 )
@@ -133,13 +138,13 @@ class GenerateData(BaseJob):
             df = pd.concat(self.df_lst).fillna(0)
             if not os.path.exists(f'data/{self.dapps_name}/train'):
                 os.makedirs(f'data/{self.dapps_name}/train')
-            df.to_parquet(f'data/{self.dapps_name}/train/{self.chain_name}_train_{self.timestamp}.parquet')
+            df.to_parquet(f'data/{self.dapps_name}/train/train_{self.timestamp}.parquet')
 
         if self.direction =='search':
             df = pd.concat(self.df_lst).fillna(0)
-            if not os.path.exists(f'data/{self.chain_name}/search'):
-                os.makedirs(f'data/{self.chain_name}/search')
-            df.to_parquet(f'data/{self.chain_name}/search/search_{self.timestamp}.parquet')
+            if not os.path.exists(f'data/search'):
+                os.makedirs(f'data/search')
+            df.to_parquet(f'data/search/search_{self.timestamp}.parquet')
 
 
 

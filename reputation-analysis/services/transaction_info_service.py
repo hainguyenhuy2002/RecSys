@@ -90,6 +90,7 @@ class GetTransactionInfoService():
                                     tags_dct = dict()
                                     tags_time = dict()
                                     max_time_dct['lattestTimestamp'] = max_timestamp[wallet]
+                                    max_time_dct['lattestTags'] = update['tags']
                                     now_time = time.time()
                                     now_daily_time = get_daily_timestamp(int(now_time))
                                     tags_time[f'{now_daily_time}'] = update['tags']
