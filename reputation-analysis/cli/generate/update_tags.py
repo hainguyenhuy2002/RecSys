@@ -43,7 +43,7 @@ class UpdateTagsServices(BaseJob):
                     cur['lattestTags'] = tags
                     address_lst.append(cur)
             self.mongodb.update_docs(collection_name=self.col,
-                                     data=address_lst)
+                                     data=address_lst, merge=True)
         
     def _end(self):
         super()._end()        
