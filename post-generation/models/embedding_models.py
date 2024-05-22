@@ -4,9 +4,10 @@ from utils.logger_utils import get_logger
 from config import EmbeddingModelConfig, LLMModelConfig
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from flasgger import Swagger
+from llama_index.llms.together import TogetherLLM
 
-os.environ["REPLICATE_API_TOKEN"] =LLMModelConfig.MODEL_API
-
+# os.environ["REPLICATE_API_TOKEN"] =LLMModelConfig.MODEL_API
+os.environ["TOGETHER_API_KEY"] = LLMModelConfig.MODEL_API
 
 class EmbeddingModel:
     def __init__(self, model_name: str = None):
@@ -17,15 +18,27 @@ class EmbeddingModel:
 
 class LargeLanguageModel:
     def __init__(self, model_name: str = None, model_kwargs: dict = None):
+        # if (model_name == None) & (model_kwargs == None):
+        #     self._embed_model = Replicate(
+        #         model=LLMModelConfig.MODEL_NAME,
+        #         model_kwargs=LLMModelConfig.MODEL_KWARGS,
+        #     )
+        # elif (model_name != None) & (model_kwargs != None):
+        #     self._embed_model = Replicate(
+        #         model=model_name,
+        #         model_kwargs=model_kwargs,
+        #     )
         if (model_name == None) & (model_kwargs == None):
-            self._embed_model = Replicate(
+            self._embed_model = TogetherLLM(
                 model=LLMModelConfig.MODEL_NAME,
                 model_kwargs=LLMModelConfig.MODEL_KWARGS,
+                api_key=LLMModelConfig.MODEL_API
             )
         elif (model_name != None) & (model_kwargs != None):
-            self._embed_model = Replicate(
+            self._embed_model = TogetherLLM(
                 model=model_name,
                 model_kwargs=model_kwargs,
+                api_key=LLMModelConfig.MODEL_API
             )
         else:
             get_logger("Invalid initial input parameter")

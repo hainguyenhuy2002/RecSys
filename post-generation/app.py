@@ -9,15 +9,13 @@ from models.embedding_models import LargeLanguageModel
 from services.tweet_vector_query_service import tweet_vector_query
 from constant.prompt import RAGPrompt, NormalPrompt
 
-
-
-
 app = Flask(__name__)
 api = Api(app)
 swagger = Swagger(app)
 
 model = EmbeddingModel()._embed_model
-vector_store=PostgresDB().vetor_store
+vector_store=PostgresDB().vector_store
+vector_store_v2=PostgresDB().vector_store_v2
 llm = LargeLanguageModel()._embed_model
 #normprompt = NormalPrompt().prompt
 
@@ -29,20 +27,26 @@ class PostGenerationWithRAG(Resource):
             user_input = request.get_json()
         
             keywords = user_input['keyWords']
+            social_platform = user_input['socialPlatform']
+            
             simi_tweets = tweet_vector_query(
                 EmbedModel=model,
                 vector_store=vector_store,
                 input=keywords,top_simi=10)
+            
             if ('rag' in user_input):
-                return  simi_tweets, 201  
+                return  simi_tweets, 201
             else:
-                
                 ragprompt = RAGPrompt(
-                    user_order=user_input,
-                    references=simi_tweets
+                    user_order=keywords,
+                    references=simi_tweets,
+                    social_platform=social_platform
                 ).prompt
-                output_post = llm(ragprompt)  
-                return output_post, 201
+         
+                output_post = llm.stream_chat(ragprompt)
+                generated_post = "".join([response.delta for response in output_post])
+
+                return generated_post, 201
         #except Exception as error:
          #   return {'error': error}
         

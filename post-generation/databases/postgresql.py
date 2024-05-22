@@ -38,6 +38,15 @@ class PostgresDB:
             table_name=PostgresRAGDBConfig.RAG_TABLE,
             embed_dim=int(EmbeddingModelConfig.EMBEDDING_DIMENSION)
         )
+        self.vector_store_v2 = PGVectorStore.from_params(
+            database=self.db_name,
+            host=self.host,
+            password=self.password,
+            port=self.port,
+            user=self.user,
+            table_name=PostgresRAGDBConfig.RAG_TABLE_V2,
+            embed_dim=int(EmbeddingModelConfig.EMBEDDING_DIMENSION)
+        )
         self.engine = create_engine(connection_url)
         self.session = Session(bind=self.engine)
         self.embedding_model = EmbeddingModel()
@@ -83,59 +92,3 @@ class PostgresDB:
                     self.session.execute(update_timestamp_query, {'timestamp': timestamp, 'node_id': node_id})
         except SQLAlchemyError as e:
             logger.error(f"Error updating timestamp values: {e}")
-
-    def upsert_nodes(self, nodes, nodes_with_timestamp):
-        if not self.table_exists(f'data_{PostgresRAGDBConfig.RAG_TABLE}'):
-            self.vector_store.add(nodes)
-            try:
-                self.ensure_unique_constraint()
-            except SQLAlchemyError as e:
-                logger.error(f"Error ensuring unique constraint: {e}")
-
-            self.add_timestamp_column()
-            self.update_timestamps(nodes_with_timestamp)
-        else:
-            """Upsert a list of nodes into the database. If the node_id exists, overwrite the existing entry."""
-            try:
-                self.ensure_unique_constraint()
-            except SQLAlchemyError as e:
-                logger.error(f"Error ensuring unique constraint: {e}")
-
-            try:
-                # Prepare the insert query with ON CONFLICT clause
-                insert_query = text(f"""
-                INSERT INTO data_{PostgresRAGDBConfig.RAG_TABLE} ({Columns.TEXT}, {Columns.METADATA}, {Columns.NODE_ID}, {Columns.EMBEDDING}, {Columns.TIMESTAMP})
-                VALUES (:text, :metadata_, :node_id, :embedding, :timestamp)
-                ON CONFLICT ({Columns.NODE_ID}) DO UPDATE
-                SET {Columns.TEXT} = EXCLUDED.{Columns.TEXT},
-                    {Columns.METADATA} = EXCLUDED.{Columns.METADATA},
-                    {Columns.EMBEDDING} = EXCLUDED.{Columns.EMBEDDING},
-                    {Columns.TIMESTAMP} = EXCLUDED.{Columns.TIMESTAMP}
-                """)
-
-                # Prepare the list of dictionaries for each node
-                values_to_insert = []
-                for node in nodes:
-                    metadata_json = json.dumps(node.metadata)
-                    timestamp = nodes_with_timestamp[node.id_]
-                    values_to_insert.append({
-                        'text': node.text,
-                        'metadata_': metadata_json,
-                        'node_id': node.id_,
-                        'embedding': node.embedding,
-                        'timestamp': timestamp
-                    })
-
-                # Execute the query with multiple values
-                # Log the percentage of nodes upserted at every 10% increment
-                chunk_size = max(1, len(values_to_insert) // 10)  # Ensure chunk_size is at least 1
-                for i in range(0, len(values_to_insert), chunk_size):
-                    with self.session.begin():
-                        self.session.execute(insert_query, values_to_insert[i:i + chunk_size])
-
-                        # Log 10% increments
-                        percentage_done = round((i + chunk_size) / len(values_to_insert) * 100)
-                        logger.info(f"Upserted {percentage_done}% of nodes.")
-
-            except SQLAlchemyError as e:
-                logger.error(f"Error upserting nodes: {e}")

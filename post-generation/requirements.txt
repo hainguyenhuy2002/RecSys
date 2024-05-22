@@ -19,3 +19,5 @@ flasgger
 flask_restful
 flask_cors
 langchain_community
+replicate
+langdetect
