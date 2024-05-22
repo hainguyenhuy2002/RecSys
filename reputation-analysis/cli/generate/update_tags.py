@@ -36,7 +36,7 @@ class UpdateTagsServices(BaseJob):
 
     def _execute_batch(self, works):
         for work in works:    
-            cursor = self.mongodb._db[f'{self.col}'].find()
+            cursor = self.mongodb._db[f'{self.col}'].find({},{'_id':1, 'tags':1})
             address_lst =[]
             for cur in cursor[work-self.batch_size: work]:
                 if 'tags' in cur:

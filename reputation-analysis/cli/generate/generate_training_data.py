@@ -5,7 +5,7 @@ from databases.mongodb import MongoDB
 from services.generate_training_data_service import GenerateData
 from constants.dapps_tokens_constans import Dapps
 @click.command(context_settings=dict(help_option_names=['-h', '--help']))
-@click.option('-s', '--searching_address_searching', type=str, default='', show_default=True,
+@click.option('-s', '--searching_address', type=str, default='', show_default=True,
               help='address searching mongoDb')
 @click.option('-da', '--dapps_name', type=str, default=None, show_default=True,
               help='name of an dapps')
@@ -16,10 +16,10 @@ from constants.dapps_tokens_constans import Dapps
 @click.option('-w', '--max-workers', default=8, show_default=True, type=int,
               help='The number of workers')
 
-def generate_training_data(searching_address_searching, dapps_name, direction, time_stamp, batch_size, max_workers):
+def generate_training_data(searching_address, dapps_name, direction, time_stamp, batch_size, max_workers):
 
     mongodb = MongoDB()
-    address_searching = mongodb._db[f'{searching_address_searching}']
+    address_searching = mongodb._db[f'{searching_address}']
     if direction == 'train':
         dapps_tags = Dapps(dapps_name=dapps_name).tags
         logger = get_logger('Gen training')
@@ -27,12 +27,12 @@ def generate_training_data(searching_address_searching, dapps_name, direction, t
         # with open(address_dapps,'r') as file:
         #     Dapps_user_address = json.load(file)
         Dapps_user_address = []
-        training_cursor = address_searching.find({'tags':{'$in':dapps_tags}})  
+        training_cursor = address_searching.find({'lattestTags':{'$in':dapps_tags}})  
         for cur in training_cursor:
             Dapps_user_address.append(cur['_id'])
     
         logger.info('Successful get training addresses ( ˵ •̀ ᴗ •́˵) ( ˵ •̀ ᴗ •́˵)')
-        chain_name = searching_address_searching.split('_')[0]
+        chain_name = searching_address.split('_')[0]
         index_list = list(range(batch_size, len(Dapps_user_address), batch_size))
         index_list.append(len(Dapps_user_address))
         logger.info('༼ つ ◕_◕ ༽つ ༼ つ ◕_◕ ༽つ start to get training data༼ つ ◕_◕ ༽つ ༼ つ ◕_◕ ༽つ')
@@ -43,7 +43,7 @@ def generate_training_data(searching_address_searching, dapps_name, direction, t
 
         logger.info('Done ( ๑ ˃̵ᴗ˂̵)و ♡ ( ๑ ˃̵ᴗ˂̵)و ♡')
     elif direction =='search':
-        chain_name = searching_address_searching.split('_')[0]
+        chain_name = searching_address.split('_')[0]
         num_documents = address_searching.estimated_document_count()
         index_list = list(range(batch_size, num_documents, batch_size))
         index_list.append(num_documents)

@@ -8,9 +8,10 @@ from constants.network_constants import Chains
 
 
 class GenerateData(BaseJob):
-    def __init__(self, direction, importer, exporter, index_lst, timestamp, chain_name= None, dapps_name=None, Dapps_user_addresses=None, max_workers= 4, batch_size=500):
+    def __init__(self, direction, importer, exporter, klg, index_lst, timestamp, chain_name= None, dapps_name=None, Dapps_user_addresses=None, max_workers= 4, batch_size=500):
         self.importer = importer
         self.exporter = exporter
+        self.klg = klg 
         self.dapps_name = dapps_name
         self.chain_name = chain_name
         self.chain_id = Chains.mapping[self.chain_name]
@@ -27,13 +28,16 @@ class GenerateData(BaseJob):
     def _execute_batch(self, works):
         if self.direction =='train':
             for work in works:
-                cursor = self.importer.find({'_id':{ '$in': self.Dapps_user_addresses}},{'_id':1,'interactedWallet':1,'tokenChangeLogs':1,'balanceChangeLogs':1,'depositChangeLogs':1,'borrowChangeLogs':1})
+                cursor = self.importer.find({'_id':{ '$in': self.Dapps_user_addresses}},{'_id':1,'interactedWallet':1})
                 transact_lst = ['_id','interactedWallet']
-                balance_lst = ['_id','balanceChangeLogs','depositChangeLogs','borrowChangeLogs','tokenChangeLogs']
+           #     balance_lst = ['_id','balanceChangeLogs','depositChangeLogs','borrowChangeLogs','tokenChangeLogs']
                 info_df_lst = []
                 for dapps_users in cursor[work-self.batch_size: work]:
                     dapps_transac = {key: dapps_users.get(key) for key in transact_lst}
-                    dapps_balance =  {key: dapps_users.get(key) for key in balance_lst}
+                    wallet_id = dapps_transac['_id']
+                    klg_cursor = self.klg._db.wallets.find({'_id':f'{wallet_id}'})
+                    #dapps_balance =  {key: dapps_users.get(key) for key in balance_lst}
+                    dapps_balance = list(klg_cursor)[0]
                     transac_df = get_df(dapps_transac)
                     transac_df = transac_df[transac_df['timestampHistory']<self.timestamp]
                     balance_df, text = get_balance_features(
@@ -82,15 +86,18 @@ class GenerateData(BaseJob):
 
         if self.direction =='search':
             for work in works:
-                cursor = self.importer.find({},{'_id':1,'interactedWallet':1,'tokenChangeLogs':1,'balanceChangeLogs':1,'depositChangeLogs':1,'borrowChangeLogs':1})
+                cursor = self.importer.find({},{'_id':1,'interactedWallet':1})
                 transact_lst = ['_id','interactedWallet']
-                balance_lst = ['_id','balanceChangeLogs','depositChangeLogs','borrowChangeLogs','tokenChangeLogs']
+              #  balance_lst = ['_id','balanceChangeLogs','depositChangeLogs','borrowChangeLogs','tokenChangeLogs']
                 info_df_lst = []
                 try:
                     for dapps_users in cursor[work-self.batch_size: work]:
                         try:
                             dapps_transac = {key: dapps_users.get(key) for key in transact_lst}
-                            dapps_balance =  {key: dapps_users.get(key) for key in balance_lst}
+                            wallet_id = dapps_transac['_id']
+                            klg_cursor = self.klg._db.wallets.find({'_id':f'{wallet_id}'})
+                            #dapps_balance =  {key: dapps_users.get(key) for key in balance_lst}
+                            dapps_balance = list(klg_cursor)[0]
                             transac_df = get_df(dapps_transac)
 
                             transac_df = transac_df[transac_df['timestampHistory']<self.timestamp]
