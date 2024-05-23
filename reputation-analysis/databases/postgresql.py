@@ -46,7 +46,7 @@ class PostgresDB:
         Session.configure(bind=create_engine(connection_url))
         self.chain_id = chain_id
 
-    @retry_handler(retries_number=10, sleep_time=10)
+    @retry_handler(retries_number=10, sleep_time=30)
     def query_addresses(self, addresses, special_addresses, direction, opposite_direction, from_block, to_block, block_timestamp_mappings ,price_history):
         token_lst = [token for token, _ in price_history.items()]
         if not self.chain_id:
