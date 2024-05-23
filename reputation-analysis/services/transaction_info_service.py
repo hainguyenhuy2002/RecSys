@@ -99,9 +99,14 @@ class GetTransactionInfoService():
                                     dict_lookup[wallet].update(max_time_dct) 
                                     dict_lookup[wallet].update(tags_dct)
 
-                            update_jobs = chunk_list(input_list=profile_info_dict, chunk_size=200)
-                            for job in update_jobs:
-                                self.mongo_community.update_data(name=self.filename, data=job, merge=True)
+                            
+                            try:
+#                            for job in update_jobs:
+                                self.mongo_community.update_data(name=self.profile_info_dict, data=job)
+                            except Exception as e:
+                                update_jobs = chunk_list(input_list=profile_info_dict, chunk_size=20)
+                                for job in update_jobs:
+                                    self.mongo_community.update_data(name=self.filename, data=job)
                         except Exception as e:
                             profiling.to_csv(f"data/log_file/address_info/{chain_id}/checking.csv", index=False)
                             print('oh no having error in combinning 2 dataframe')
