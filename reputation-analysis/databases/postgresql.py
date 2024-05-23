@@ -4,7 +4,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import text
 from config import PostgresDBConfig
 from utils.logger_utils import get_logger, write_file
-
+from utils.retry_utils import retry_handler
 logger = get_logger('PostgreSQL thread safe')
 
 Session = sessionmaker()
@@ -46,6 +46,7 @@ class PostgresDB:
         Session.configure(bind=create_engine(connection_url))
         self.chain_id = chain_id
 
+    @retry_handler(retries_number=10, sleep_time=10)
     def query_addresses(self, addresses, special_addresses, direction, opposite_direction, from_block, to_block, block_timestamp_mappings ,price_history):
         token_lst = [token for token, _ in price_history.items()]
         if not self.chain_id:
@@ -70,39 +71,7 @@ class PostgresDB:
         with Session.begin() as session:
             wallet_transfer = []
             failed_addresses = []
-            try:
-                # num_event = session.execute(text(count_query)).fetchone()[0]
-                # if num_event >= 50000:
-                #     failed_addresses.extend(addresses)
-                #     # for address in addresses:
-                #     #     query_v2 = f"""
-                #     #     SELECT contract_address, block_number, from_address, to_address, value
-                #     #     FROM {schema}.{PostgresDBConfig.TRANSFER_EVENT_TABLE}
-                #     #     WHERE {direction}_address={address}
-                #     #     AND {opposite_direction}_address NOT IN ({special_addresses_values})
-                #     #     AND block_number BETWEEN {from_block} AND {to_block}
-                #     #     """
-                #     #     count_query_v2 =f"""
-                #     #         SELECT COUNT(*)
-                #     #         FROM  {schema}.{PostgresDBConfig.TRANSFER_EVENT_TABLE}
-                #     #         WHERE {direction}_address IN ({addresses_values})
-                #     #     """
-                #     #     with Session.begin() as session_2:
-                #     #         num_event_v2 = session_2.execute(text(count_query_v2)).fetchone()[0]
-                #     #         if num_event_v2 >2500:
-                #     #             failed_addresses.append(address)
-                #     #             continue
-                #     #         else:
-                #     #             event_transfer = session_2.execute(text(query_v2))
-                #     #             fields_to_select =['contract_address', 'block_number', 'from_address', 'to_address', 'value']
-                #     #             for event in event_transfer:
-                #     #                 valueInUSD = get_valueInUSD(row = event, token_history =price_history,token_lst = token_lst, block_timestamp_mappings=block_timestamp_mappings)
-                #     #                 modified_event = event[:1] + (block_timestamp_mappings[event[1]],) + event[2:]
-                #     #                 timestamp_event = dict(zip(fields_to_select, modified_event))
-                #     #                 timestamp_event['valueInUSD'] = valueInUSD
-                #     #                 wallet_transfer.append(timestamp_event)
-
-                # else:                        
+            try:                   
                 event_transfer = session.execute(text(query))
                 fields_to_select =['contract_address', 'block_number', 'from_address', 'to_address', 'value']
                 for event in event_transfer:
