@@ -24,3 +24,5 @@ replicate
 langdetect
 replicate
 emoji
+multithread_parallel_processing
+langdetect
