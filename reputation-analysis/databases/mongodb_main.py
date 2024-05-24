@@ -63,7 +63,6 @@ class MongoDBMain:
 
     def get_largest_block(self):
         uppper_time =int(time.time()) - TimeConstants.A_DAY #17s/05/2024
-        uppper_time = 1710072695
         query = {'timestamp':{'$lte':uppper_time}}
         projection =  {'timestamp':1,'number':1}
         cursor = self._db.blocks.find(query, 
@@ -75,7 +74,6 @@ class MongoDBMain:
     def get_previous_3month_block(self):
         time_now = int(time.time()) - TimeConstants.A_DAY
         lower_time = int(time_now) - TimeConstants.MONTHS_3
-        lower_time = 1710012539
         query = {'timestamp':{'$gte':lower_time}}
         projection =  {'timestamp':1,'number':1}
         cursor = self._db.blocks.find(filter=query,
