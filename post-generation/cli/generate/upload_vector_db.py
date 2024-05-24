@@ -11,6 +11,7 @@ from models.embedding_models import EmbeddingModel
 from constant.time_constant import TimeConstants
 from jobs.cli_job import CLIJob
 from services.upload_vector_database import UploadVectorDB
+from config import PostgresRAGDBConfig
 from utils.logger_utils import get_logger
 from utils.preprocess_utils import get_lemma
 from langdetect import detect
@@ -51,7 +52,7 @@ class UploadVectorDataBase(CLIJob):
         mongo_db = MongoDB()
         posgre_db = PostgresDB()
 
-        posgre_table = f"data_{posgre_db.vector_store.table_name}"
+        posgre_table = f"data_{PostgresRAGDBConfig.RAG_TABLE}"
 
         batch_size = self.batch_size
         max_workers = self.max_workers

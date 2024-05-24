@@ -38,16 +38,6 @@ class UploadVectorDB(BaseJob):
         logg = get_logger('UploadVectorDB')
         nodes = []
         nodes_with_timestamp = {}
-        # Prepare the insert query with ON CONFLICT clause
-        insert_query = text(f"""
-        INSERT INTO {self.exporter} ({Columns.TEXT}, {Columns.METADATA}, {Columns.NODE_ID}, {Columns.EMBEDDING}, {Columns.TIMESTAMP})
-        VALUES (:text, :metadata_, :node_id, :embedding, :timestamp)
-        ON CONFLICT ({Columns.NODE_ID}) DO UPDATE
-        SET {Columns.TEXT} = EXCLUDED.{Columns.TEXT},
-            {Columns.METADATA} = EXCLUDED.{Columns.METADATA},
-            {Columns.EMBEDDING} = EXCLUDED.{Columns.EMBEDDING},
-            {Columns.TIMESTAMP} = EXCLUDED.{Columns.TIMESTAMP}
-        """)
         
         for work in works:
             df = self.df_tweet_filter[work-self.batch_size:work]
@@ -68,44 +58,53 @@ class UploadVectorDB(BaseJob):
 
         logg.info(f"Uploading {len(nodes_with_timestamp)} nodes to the database ...")
 
+        if not self.importer.table_exists(self.exporter):
+            self.importer.vector_store.add(nodes)
+            try:
+                self.importer.ensure_unique_constraint()
+            except:
+                pass
+
+            self.importer.add_timestamp_column()
+            self.importer.update_timestamps(nodes_with_timestamp)
+        
+        try:
+            self.importer.ensure_unique_constraint()
+        except:
+            pass
+
+        # Prepare the insert query with ON CONFLICT clause
+        insert_query = text(f"""
+        INSERT INTO {self.exporter} ({Columns.TEXT}, {Columns.METADATA}, {Columns.NODE_ID}, {Columns.EMBEDDING}, {Columns.TIMESTAMP})
+        VALUES (:text, :metadata_, :node_id, :embedding, :timestamp)
+        ON CONFLICT ({Columns.NODE_ID}) DO UPDATE
+        SET {Columns.TEXT} = EXCLUDED.{Columns.TEXT},
+            {Columns.METADATA} = EXCLUDED.{Columns.METADATA},
+            {Columns.EMBEDDING} = EXCLUDED.{Columns.EMBEDDING},
+            {Columns.TIMESTAMP} = EXCLUDED.{Columns.TIMESTAMP}
+        """)
+
         for work in works:
-            if not self.importer.table_exists(self.exporter):
-                self.importer.vector_store.add(nodes)
-                try:
-                    self.importer.ensure_unique_constraint()
-                except SQLAlchemyError as e:
-                    pass
+            # Prepare the list of dictionaries for each node
+            values_to_insert = []
+            for node in nodes:
+                metadata_json = json.dumps(node.metadata)
+                timestamp = nodes_with_timestamp[node.id_]
+                values_to_insert.append({
+                    'text': node.text,
+                    'metadata_': metadata_json,
+                    'node_id': node.id_,
+                    'embedding': node.embedding,
+                    'timestamp': timestamp
+                })
 
-                self.importer.add_timestamp_column()
-                self.importer.update_timestamps(nodes_with_timestamp)
-
-            else:
-                try:
-                    self.importer.ensure_unique_constraint()
-                except SQLAlchemyError as e:
-                    pass
-
-                for work in works:
-                    # Prepare the list of dictionaries for each node
-                    values_to_insert = []
-                    for node in nodes:
-                        metadata_json = json.dumps(node.metadata)
-                        timestamp = nodes_with_timestamp[node.id_]
-                        values_to_insert.append({
-                            'text': node.text,
-                            'metadata_': metadata_json,
-                            'node_id': node.id_,
-                            'embedding': node.embedding,
-                            'timestamp': timestamp
-                        })
-
-                    # Divide the list of dictionaries into batches
-                    for value in values_to_insert[work-self.batch_size:work]:
-                        with self.importer.session.begin(): 
-                            try:
-                                self.importer.session.execute(insert_query, value)
-                            except SQLAlchemyError as e:
-                                logg.error(f"Error upserting nodes: {e}")
+            # Divide the list of dictionaries into batches
+            for value in values_to_insert[work-self.batch_size:work]:
+                with self.importer.session.begin(): 
+                    try:
+                        self.importer.session.execute(insert_query, value)
+                    except SQLAlchemyError as e:
+                        logg.error(f"Error upserting nodes: {e}")
 
     def _end(self):
         self.batch_executor.shutdown()
