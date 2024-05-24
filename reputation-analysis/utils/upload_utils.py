@@ -18,7 +18,7 @@ def update_format(data):
 
                 }
         if timestamp_history not in result[wallet]['interactedWallet'][interacted_wallet]['contractAddress'][contractAddress]:
-            result[wallet]['interactedWallet'][interacted_wallet]['contractAddress'][contractAddress][timestamp_history] = {'value': value_history, 'amount': amount_history}
+            result[wallet]['interactedWallet'][interacted_wallet]['contractAddress'][contractAddress][str(timestamp_history)] = {'value': value_history, 'amount': amount_history}
 
 
     final_result = [{'_id':wallet, 'wallet': wallet, **data} for wallet, data in result.items()]
