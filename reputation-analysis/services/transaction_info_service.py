@@ -74,14 +74,26 @@ class GetTransactionInfoService():
                                        "valueInUSDHistory":flatten_and_concat,
                                        "amountHistory":flatten_and_concat}
                                     ).reset_index()
+                            profile_infoo = profile_info. \
+                                            set_index(['wallet','interactedWallet','contractAddress']). \
+                                            apply(lambda x: x.explode()) \
+                                            .reset_index()
                             
+                            profile_infooo = profile_infoo.groupby(['wallet','interactedWallet','contractAddress', 'timestampHistory']) \
+                                                            .agg({
+                                                                "valueInUSDHistory":sum,
+                                                                "amountHistory":sum}
+                                                                ).reset_index()
+
+
+                                
                             profile_timestamp = profile_info[['wallet','timestampHistory']].copy()
                             profile_max_timestamp = profile_timestamp.groupby('wallet').agg(
                                 {"timestampHistory":flatten_and_concat}
                             )
                             profile_max_timestamp['lattestTimestamp'] = profile_max_timestamp['timestampHistory'].apply(lambda x: max(x))
                             max_timestamp = profile_max_timestamp['lattestTimestamp'].to_dict()
-                            profile_info_dict = update_format(profile_info)
+                            profile_info_dict = update_format(profile_infooo)
                             dict_lookup = {item['wallet']: item for item in profile_info_dict}
                             for update in other_info:
                                 wallet = update['wallet']

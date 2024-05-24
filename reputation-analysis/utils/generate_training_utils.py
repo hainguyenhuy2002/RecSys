@@ -11,24 +11,24 @@ def get_label(row, threshold):
         return 0
 
 
-def get_token_balance(row, timestamp):
-    tokens_balance =[]
-    if (row == 0) |(row == {}):
-        tokens_balance.append(0)
-    else:
-        for token, value_history in row.items():
-            if value_history == {}:
-                value = 0
-            else:
-                largest_key = largest_key_smaller_than(value_history, timestamp)
-                if largest_key ==0:
-                    value = 0
-                else:
-                    last_value = value_history[largest_key]
-                    value = last_value['valueInUSD']
-            tokens_balance.append(value)
+# def get_token_balance(row, timestamp):
+#     tokens_balance =[]
+#     if (row == 0) |(row == {}):
+#         tokens_balance.append(0)
+#     else:
+#         for token, value_history in row.items():
+#             if value_history == {}:
+#                 value = 0
+#             else:
+#                 largest_key = largest_key_smaller_than(value_history, timestamp)
+#                 if largest_key ==0:
+#                     value = 0
+#                 else:
+#                     last_value = value_history[largest_key]
+#                     value = last_value['valueInUSD']
+#             tokens_balance.append(value)
 
-    return tokens_balance
+#     return tokens_balance
         
 
 def get_dapps_balance(dapps_name, dapps_balance, chain_id, row, timestamp):
@@ -88,7 +88,7 @@ def average_value(dictionary, timestamp):
     elif not dictionary:
         return 'outdated'
     
-    sub_dict = {key: value for key, value in dictionary.items() if (int(key) <= timestamp)}  
+    sub_dict = {key: value for key, value in dictionary.items() if (key <= timestamp)}  
     if sub_dict =={}:
         future_subdict = {key: value for key, value in dictionary.items() if key > timestamp}
         if (future_subdict =={}):
@@ -101,9 +101,41 @@ def average_value(dictionary, timestamp):
                 return 'future data'
 
 
-    largest_key = max(sub_dict.keys())
-    value_of_largest_key = sub_dict[largest_key]
+    #largest_key = max(sub_dict.keys())
+    #value_of_largest_key = sub_dict[largest_key] ## Get the latest value
+
+    value_of_largest_key = sum(sub_dict.values())/ len(sub_dict)
+
+
     return value_of_largest_key
+
+def get_deposit_features(row, timestamp, dapps_balance):
+    if 'depositChangeLogs' in dapps_balance:
+        avg_value = average_value(dictionary=row['depositChangeLogs'],
+                      timestamp=timestamp)
+        return avg_value
+    elif 'depositInUSD' in dapps_balance:
+        if dapps_balance['depositInUSD'] == 0:
+            return 'outdated'
+        else:
+            return dapps_balance['depositInUSD']
+    else:
+        return 'outdated'
+
+def get_borrow_features(row, timestamp, dapps_balance):
+    if 'borrowChangeLogs' in dapps_balance:
+        avg_value = average_value(dictionary=row['borrowChangeLogs'],
+                      timestamp=timestamp)
+        return avg_value
+    elif 'borrowInUSD' in dapps_balance:
+        if dapps_balance['borrowInUSD'] == 0:
+            return 'outdated'
+        else:
+            return dapps_balance['borrowInUSD']
+    
+    else:
+        return 'outdated'
+
 
 def get_freq_features(Dapps_transaction_clean):
     #frequency
@@ -131,7 +163,7 @@ def get_freq_features(Dapps_transaction_clean):
     Dapps_freq = Dapps_freq_info[['_id','numInteractedToken','numInteractedWallet','addressTimeStd','tokenTimeStd','noTransaction']]
     return Dapps_freq
 
-def get_value_features(Dapps_transaction_clean):
+def get_value_features(Dapps_transaction_clean, chain_id, mongo_klg):
     #valueInUSD
     Dapps_token_transfer = Dapps_transaction_clean.groupby(['_id','contractAddress']) \
                                     .agg({"valueInUSDHistory":tuple}).reset_index()
@@ -139,16 +171,23 @@ def get_value_features(Dapps_transaction_clean):
     Dapps_tokens = Dapps_token_transfer.pivot_table(values=['totalInUSD'], index='_id', \
                                     columns='contractAddress', aggfunc='sum', fill_value = 0) \
                                     .reset_index()
-    column_lst = ['_id']
-    column_lst.extend(['{}_{}'.format(col[0], col[1]) for col in Dapps_tokens.columns if col[0]!='_id'])
-    Dapps_tokens.columns = column_lst
+    column_lst = []
+    column_lst.extend(['{}_{}'.format(chain_id, col[1]) for col in Dapps_tokens.columns if col[0]!='_id'])
+    new_column_lst = ['_id']
+    for col in column_lst:
+        cursor = mongo_klg._db['smart_contracts'].find({"_id":col},{"_id":1,"idCoingecko":1})
+        token_id = 'value-'+list(cursor)[0]['idCoingecko']
+        new_column_lst.append(token_id)
+
+    Dapps_tokens.columns = new_column_lst
     Dapps_value_transfer = Dapps_transaction_clean.groupby(['_id']) \
                                     .agg({"valueInUSDHistory":tuple}).reset_index()
     Dapps_value_transfer['totalUSDTransfer'] = Dapps_value_transfer['valueInUSDHistory'].apply(sum)
     Dapps_value_transfer['avgUSDTransfer'] = Dapps_value_transfer['valueInUSDHistory'].apply(np.median)
     Dapps_value = Dapps_value_transfer[['_id','totalUSDTransfer','avgUSDTransfer']] \
                                     .merge(Dapps_tokens, on ='_id',how='inner')
-    return Dapps_value
+    new_column_lst.remove('_id')
+    return Dapps_value, new_column_lst
 
 def get_df(data):
     rows = []
@@ -182,10 +221,22 @@ def get_balance_features(dapps_name, chain_id, dapps_balance, timestamp):
         lambda row: get_balance(row=row, 
                                 dapps_balance=dapps_balance, 
                                 timestamp=timestamp), axis=1)
-    print(profile_elite)
-    profile_elite['aaveAvgDeposit'] = profile_elite['depositChangeLogs'].apply(lambda row: average_value(row, timestamp))
-    profile_elite['aaveAvgBorrow'] = profile_elite['borrowChangeLogs'].apply(lambda row: average_value(row, timestamp))
+
+    profile_elite['aaveAvgDeposit'] = profile_elite.apply(
+        lambda row: get_deposit_features(row=row, 
+                                         timestamp=timestamp,
+                                         dapps_balance=dapps_balance), axis=1
+        )
+    
+    profile_elite['aaveAvgBorrow'] = profile_elite.apply(
+        lambda row: get_borrow_features(row=row, 
+                                         timestamp=timestamp,
+                                         dapps_balance=dapps_balance), axis=1
+        )
+    
+    #profile_elite['aaveAvgBorrow'] = profile_elite['borrowChangeLogs'].apply(lambda row: average_value(row, timestamp))
     if profile_elite['dappsBalance'].iloc[0] ==0:
+        
         if (profile_elite['aaveAvgDeposit'].iloc[0]=='outdated')&(profile_elite['aaveAvgBorrow'].iloc[0]=='outdated'):
             return pd.DataFrame(), 'outdated'
         elif (((profile_elite['aaveAvgDeposit'].iloc[0] in ['future data','outdated'])&(profile_elite['aaveAvgBorrow'].iloc[0]=='future data'))|((profile_elite['aaveAvgBorrow'].iloc[0] in ['future data','outdated'])&(profile_elite['aaveAvgDeposit'].iloc[0]=='future data'))):
@@ -203,6 +254,7 @@ def get_balance_features(dapps_name, chain_id, dapps_balance, timestamp):
         profile_elite['reputationScore'] = (profile_elite['dappsBalance'] + profile_elite['aaveAvgDeposit']+ profile_elite['aaveAvgBorrow'])/3
 
     Dapps_balance = profile_elite[['_id','overallBalance','reputationScore']]
+
     return Dapps_balance, 'acceptable'
 
 def search_balance_feature(dapps_balance, timestamp):

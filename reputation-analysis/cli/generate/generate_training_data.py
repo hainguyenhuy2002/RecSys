@@ -30,7 +30,7 @@ def generate_training_data(searching_address, dapps_name, direction, time_stamp,
         #     Dapps_user_address = json.load(file)
         Dapps_user_address = []
         training_cursor = address_searching.find({'lattestTags':{'$in':dapps_tags}})  
-        for cur in training_cursor[0:100]:
+        for cur in training_cursor[0:50]:
             Dapps_user_address.append(cur['_id'])
     
         logger.info('Successful get training addresses ( ˵ •̀ ᴗ •́˵) ( ˵ •̀ ᴗ •́˵)')

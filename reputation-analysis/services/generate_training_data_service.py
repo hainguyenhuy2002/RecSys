@@ -1,8 +1,9 @@
 import json
 import os
 import pandas as pd 
+from collections import Counter
 from multithread_processing.base_job import BaseJob
-from utils.logger_utils import get_logger, write_file
+from utils.logger_utils import get_logger, write_file1, write_file
 from utils.generate_training_utils import get_df, get_balance_features, get_value_features, get_freq_features, search_balance_feature
 from constants.network_constants import Chains
 
@@ -19,6 +20,7 @@ class GenerateData(BaseJob):
         self.timestamp = timestamp
         self.timestamp_str = str(timestamp)
         self.df_lst = []
+        self.token_interact = []
         super().__init__(work_iterable=index_lst,
                          max_workers=max_workers,
                          batch_size=batch_size)
@@ -36,6 +38,9 @@ class GenerateData(BaseJob):
                     chain_id = wallet_id.split('_')[0]
                     klg_cursor = self.klg._db.wallets.find({'_id':f'{wallet_id}'},{'_id':1,
                                                                                    'tokens':1,
+                                                                                   'balanceInUSD':1,
+                                                                                   'depositInUSD':1,
+                                                                                   'borrowInUSD':1,
                                                                                    'balanceChangeLogs':1,
                                                                                    'depositChangeLogs':1,
                                                                                    'borrowChangeLogs':1,
@@ -43,7 +48,6 @@ class GenerateData(BaseJob):
 
                     #dapps_balance =  {key: dapps_users.get(key) for key in balance_lst}
                     dapps_balance = list(klg_cursor)[0]
-                    print(dapps_balance)
                     transac_df = get_df(dapps_transac)
                     transac_df = transac_df[transac_df['timestampHistory']<self.timestamp]
                     balance_df, text = get_balance_features(
@@ -54,7 +58,7 @@ class GenerateData(BaseJob):
                         )
 
                     if (transac_df.empty) &(text =='future data'):
-                        write_file(
+                        write_file1(
                             folder_direction=f'{self.dapps_name}_train/{self.timestamp}/future_wallet',
                             name='future_addresses.json', 
                             file=dapps_users['_id']
@@ -62,7 +66,7 @@ class GenerateData(BaseJob):
                         continue
 
                     elif text =='future data':
-                        write_file(
+                        write_file1(
                             folder_direction=f'{self.dapps_name}_train/{self.timestamp}/potential_wallet',
                             name='potential_addresses.json', 
                             file=dapps_users['_id']
@@ -70,7 +74,7 @@ class GenerateData(BaseJob):
                         continue
                     
                     elif text =='outdated':
-                        write_file(
+                        write_file1(
                             folder_direction=f'{self.dapps_name}_train/{self.timestamp}/outdated_wallet',
                             name='outdated_addresses.json', 
                             file=dapps_users['_id']
@@ -78,15 +82,15 @@ class GenerateData(BaseJob):
                         continue
 
                     elif text == 'acceptable':
-                        value_df = get_value_features(transac_df)
+                        value_df, tokens_interact = get_value_features(transac_df, chain_id, self.klg)
                         freq_df = get_freq_features(transac_df)
                         info_df = value_df.merge(freq_df, on='_id',how = 'inner')
                         info_df = info_df.merge(balance_df, on='_id', how='inner')
                         if info_df.empty == False:
                             self.df_lst.append(info_df)
-                        # info_dict = info_df.to_dict(orient='records')
+                            self.token_interact.append(tokens_interact)
                         # info_df_lst.extend(info_dict)
-    
+                        # info_dict = info_df.to_dict(orient='records')
 #                if info_df_lst != []:
 #                    self.exporter.update_data(name=self.name, data=info_df_lst)
 
@@ -122,7 +126,7 @@ class GenerateData(BaseJob):
                                     file=dapps_users['_id']
                                 )
                             else:
-                                self.df_lst.append(info_df)
+                                self.df_lst.append(info_df[['_id','reputationScore']])
                                 # info_dict = info_df.to_dict(orient='records')
                                 # info_df_lst.extend(info_dict)
                         except Exception as e:
@@ -140,10 +144,21 @@ class GenerateData(BaseJob):
     def _end(self):
         super()._end()
         if self.direction =='train':
+           ## element_counts = Counter(self.token_interact)
+           # df_token = pd.DataFrame.from_dict(element_counts, orient='index').reset_index()
+          #  df_token.columns = ['tokens', 'count']
+          #  print(df_token)    
+           # json_objects = [df[['_id','reputationScore']].to_json(orient='records') for df in self.df_lst]
+
+            with open(f'data/{self.dapps_name}/train/train_{self.timestamp}.json', 'w') as file:
+                json.dump(self.token_interact, file, indent=4)
             df = pd.concat(self.df_lst).fillna(0)
+            print(df)
             if not os.path.exists(f'data/{self.dapps_name}/train'):
                 os.makedirs(f'data/{self.dapps_name}/train')
             df.to_parquet(f'data/{self.dapps_name}/train/train_{self.timestamp}.parquet')
+            df[['_id','reputationScore']].to_csv(f'data/{self.dapps_name}/train/train_{self.timestamp}.csv')
+
 
         if self.direction =='search':
             df = pd.concat(self.df_lst).fillna(0)
