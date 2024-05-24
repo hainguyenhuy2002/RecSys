@@ -116,9 +116,20 @@ class GetTransactionInfoService():
 #                            for job in update_jobs:
                                 self.mongo_community.update_data(name=self.profile_info_dict, data=job)
                             except Exception as e:
-                                update_jobs = chunk_list(input_list=profile_info_dict, chunk_size=20)
+                                update_jobs = chunk_list(input_list=profile_info_dict, chunk_size=50)
                                 for job in update_jobs:
-                                    self.mongo_community.update_data(name=self.filename, data=job)
+                                    try:
+                                        self.mongo_community.update_data(name=self.filename, data=job)
+                                    except:
+                                        update_jobss = chunk_list(input_list=job, chunk_size=1)
+                                        for sub_job in update_jobss:
+                                            try:
+                                                self.mongo_community.update_data(name=self.filename, data=sub_job)
+                                            except:
+                                                err_wal = jub_job[0]['wallet']
+                                                print(f'error wallet: {sub_job} in {chain_id}')
+                                                continue
+
                         except Exception as e:
                             profiling.to_csv(f"data/log_file/address_info/{chain_id}/checking.csv", index=False)
                             print('oh no having error in combinning 2 dataframe')
