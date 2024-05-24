@@ -1,12 +1,14 @@
+import random
 from llama_index.core.llms import ChatMessage
 
 class RAGPrompt:
-     def __init__(self, user_order, references, social_platform):
+     def __init__(self, user_order, references, lst_emojis, social_platform):
         self.prompt = [
             ChatMessage(
                 role="user", content="""
                     You are a professional marketer and your task is to create a post for a social media platform.
                     Now, I will give you my requirement and after I say 'Start!!!', you will start your task.
+                    ----------------------------------------------------------------------------------------------
                 """
             ),
             ChatMessage(
@@ -14,11 +16,12 @@ class RAGPrompt:
             ),
             ChatMessage(
                 role="user", content=f"""
-                    I want to create a post for a social media platform with the keywords: {user_order}.;
+                    create a post for a social media platform, with the keywords: {user_order}.;
                     You must write a post suitable for a social media platform.
                     - If I want to create a post for Twitter, please limit your post to maximum 280 characters.
                     - If I want to create a post for Telegram or Discord, consider your post with longer content and more detailed information.
                     I will provide you with some examples of posts. Please wait a moment.
+                    ----------------------------------------------------------------------------------------------
                 """
             ),
             ChatMessage(
@@ -26,16 +29,18 @@ class RAGPrompt:
             ),
             ChatMessage(
                 role="user", content=f"""
-                    I want to create a post for {social_platform}. 
+                    Create a post for {social_platform} platform. 
                     Here are some examples of posts:
-                        - Post1 content: {references[f'post {0}']}
-                        - Post2 content: {references[f'post {1}']}
-                        - Post3 content: {references[f'post {2}']}
-                        - Post4 content: {references[f'post {3}']}
-                        - Post5 content: {references[f'post {4}']}
+                        - Post1 content: {references[f'post {random.randint(1, len(references))}']}
+                        - Post2 content: {references[f'post {random.randint(1, len(references))}']}
+                        - Post3 content: {references[f'post {random.randint(1, len(references))}']}
+                        - Post4 content: {references[f'post {random.randint(1, len(references))}']}
+                        - Post5 content: {references[f'post {random.randint(1, len(references))}']}
                     Please write a post in the same style and layout as the above posts. 
+                    Please use emojis that belong to the following lít emojis: {lst_emojis}. Do not use any other emojis.
                     Your post should only contain content without any unnecessary information such as "Author", 
-                    "Note", "Introduction", "Conclusion", or any other end marker
+                    "Note", "Introduction", "Conclusion", or any other end markers.
+                    ----------------------------------------------------------------------------------------------
                 """
             ),
             ChatMessage(
@@ -46,6 +51,8 @@ class RAGPrompt:
                     Remember that:
                         - Your post should only contain content, no additional information or introduction or conclusion.
                         - Limit the number of "\\n" in your post to a maximum of 2. Use line breaks only when you want to write a new part of your post.
+                        - I found that your post usually contains hashtag at the end of the post, please flexible and creative to add it in your post.
+                        ----------------------------------------------------------------------------------------------
                 """
             ),
             ChatMessage(
@@ -56,14 +63,15 @@ class RAGPrompt:
             ),
         ]
 
+# After get the first response of llm, prompt again to improve the quality of the post 
 class NormalPrompt:
-    def __init__(self, user_order):
-        self.prompt = f"""   
-            Please execute the following user order
-            User order: 
-
-                Please write me a twitter post with keywords: {user_order}
-                Write your answer in the commentary form:"answer": \n"your answer"
-                Note: your answer should have 3 main parts: title, main content, ending part
-                
-            Start!"""
+    def __init__(self, first_reponse, social_platform):
+        self.prompt = [
+            ChatMessage(
+                role="user", content=f"""
+                    I have received the first response from you.
+                    Here is the post that you have created: {first_reponse}
+                    Please remove any unnecessary information, only keep the content of the post and give me the final version of the post.
+                    ----------------------------------------------------------------------------------------------
+                """),
+        ]

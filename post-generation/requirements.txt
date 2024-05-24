@@ -4,6 +4,8 @@ llama-index-vector-stores-postgres
 llama-index-embeddings-huggingface
 llama-index-llms-llama-cpp
 llama-cpp-python
+llama_index.llms.together 
+llama_index.core.llms
 pymupdf
 psycopg2-binary
 pgvector
@@ -21,3 +23,5 @@ flask_cors
 langchain_community
 replicate
 langdetect
+replicate
+emoji
