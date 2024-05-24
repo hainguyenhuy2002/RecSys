@@ -35,6 +35,7 @@ class GenerateData(BaseJob):
                     wallet_id = dapps_transac['_id']
                     chain_id = wallet_id.split('_')[0]
                     klg_cursor = self.klg._db.wallets.find({'_id':f'{wallet_id}'},{'_id':1,
+                                                                                   'tokens':1,
                                                                                    'balanceChangeLogs':1,
                                                                                    'depositChangeLogs':1,
                                                                                    'borrowChangeLogs':1,
@@ -48,7 +49,7 @@ class GenerateData(BaseJob):
                     balance_df, text = get_balance_features(
                         dapps_name=self.dapps_name,
                         chain_id=chain_id,
-                        profile_elite=pd.DataFrame([dapps_balance]), 
+                        dapps_balance=dapps_balance, 
                         timestamp=self.timestamp_str
                         )
 
@@ -100,7 +101,10 @@ class GenerateData(BaseJob):
                         try:
                             dapps_transac = {key: dapps_users.get(key) for key in transact_lst}
                             wallet_id = dapps_transac['_id']
-                            klg_cursor = self.klg._db.wallets.find({'_id':f'{wallet_id}'}, {'_id':1,'balanceInUSD':1,'balanceChangeLogs':1})
+                            klg_cursor = self.klg._db.wallets.find({'_id':f'{wallet_id}'}, 
+                                                                   {'_id':1,'balanceInUSD':1,
+                                                                    'balanceChangeLogs':1,
+                                                                    'balanceInUSD':1})
                             #dapps_balance =  {key: dapps_users.get(key) for key in balance_lst}
                             dapps_balance = list(klg_cursor)[0]
                             transac_df = get_df(dapps_transac)

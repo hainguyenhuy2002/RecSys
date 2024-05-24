@@ -31,42 +31,56 @@ def get_token_balance(row, timestamp):
     return tokens_balance
         
 
-def get_dapps_balance(dapps_name, chain_id, row, timestamp):
+def get_dapps_balance(dapps_name, dapps_balance, chain_id, row, timestamp):
     dapps_tokens = Dapps(dapps_name=dapps_name)
 #    previous_2month = str(int(timestamp) - 2678400*2)
     tokens_balance =[]
-    if (row == 0) |(row == {}):
-        tokens_balance.append(0)
+    if 'tokenChangeLogs' in dapps_balance:
+        if (row['tokenChangeLogs'] == 0) |(row['tokenChangeLogs'] == {}):
+            tokens_balance.append(0)
+        else:
+            for token, value_history in row['tokenChangeLogs'].items():
+                if token in dapps_tokens.tokens[chain_id]:
+                        if value_history == {}:
+                            value = 0
+                        else:
+                            largest_key = largest_key_smaller_than(value_history, timestamp)
+                            if largest_key ==0:
+                                value = 0
+                            else:
+                                last_value = value_history[largest_key]
+                                value = last_value['valueInUSD']
+                        tokens_balance.append(value)
+                else: 
+                    tokens_balance.append(0)        
+    elif 'tokens' in dapps_balance:
+        for token, value_history in row['tokens'].items():
+            tokens_balance.append(value_history)
     else:
-        for token, value_history in row.items():
-            if token in dapps_tokens.tokens[chain_id]:       
-                if value_history == {}:
-                    value = 0
-                else:
-                    largest_key = largest_key_smaller_than(value_history, timestamp)
-                    if largest_key ==0:
-                        value = 0
-                    else:
-                        last_value = value_history[largest_key]
-                        value = last_value['valueInUSD']
-                tokens_balance.append(value)
-            else: 
-                tokens_balance.append(0)
+        tokens_balance.append(0)
+
+                
+
     return np.sum(tokens_balance)
     
     
         
-def get_balance(my_dict, timestamp):
-    if my_dict =={}:
-        return 0
-    else:
-        largest_key = largest_key_smaller_than(my_dict, timestamp)
-        if largest_key == 0:
-            last_value = 0
+def get_balance(row, dapps_balance, timestamp):
+    if 'balanceChangeLogs' in dapps_balance:
+        if row['balanceChangeLogs'] =={}:
+            return 0
         else:
-            last_value = my_dict[str(largest_key)]
-        return last_value
-    
+            largest_key = largest_key_smaller_than(row['balanceChangeLogs'], timestamp)
+            if largest_key == 0:
+                last_value = 0
+            else:
+                last_value = row['balanceChangeLogs'][str(largest_key)]
+            return last_value
+    elif 'balanceInUSD' in dapps_balance:
+        return dapps_balance['balanceInUSD']
+    else: 
+        return 0
+
 def average_value(dictionary, timestamp):
   #  previous3month = str(int(timestamp) - 2678400*3)
     if (dictionary =={}) |(dictionary ==0):
@@ -74,7 +88,7 @@ def average_value(dictionary, timestamp):
     elif not dictionary:
         return 'outdated'
     
-    sub_dict = {key: value for key, value in dictionary.items() if (key <= timestamp)}  
+    sub_dict = {key: value for key, value in dictionary.items() if (int(key) <= timestamp)}  
     if sub_dict =={}:
         future_subdict = {key: value for key, value in dictionary.items() if key > timestamp}
         if (future_subdict =={}):
@@ -157,13 +171,21 @@ def get_df(data):
 def get_balance_features(dapps_name, chain_id, dapps_balance, timestamp):
     #balance
     profile_elite = pd.DataFrame([dapps_balance])
-    #profile_elite['tokenChangeLogs'].fillna("0", inplace=True)
-    #profile_elite['tokenBalances'] = profile_elite['tokenChangeLogs'].apply(lambda row: get_token_balance(row,timestamp))
-    profile_elite['aaveBalance'] = profile_elite['tokenChangeLogs'].apply(lambda row: get_dapps_balance(dapps_name, chain_id, row, timestamp))
-    profile_elite['overallBalance'] = profile_elite['balanceChangeLogs'].apply(lambda row: get_balance(row, timestamp))
+    profile_elite['dappsBalance'] = profile_elite.apply(
+        lambda row: get_dapps_balance(dapps_name=dapps_name,
+                                      dapps_balance=dapps_balance, 
+                                      chain_id=chain_id, 
+                                      row=row, 
+                                      timestamp=timestamp), axis=1)    
+    
+    profile_elite['overallBalance'] = profile_elite.apply(
+        lambda row: get_balance(row=row, 
+                                dapps_balance=dapps_balance, 
+                                timestamp=timestamp), axis=1)
+    print(profile_elite)
     profile_elite['aaveAvgDeposit'] = profile_elite['depositChangeLogs'].apply(lambda row: average_value(row, timestamp))
     profile_elite['aaveAvgBorrow'] = profile_elite['borrowChangeLogs'].apply(lambda row: average_value(row, timestamp))
-    if profile_elite['aaveBalance'].iloc[0] ==0:
+    if profile_elite['dappsBalance'].iloc[0] ==0:
         if (profile_elite['aaveAvgDeposit'].iloc[0]=='outdated')&(profile_elite['aaveAvgBorrow'].iloc[0]=='outdated'):
             return pd.DataFrame(), 'outdated'
         elif (((profile_elite['aaveAvgDeposit'].iloc[0] in ['future data','outdated'])&(profile_elite['aaveAvgBorrow'].iloc[0]=='future data'))|((profile_elite['aaveAvgBorrow'].iloc[0] in ['future data','outdated'])&(profile_elite['aaveAvgDeposit'].iloc[0]=='future data'))):
@@ -171,21 +193,20 @@ def get_balance_features(dapps_name, chain_id, dapps_balance, timestamp):
         else:
             profile_elite = profile_elite.replace('future data', 0)
             profile_elite = profile_elite.replace('outdated', 0)
-            profile_elite['reputationScore'] = (profile_elite['aaveBalance'] + profile_elite['aaveAvgDeposit']+ profile_elite['aaveAvgBorrow'])/3
+            profile_elite['reputationScore'] = (profile_elite['dappsBalance'] + profile_elite['aaveAvgDeposit']+ profile_elite['aaveAvgBorrow'])/3
 
 
 
     else:
         profile_elite = profile_elite.replace('future data', 0)
         profile_elite = profile_elite.replace('outdated', 0)
-        profile_elite['reputationScore'] = (profile_elite['aaveBalance'] + profile_elite['aaveAvgDeposit']+ profile_elite['aaveAvgBorrow'])/3
+        profile_elite['reputationScore'] = (profile_elite['dappsBalance'] + profile_elite['aaveAvgDeposit']+ profile_elite['aaveAvgBorrow'])/3
 
     Dapps_balance = profile_elite[['_id','overallBalance','reputationScore']]
     return Dapps_balance, 'acceptable'
+
 def search_balance_feature(dapps_balance, timestamp):
     if 'balanceChangeLogs' in dapps_balance:
-    # profile_elite['tokenChangeLogs'].fillna("0", inplace=True)
-    # profile_elite['tokenBalances'] = profile_elite['tokenChangeLogs'].apply(lambda row: get_token_balance(row, timestamp))
         profile_elite = pd.DataFrame([dapps_balance])
         profile_elite['overallBalance'] = profile_elite['balanceChangeLogs'].apply(lambda row: get_balance(row, timestamp))
     elif 'balanceInUSD' in dapps_balance:
