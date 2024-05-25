@@ -2,7 +2,13 @@ import random
 from llama_index.core.llms import ChatMessage
 
 class RAGPrompt:
-     def __init__(self, user_order, references, lst_emojis, social_platform):
+    def __init__(self, user_order, references, lst_emojis, social_platform, post_of_author):
+        max_length = 0
+        for key, value in references.items():
+            if len(value) > max_length:
+                max_length = len(value)
+
+        self.max_length = max_length
         self.prompt = [
             ChatMessage(
                 role="user", content="""
@@ -19,7 +25,7 @@ class RAGPrompt:
                     create a post for a social media platform, with the keywords: {user_order}.;
                     You must write a post suitable for a social media platform.
                     - If I want to create a post for Twitter, please limit your post to maximum 280 characters.
-                    - If I want to create a post for Telegram or Discord, consider your post with longer content and more detailed information.
+                    - If I want to create a post for Telegram, MUST write a post with the length at least {self.max_length} characters.
                     I will provide you with some examples of posts. Please wait a moment.
                     ----------------------------------------------------------------------------------------------
                 """
@@ -36,7 +42,9 @@ class RAGPrompt:
                         - Post3 content: {references[f'post {random.randint(1, len(references))}']}
                         - Post4 content: {references[f'post {random.randint(1, len(references))}']}
                         - Post5 content: {references[f'post {random.randint(1, len(references))}']}
-                    Please write a post in the same style and layout as the above posts. 
+                    ----------------------------------------------------------------------------------------------
+
+                    MUST write a post in the same style as the following list of post: {post_of_author}
                     Please use emojis that belong to the following lít emojis: {lst_emojis}. Do not use any other emojis.
                     Your post should only contain content without any unnecessary information such as "Author", 
                     "Note", "Introduction", "Conclusion", or any other end markers.
@@ -63,15 +71,16 @@ class RAGPrompt:
             ),
         ]
 
-# After get the first response of llm, prompt again to improve the quality of the post 
-class NormalPrompt:
-    def __init__(self, first_reponse, social_platform):
-        self.prompt = [
+    def prompt_v2(self, first_reponse):
+        prompt_v2 = [
             ChatMessage(
                 role="user", content=f"""
                     I have received the first response from you.
                     Here is the post that you have created: {first_reponse}
                     Please remove any unnecessary information, only keep the content of the post and give me the final version of the post.
                     ----------------------------------------------------------------------------------------------
+                    MUST write a post with the length at least {self.max_length} characters, Please create again, MORE CREATIVE, MORE FLEXIBLE.
                 """),
         ]
+
+        return prompt_v2

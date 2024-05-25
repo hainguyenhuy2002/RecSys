@@ -92,3 +92,15 @@ class PostgresDB:
                     self.session.execute(update_timestamp_query, {'timestamp': timestamp, 'node_id': node_id})
         except SQLAlchemyError as e:
             logger.error(f"Error updating timestamp values: {e}")
+
+    def query_post_of_author(self, table, author_name):
+        author_name = author_name.lower()
+        query = f"""
+        SELECT {Columns.TEXT} FROM {table}
+        WHERE LOWER({Columns.NODE_ID}) LIKE '%{author_name}%'
+        """
+        
+        with self.session.begin():
+            result = self.session.execute(text(query), {'author_name': author_name})
+            results = result.fetchall()
+            return results

@@ -1,5 +1,6 @@
 import os
 import re
+import emoji
 from flasgger import Swagger
 from flask_cors import CORS
 from flask import Flask, request
@@ -8,7 +9,7 @@ from databases.postgresql import PostgresDB
 from models.embedding_models import EmbeddingModel
 from models.embedding_models import LargeLanguageModel
 from services.tweet_vector_query_service import tweet_vector_query
-from constant.prompt import RAGPrompt, NormalPrompt
+from constant.prompt import RAGPrompt
 
 app = Flask(__name__)
 api = Api(app)
@@ -17,6 +18,7 @@ swagger = Swagger(app)
 model = EmbeddingModel()._embed_model
 vector_store=PostgresDB().vector_store
 vector_store_v2=PostgresDB().vector_store_v2
+db = PostgresDB()
 llm = LargeLanguageModel()._embed_model
 
 def clean_generated_content(content):
@@ -55,49 +57,106 @@ class PostGenerationWithRAG(Resource):
     def get(self):
         return """ Welcome to post generation task, I am is LLM and I'll help to generate your marketing post """ , 200
     def post(self):
-        #try:
+        try:
             user_input = request.get_json()
-        
+
+            author = user_input['author']
             keywords = user_input['keyWords']
             social_platform = user_input['socialPlatform']
             
             if social_platform.lower() == 'twitter':
-                simi_tweets, lst_emojis = tweet_vector_query(
+                simi_tweets = tweet_vector_query(
                     EmbedModel=model,
                     vector_store=vector_store,
                     input=keywords,top_simi=20)
                 
+                # Filter the query result which have the length of content < 350
+                references = {}
+                for key, value in simi_tweets.items():
+                    if len(value) < 350:
+                        references[key] = value
+                    else:
+                        continue
+                        
+                table = f'data_{vector_store.table_name}'
+
+                try:
+                    post_of_author = db.query_post_of_author(table, author)
+                except Exception as error:
+                    print(error)
+
+                if len(post_of_author) > 10:
+                    post_of_author = post_of_author[:10]
+                else:
+                    post_of_author = post_of_author
+                
             if social_platform.lower() == 'telegram':
-                simi_tweets, lst_emojis = tweet_vector_query(
+                references = tweet_vector_query(
                     EmbedModel=model,
                     vector_store=vector_store_v2,
                     input=keywords,top_simi=20)
+                
+                table = f'data_{vector_store_v2.table_name}'
+
+                try:
+                    post_of_author = db.query_post_of_author(table, author)
+                except Exception as error:
+                    print(error)
+                    
+                if len(post_of_author) > 10:
+                    post_of_author = post_of_author[:10]
+                else:
+                    post_of_author = post_of_author
+
+            # Get emojis from references and post of author
+            lst_emojis = []
+            for key, value in references.items():
+                values = emoji.emoji_list(value)
+                for i in values:
+                    lst_emojis.append(i.get('emoji'))
             
+            for i in post_of_author:
+                values = emoji.emoji_list(i)
+                for i in values:
+                    lst_emojis.append(i.get('emoji'))
+            
+            # Remove duplicate emojis
+            lst_emojis = list(set(lst_emojis))
+
+            post_styles = []
+            for value in post_of_author:    
+                for text in value:
+                    post_styles.append(text)
+        
             if ('rag' in user_input):
-                return  simi_tweets, 201
+                return  references, 201
             else:
                 ragprompt = RAGPrompt(
                     user_order=keywords,
-                    references=simi_tweets,
+                    references=references,
                     lst_emojis=lst_emojis,
-                    social_platform=social_platform
+                    social_platform=social_platform,
+                    post_of_author=post_styles
                 ).prompt
          
                 output_post = llm.stream_chat(ragprompt)
                 generated_post = "".join([response.delta for response in output_post])
 
-                normprompt = NormalPrompt(
-                    first_reponse=generated_post,
-                    social_platform=social_platform
-                ).prompt
-                output_post_v2 = llm.stream_chat(normprompt)
+                prompt_v2 = RAGPrompt(user_order=keywords,
+                    references=references,
+                    lst_emojis=lst_emojis,
+                    social_platform=social_platform,
+                    post_of_author=post_styles).prompt_v2(generated_post)
+      
+                output_post_v2 = llm.stream_chat(prompt_v2)
+
                 generated_post_v2 = "".join([response.delta for response in output_post_v2])
                 generated_post_v2 = clean_generated_content(generated_post)
 
                 return generated_post_v2, 201
-        #except Exception as error:
-         #   return {'error': error}
-        
+            
+        except Exception as error:
+           return {'error': error}
 
 api.add_resource(PostGenerationWithRAG,'/genpost')
 
