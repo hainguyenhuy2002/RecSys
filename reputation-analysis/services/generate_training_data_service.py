@@ -172,6 +172,7 @@ class GenerateData(BaseJob):
 
             logger.info(f"Successful preprocess dataframe with {accept_tokens} tokens")
             df = pd.concat(preprocessed_df_lst).fillna(0)
+            df = df.reindex(sorted(df.columns), axis=1)
 
             if not os.path.exists(f'data/{self.dapps_name}/train'):
                 os.makedirs(f'data/{self.dapps_name}/train')
