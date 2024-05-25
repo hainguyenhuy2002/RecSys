@@ -7,6 +7,8 @@ from utils.logger_utils import get_logger, write_file1, write_file
 from utils.generate_training_utils import get_df_v2, get_balance_features, get_value_features, get_freq_features, search_balance_feature
 from constants.network_constants import Chains
 from constants.dapps_tokens_constans import Dapps
+from IPython.utils import io
+
 logger = get_logger("Generate training data")
 
 class GenerateData(BaseJob):
@@ -166,8 +168,9 @@ class GenerateData(BaseJob):
                 columns_to_remove = sub_df.columns.intersection(ignore_tokens) ## invalid tokens
                 sub_df['other'] = sub_df[columns_to_remove].sum(axis=1)
                 sub_df = sub_df.drop(columns_to_remove, axis=1)
-                for accept_col in accepted_columns:
-                    sub_df[accept_col] = 0
+                with io.capture_output() as captured:  # not show warning
+                    for accept_col in accepted_columns:
+                        sub_df[accept_col] = 0
                 preprocessed_df_lst.append(sub_df)
 
             logger.info(f"Successful preprocess dataframe with {accept_tokens} tokens")
