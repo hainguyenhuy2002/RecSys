@@ -164,14 +164,15 @@ class GenerateData(BaseJob):
             
             preprocessed_df_lst = []
             for sub_df in self.df_lst:
-                accepted_columns = set(df_token.iloc[:num_tokens].tokens.unique().tolist()) - set(sub_df.columns) ## accept tokens
-                columns_to_remove = sub_df.columns.intersection(ignore_tokens) ## invalid tokens
-                sub_df['other'] = sub_df[columns_to_remove].sum(axis=1)
-                sub_df = sub_df.drop(columns_to_remove, axis=1)
                 with io.capture_output() as captured:  # not show warning
+
+                    accepted_columns = set(df_token.iloc[:num_tokens].tokens.unique().tolist()) - set(sub_df.columns) ## accept tokens
+                    columns_to_remove = sub_df.columns.intersection(ignore_tokens) ## invalid tokens
+                    sub_df['other'] = sub_df[columns_to_remove].sum(axis=1)
+                    sub_df = sub_df.drop(columns_to_remove, axis=1)
                     for accept_col in accepted_columns:
                         sub_df[accept_col] = 0
-                preprocessed_df_lst.append(sub_df)
+                    preprocessed_df_lst.append(sub_df)
 
             logger.info(f"Successful preprocess dataframe with {accept_tokens} tokens")
             df = pd.concat(preprocessed_df_lst).fillna(0)
