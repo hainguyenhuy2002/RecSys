@@ -37,11 +37,11 @@ class RAGPrompt:
                 role="user", content=f"""
                     Create a post for {social_platform} platform. 
                     Here are some examples of posts:
-                        - Post1 content: {references[f'post {random.randint(1, len(references))}']}
-                        - Post2 content: {references[f'post {random.randint(1, len(references))}']}
-                        - Post3 content: {references[f'post {random.randint(1, len(references))}']}
-                        - Post4 content: {references[f'post {random.randint(1, len(references))}']}
-                        - Post5 content: {references[f'post {random.randint(1, len(references))}']}
+                        - Post1 content: {random.choice(list(references.values()))}
+                        - Post2 content: {random.choice(list(references.values()))}
+                        - Post3 content: {random.choice(list(references.values()))}
+                        - Post4 content: {random.choice(list(references.values()))}
+                        - Post5 content: {random.choice(list(references.values()))}
                     ----------------------------------------------------------------------------------------------
 
                     MUST write a post in the same style as the following list of post: {post_of_author}

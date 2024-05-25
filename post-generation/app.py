@@ -51,6 +51,14 @@ def clean_generated_content(content):
         content = re.sub(r'#\w+', '', content)
         content += ' ' + ' '.join(hashtags[:max_hashtags])
     
+    # If the content has no "\n\n", please replace "\n" with "\n\n"
+    if content.count('\n') == 1 and content.count('\n\n') == 0:
+        content = content.replace('\n', '\n\n')
+    
+    # If the content has no any '\n', please add '\n\n' after the first sentence
+    if content.count('\n') == 0 and content.count('\n\n') == 0:
+        content = content.replace('. ', '.\n\n')
+    
     return content
 
 class PostGenerationWithRAG(Resource):
@@ -77,7 +85,7 @@ class PostGenerationWithRAG(Resource):
                         references[key] = value
                     else:
                         continue
-                        
+                
                 table = f'data_{vector_store.table_name}'
 
                 try:
