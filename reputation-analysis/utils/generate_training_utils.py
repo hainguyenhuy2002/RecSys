@@ -207,6 +207,24 @@ def get_df(data):
     df = pd.DataFrame(rows)
     return df
 
+def get_df_v2(data):
+    rows = []
+    for wallet, wallet_data in data['interactedWallet'].items():
+        for contract, contract_data in wallet_data['contractAddress'].items():
+            for timestamp, values in contract_data.items():
+                row = {
+                    '_id': data['_id'],
+                    'interactedWallet': wallet,
+                    'contractAddress': contract,
+                    'timestampHistory': timestamp,
+                    'valueInUSDHistory': values['value'],
+                    'amountHistory': values['amount']
+                }
+                rows.append(row)
+
+    df = pd.DataFrame(rows)
+    return df
+
 def get_balance_features(dapps_name, chain_id, dapps_balance, timestamp):
     #balance
     profile_elite = pd.DataFrame([dapps_balance])

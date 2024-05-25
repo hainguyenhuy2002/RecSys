@@ -1,5 +1,6 @@
 class Dapps:
     def __init__(self, dapps_name=None):
+        self.all_projects = ['trava', 'aave']
         if dapps_name =='trava':
             self.tokens = \
             {
