@@ -58,6 +58,8 @@ def generate_training_data(searching_address, direction, time_stamp, batch_size,
 
             logger.info('Done ( ๑ ˃̵ᴗ˂̵)و ♡ ( ๑ ˃̵ᴗ˂̵)و ♡')
     elif direction =='search':
+        logger = get_logger(f'Gen searching for multichain')
+
         num_documents = address_searching.estimated_document_count()
         index_list = list(range(batch_size, num_documents, batch_size))
         logger.info(f"start to search with {num_documents} addresses")
