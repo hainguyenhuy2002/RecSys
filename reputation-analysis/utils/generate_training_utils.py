@@ -31,16 +31,16 @@ def get_label(row, threshold):
 #     return tokens_balance
         
 
-def get_dapps_balance(dapps_name, dapps_balance, chain_id, row, timestamp):
-    dapps_tokens = Dapps(dapps_name=dapps_name)
+def get_dapps_balance(dapps_name, dapps_balance, row, timestamp):
 #    previous_2month = str(int(timestamp) - 2678400*2)
+    dapps_tokens = Dapps(dapps_name=dapps_name)
     tokens_balance =[]
-    if 'tokenChangeLogs' in dapps_balance:
-        if (row['tokenChangeLogs'] == 0) |(row['tokenChangeLogs'] == {}):
+    if ('tokenChangeLogs' in dapps_balance) | (row['tokenChangeLogs']!=0) :
+        if (row['tokenChangeLogs'] == {}):
             tokens_balance.append(0)
         else:
             for token, value_history in row['tokenChangeLogs'].items():
-                if token in dapps_tokens.tokens[chain_id]:
+                if token in dapps_tokens.tokens[row['chainId']]:
                         if value_history == {}:
                             value = 0
                         else:
@@ -65,21 +65,20 @@ def get_dapps_balance(dapps_name, dapps_balance, chain_id, row, timestamp):
     
     
         
-def get_balance(row, dapps_balance, timestamp):
-    if 'balanceChangeLogs' in dapps_balance:
+def get_balance(row, timestamp):
+    if row['balanceChangeLogs'] != 0:
         if row['balanceChangeLogs'] =={}:
             return 0
         else:
+            
             largest_key = largest_key_smaller_than(row['balanceChangeLogs'], timestamp)
             if largest_key == 0:
                 last_value = 0
             else:
                 last_value = row['balanceChangeLogs'][str(largest_key)]
             return last_value
-    elif 'balanceInUSD' in dapps_balance:
-        return dapps_balance['balanceInUSD']
-    else: 
-        return 0
+    else:
+        return row['balanceInUSD']
 
 def average_value(dictionary, timestamp):
   #  previous3month = str(int(timestamp) - 2678400*3)
@@ -110,7 +109,7 @@ def average_value(dictionary, timestamp):
     return value_of_largest_key
 
 def get_deposit_features(row, timestamp, dapps_balance):
-    if 'depositChangeLogs' in dapps_balance:
+    if ('depositChangeLogs' in dapps_balance) &(row['depositChangeLogs'] != 0):
         avg_value = average_value(dictionary=row['depositChangeLogs'],
                       timestamp=timestamp)
         return avg_value
@@ -123,7 +122,7 @@ def get_deposit_features(row, timestamp, dapps_balance):
         return 'outdated'
 
 def get_borrow_features(row, timestamp, dapps_balance):
-    if 'borrowChangeLogs' in dapps_balance:
+    if ('borrowChangeLogs' in dapps_balance) & (row['borrowChangeLogs'] !=0):
         avg_value = average_value(dictionary=row['borrowChangeLogs'],
                       timestamp=timestamp)
         return avg_value
@@ -189,6 +188,33 @@ def get_value_features(Dapps_transaction_clean, chain_id, mongo_klg):
     new_column_lst.remove('_id')
     return Dapps_value, new_column_lst
 
+def get_only_value_features(Dapps_transaction_clean):
+    #valueInUSD
+    #Dapps_token_transfer = Dapps_transaction_clean.groupby(['_id','contractAddress']) \
+    #                                .agg({"valueInUSDHistory":tuple}).reset_index()
+    #Dapps_token_transfer['totalInUSD'] = Dapps_token_transfer['valueInUSDHistory'].apply(sum)
+    # Dapps_tokens = Dapps_token_transfer.pivot_table(values=['totalInUSD'], index='_id', \
+    #                                 columns='contractAddress', aggfunc='sum', fill_value = 0) \
+    #                                 .reset_index()
+    # column_lst = []
+    # column_lst.extend(['{}_{}'.format(chain_id, col[1]) for col in Dapps_tokens.columns if col[0]!='_id'])
+    # new_column_lst = ['_id']
+    # for col in column_lst:
+    #     cursor = mongo_klg._db['smart_contracts'].find({"_id":col},{"_id":1,"idCoingecko":1})
+    #     token_id = 'value-'+list(cursor)[0]['idCoingecko']
+    #     new_column_lst.append(token_id)
+
+    # Dapps_tokens.columns = new_column_lst
+    Dapps_value_transfer = Dapps_transaction_clean.groupby(['_id']) \
+                                    .agg({"valueInUSDHistory":tuple}).reset_index()
+    Dapps_value_transfer['totalUSDTransfer'] = Dapps_value_transfer['valueInUSDHistory'].apply(sum)
+    Dapps_value_transfer['avgUSDTransfer'] = Dapps_value_transfer['valueInUSDHistory'].apply(np.median)
+    Dapps_value = Dapps_value_transfer[['_id','totalUSDTransfer','avgUSDTransfer']]
+    #new_column_lst.remove('_id')
+    return Dapps_value
+
+
+
 def get_df(data):
     rows = []
     for wallet, wallet_data in data['interactedWallet'].items():
@@ -237,7 +263,6 @@ def get_balance_features(dapps_name, chain_id, dapps_balance, timestamp):
     
     profile_elite['overallBalance'] = profile_elite.apply(
         lambda row: get_balance(row=row, 
-                                dapps_balance=dapps_balance, 
                                 timestamp=timestamp), axis=1)
 
     profile_elite['aaveAvgDeposit'] = profile_elite.apply(
@@ -276,15 +301,13 @@ def get_balance_features(dapps_name, chain_id, dapps_balance, timestamp):
     return Dapps_balance, 'acceptable'
 
 def search_balance_feature(dapps_balance, timestamp):
-    if 'balanceChangeLogs' in dapps_balance:
-        profile_elite = pd.DataFrame([dapps_balance])
-        profile_elite['overallBalance'] = profile_elite['balanceChangeLogs'].apply(lambda row: get_balance(row, timestamp))
-    elif 'balanceInUSD' in dapps_balance:
-        profile_elite = pd.DataFrame([dapps_balance])
-        profile_elite['overallBalance'] = profile_elite['balanceInUSD']
+    if 'balanceChangeLogs' not in dapps_balance.columns:
+        dapps_balance['balanceChangeLogs'] = 0
 
-#    profile_elite['tokenBalanceStd'] = profile_elite['tokenBalances'].apply(np.std)
-    Dapps_balance = profile_elite[['_id','overallBalance']]
+    if 'balanceInUSD' not in dapps_balance.columns:
+        dapps_balance['balanceInUSD'] = 0
+    dapps_balance['overallBalance'] = dapps_balance.apply(lambda row: get_balance(row,timestamp), axis=1)
+    Dapps_balance = dapps_balance[['_id','overallBalance']]
     return Dapps_balance
 
 def update_json_file(address, removed_path):

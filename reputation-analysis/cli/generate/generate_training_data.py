@@ -60,7 +60,9 @@ def generate_training_data(searching_address, direction, time_stamp, batch_size,
     elif direction =='search':
         num_documents = address_searching.estimated_document_count()
         index_list = list(range(batch_size, num_documents, batch_size))
+        logger.info(f"start to search with {num_documents} addresses")
         index_list.append(num_documents)
+        #index_list = [1000, 2000, 3000, 4000]
         job =GenerateData(importer=address_searching, 
                           exporter= mongodb,
                           klg = klg, 

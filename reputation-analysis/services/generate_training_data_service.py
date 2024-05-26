@@ -4,7 +4,7 @@ import pandas as pd
 from collections import Counter
 from multithread_processing.base_job import BaseJob
 from utils.logger_utils import get_logger, write_file1, write_file
-from utils.generate_training_utils import get_df_v2, get_balance_features, get_value_features, get_freq_features, search_balance_feature
+from utils.generate_training_utils import get_df_v2, get_balance_features, get_value_features, get_freq_features, search_balance_feature, get_only_value_features
 from constants.network_constants import Chains
 from constants.dapps_tokens_constans import Dapps
 from IPython.utils import io
@@ -18,7 +18,8 @@ class GenerateData(BaseJob):
         self.klg = klg 
         self.dapps_name = dapps_name
         self.batch_size = batch_size
-        self.tokens = Dapps(dapps_name=dapps_name).tokens
+        if dapps_name != None:
+           self.tokens = Dapps(dapps_name=dapps_name).tokens
         self.Dapps_user_addresses = Dapps_user_addresses
         self.direction = direction
         self.timestamp = timestamp
@@ -104,47 +105,58 @@ class GenerateData(BaseJob):
                 cursor = self.importer.find({},{'_id':1,'interactedWallet':1})
                 transact_lst = ['_id','interactedWallet']
               #  balance_lst = ['_id','balanceChangeLogs','depositChangeLogs','borrowChangeLogs','tokenChangeLogs']
+             #   try:
+                wallet_id_lst = []
                 info_df_lst = []
-                try:
-                    for dapps_users in cursor[work-self.batch_size: work]:
-                        try:
-                            dapps_transac = {key: dapps_users.get(key) for key in transact_lst}
-                            wallet_id = dapps_transac['_id']
-                            klg_cursor = self.klg._db.wallets.find({'_id':f'{wallet_id}'}, 
-                                                                   {'_id':1,'balanceInUSD':1,
-                                                                    'balanceChangeLogs':1,
-                                                                    'balanceInUSD':1})
-                            #dapps_balance =  {key: dapps_users.get(key) for key in balance_lst}
-                            dapps_balance = list(klg_cursor)[0]
-                            transac_df = get_df_v2(dapps_transac)
+                for dapps_users in cursor[work-self.batch_size: work]:
+                    try:
+                        dapps_transac = {key: dapps_users.get(key) for key in transact_lst}
+                        wallet_id = dapps_transac['_id']
+                        transac_df = get_df_v2(dapps_transac)
 
-                            transac_df = transac_df[transac_df['timestampHistory']. \
-                                                    apply(int)<self.timestamp]
-                            
-                            value_df = get_value_features(transac_df)
-                            freq_df = get_freq_features(transac_df)
-                            balance_df = search_balance_feature(dapps_balance, self.timestamp)
-                            info_df = value_df.merge(freq_df, on='_id',how = 'inner')
-                            info_df = info_df.merge(balance_df, on='_id', how='inner')
-                            if info_df.empty:
-                                write_file(
-                                    folder_direction=f'search/{self.timestamp}/search',
-                                    name='failed_addresses.json', 
-                                    file=dapps_users['_id']
-                                )
-                            else:
-                                self.df_lst.append(info_df[['_id','reputationScore']])
-                                # info_dict = info_df.to_dict(orient='records')
-                                # info_df_lst.extend(info_dict)
-                        except Exception as e:
-                            print(e)
-                            print(dapps_users)
-                            continue
-                except Exception as ex:
-                    print(ex)
+                        transac_df = transac_df[transac_df['timestampHistory']. \
+                                                apply(int)<self.timestamp]
+                        
+                        value_df = get_only_value_features(transac_df)  #do not get token value, just avgUSD, totalUSD
+                        freq_df = get_freq_features(transac_df)
+                        sub_info_df = value_df.merge(freq_df, on='_id',how = 'inner')
+                        wallet_id_lst.append(wallet_id)
+                        info_df_lst.append(sub_info_df)
+
+                    except Exception as e:
+                        print(e)
+                        print(dapps_users)
+                        continue
+                
+
+                klg_cursor = self.klg._db.wallets.find({'_id':{'$in':wallet_id_lst}}, 
+                                                                {'_id':1,'balanceInUSD':1,
+                                                                'balanceChangeLogs':1})
+                cursor_balance_lst =[]
+                for klg_cur in klg_cursor:
+                    cursor_balance_lst.append(klg_cur)
+
+                dapps_balance = pd.DataFrame(cursor_balance_lst)
+                dapps_balance = dapps_balance.fillna(0)
+                balance_df = search_balance_feature(dapps_balance, self.timestamp)
+                info_df = pd.concat(info_df_lst)
+                info_df = info_df.merge(balance_df, on='_id', how='inner')
+
+                if info_df.empty:
+                    write_file(
+                        folder_direction=f'search/{self.timestamp}/search',
+                        name='failed_addresses.json', 
+                        file=dapps_users['_id']
+                    )
+                else:
+                    self.df_lst.append(info_df)
+
+
+             #   except Exception as ex:
+            #        print(ex)
                     # if info_df_lst != []:
                     #     self.exporter.update_data(name=f'{self.chain_name}_{self.timestamp}', data=info_df_lst)
-                    continue
+            #        continue
                 # if info_df_lst != []:
                 #     self.exporter.update_data(name=f'{self.chain_name}_{self.timestamp}', data=info_df_lst)
 
