@@ -11,13 +11,15 @@ def update_format(data):
         if wallet not in result:
             result[wallet] = {'interactedWallet': {}}
         if interacted_wallet not in result[wallet]['interactedWallet']:
+           # print(interacted_wallet)
             result[wallet]['interactedWallet'][interacted_wallet] = {'contractAddress': {}}
         if contractAddress not in result[wallet]['interactedWallet'][interacted_wallet]['contractAddress']:
             result[wallet]['interactedWallet'][interacted_wallet]['contractAddress'][contractAddress] = {
-                'timestampHistory': timestamp_history,
-                'valueInUSDHistory': value_history,
-                'amountHistory': amount_history
-            }
+
+                }
+        if timestamp_history not in result[wallet]['interactedWallet'][interacted_wallet]['contractAddress'][contractAddress]:
+            result[wallet]['interactedWallet'][interacted_wallet]['contractAddress'][contractAddress][str(timestamp_history)] = {'value': value_history, 'amount': amount_history}
+
 
     final_result = [{'_id':wallet, 'wallet': wallet, **data} for wallet, data in result.items()]
     return final_result

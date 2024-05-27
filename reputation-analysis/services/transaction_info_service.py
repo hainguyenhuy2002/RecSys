@@ -3,7 +3,7 @@ import time
 
 from constants.network_constants import NATIVE_TOKEN
 from utils.logger_utils import write_file
-from utils.list_dict_utils import flatten_and_concat, rename_key, update_list_of_dict
+from utils.list_dict_utils import flatten_and_concat, rename_key, update_list_of_dict, chunk_list
 from utils.history_price_utils import get_daily_timestamp
 from utils.upload_utils import update_format
 from databases.mongodb_main import MongoDBMain
@@ -74,14 +74,26 @@ class GetTransactionInfoService():
                                        "valueInUSDHistory":flatten_and_concat,
                                        "amountHistory":flatten_and_concat}
                                     ).reset_index()
+                            profile_infoo = profile_info. \
+                                            set_index(['wallet','interactedWallet','contractAddress']). \
+                                            apply(lambda x: x.explode()) \
+                                            .reset_index()
                             
+                            profile_infooo = profile_infoo.groupby(['wallet','interactedWallet','contractAddress', 'timestampHistory']) \
+                                                            .agg({
+                                                                "valueInUSDHistory":sum,
+                                                                "amountHistory":sum}
+                                                                ).reset_index()
+
+
+                                
                             profile_timestamp = profile_info[['wallet','timestampHistory']].copy()
                             profile_max_timestamp = profile_timestamp.groupby('wallet').agg(
                                 {"timestampHistory":flatten_and_concat}
                             )
                             profile_max_timestamp['lattestTimestamp'] = profile_max_timestamp['timestampHistory'].apply(lambda x: max(x))
                             max_timestamp = profile_max_timestamp['lattestTimestamp'].to_dict()
-                            profile_info_dict = update_format(profile_info)
+                            profile_info_dict = update_format(profile_infooo)
                             dict_lookup = {item['wallet']: item for item in profile_info_dict}
                             for update in other_info:
                                 wallet = update['wallet']
@@ -90,6 +102,7 @@ class GetTransactionInfoService():
                                     tags_dct = dict()
                                     tags_time = dict()
                                     max_time_dct['lattestTimestamp'] = max_timestamp[wallet]
+                                    max_time_dct['lattestTags'] = update['tags']
                                     now_time = time.time()
                                     now_daily_time = get_daily_timestamp(int(now_time))
                                     tags_time[f'{now_daily_time}'] = update['tags']
@@ -97,7 +110,26 @@ class GetTransactionInfoService():
                                     dict_lookup[wallet].update(update)  # Update in here
                                     dict_lookup[wallet].update(max_time_dct) 
                                     dict_lookup[wallet].update(tags_dct)
-                            self.mongo_community.update_docs(collection_name=self.filename, data=profile_info_dict, merge=True)
+
+                            
+                            try:
+#                            for job in update_jobs:
+                                self.mongo_community.update_data(name=self.profile_info_dict, data=job)
+                            except Exception as e:
+                                update_jobs = chunk_list(input_list=profile_info_dict, chunk_size=50)
+                                for job in update_jobs:
+                                    try:
+                                        self.mongo_community.update_data(name=self.filename, data=job)
+                                    except:
+                                        update_jobss = chunk_list(input_list=job, chunk_size=1)
+                                        for sub_job in update_jobss:
+                                            try:
+                                                self.mongo_community.update_data(name=self.filename, data=sub_job)
+                                            except:
+                                                err_wal = sub_job[0]['wallet']
+                                                print(f'error wallet: {err_wal} in {chain_id}')
+                                                continue
+
                         except Exception as e:
                             profiling.to_csv(f"data/log_file/address_info/{chain_id}/checking.csv", index=False)
                             print('oh no having error in combinning 2 dataframe')

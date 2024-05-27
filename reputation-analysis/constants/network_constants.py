@@ -35,7 +35,6 @@ class Chains:
 #    all = [bsc, ethereum, ftm, polygon, arbitrum, optimism, avalanche]
     alls = [bsc, ethereum, polygon, ftm, arbitrum, optimism, avalanche]
     all_name = ['bsc', 'ethereum', 'polygon', 'ftm', 'arbitrum', 'optimism', 'avalanche']
-
     mapping = {
         'bsc': bsc,
         'ethereum': ethereum,
