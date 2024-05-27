@@ -6,7 +6,7 @@ from pymongo import MongoClient
 from constants.mongodb_main_constants import MongoMainCollections
 from constants.time_constants import TimeConstants
 from config import MongoDBMainConfig
-from utils.logger_utils import get_logger
+from utils.logger_utils import get_logger, write_file
 
 
 logger = get_logger('MongoDB Entity')
@@ -56,7 +56,7 @@ class MongoDBMain:
                     addresses_info.append(single_transaction_info)    
         except Exception as e:
             log =get_logger("Oh no getting an error in the query Mongo task")
-            log.info(addresses)
+            write_file('mongo_query', 'failed_addresses', addresses)
             log.info(e)
             addresses_info = list()
         return addresses_info

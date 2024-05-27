@@ -3,7 +3,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import text
 from config import PostgresDBConfig
-from utils.logger_utils import get_logger
+from utils.logger_utils import get_logger, write_file
 
 logger = get_logger('PostgreSQL thread safe')
 
@@ -115,7 +115,7 @@ class PostgresDB:
             except Exception as e:
                 log =get_logger("Oh no getting an error in the query Postgres task")
                 log.info(addresses)
-                log.info(e)
+                write_file('postgre_query', 'failed_addresses', addresses)
                 wallet_transfer = []
                 
         return wallet_transfer, failed_addresses
