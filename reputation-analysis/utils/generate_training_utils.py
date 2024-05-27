@@ -35,7 +35,7 @@ def get_dapps_balance(dapps_name, dapps_balance, row, timestamp):
 #    previous_2month = str(int(timestamp) - 2678400*2)
     dapps_tokens = Dapps(dapps_name=dapps_name)
     tokens_balance =[]
-    if ('tokenChangeLogs' in dapps_balance) | (row['tokenChangeLogs']!=0) :
+    if ('tokenChangeLogs' in dapps_balance) :
         if (row['tokenChangeLogs'] == {}):
             tokens_balance.append(0)
         else:
@@ -44,7 +44,7 @@ def get_dapps_balance(dapps_name, dapps_balance, row, timestamp):
                         if value_history == {}:
                             value = 0
                         else:
-                            largest_key = largest_key_smaller_than(value_history, timestamp)
+                            largest_key = largest_key_smaller_than(value_history, timestamp,  type='train')
                             if largest_key ==0:
                                 value = 0
                             else:
@@ -59,26 +59,26 @@ def get_dapps_balance(dapps_name, dapps_balance, row, timestamp):
     else:
         tokens_balance.append(0)
 
-                
 
     return np.sum(tokens_balance)
     
     
         
-def get_balance(row, timestamp):
-    if row['balanceChangeLogs'] != 0:
-        if row['balanceChangeLogs'] =={}:
-            return 0
-        else:
-            
-            largest_key = largest_key_smaller_than(row['balanceChangeLogs'], timestamp)
-            if largest_key == 0:
-                last_value = 0
+def get_balance(row, timestamp, type='search'):
+    if 'balanceChangeLogs' in row:
+        if row['balanceChangeLogs'] != 0:
+            if row['balanceChangeLogs'] =={}:
+                return 0
             else:
-                last_value = row['balanceChangeLogs'][str(largest_key)]
-            return last_value
-    else:
-        return row['balanceInUSD']
+                largest_key = largest_key_smaller_than(row['balanceChangeLogs'], timestamp, type=type)
+
+                if largest_key == 0:
+                    last_value = 0
+                else:
+                    last_value = row['balanceChangeLogs'][str(largest_key)]
+                return last_value
+                
+    return row['balanceInUSD']
 
 def average_value(dictionary, timestamp):
   #  previous3month = str(int(timestamp) - 2678400*3)
@@ -109,7 +109,7 @@ def average_value(dictionary, timestamp):
     return value_of_largest_key
 
 def get_deposit_features(row, timestamp, dapps_balance):
-    if ('depositChangeLogs' in dapps_balance) &(row['depositChangeLogs'] != 0):
+    if ('depositChangeLogs' in dapps_balance):
         avg_value = average_value(dictionary=row['depositChangeLogs'],
                       timestamp=timestamp)
         return avg_value
@@ -122,7 +122,7 @@ def get_deposit_features(row, timestamp, dapps_balance):
         return 'outdated'
 
 def get_borrow_features(row, timestamp, dapps_balance):
-    if ('borrowChangeLogs' in dapps_balance) & (row['borrowChangeLogs'] !=0):
+    if ('borrowChangeLogs' in dapps_balance):
         avg_value = average_value(dictionary=row['borrowChangeLogs'],
                       timestamp=timestamp)
         return avg_value
@@ -251,19 +251,19 @@ def get_df_v2(data):
     df = pd.DataFrame(rows)
     return df
 
-def get_balance_features(dapps_name, chain_id, dapps_balance, timestamp):
+def get_balance_features(dapps_name, dapps_balance, timestamp):
     #balance
     profile_elite = pd.DataFrame([dapps_balance])
     profile_elite['dappsBalance'] = profile_elite.apply(
         lambda row: get_dapps_balance(dapps_name=dapps_name,
                                       dapps_balance=dapps_balance, 
-                                      chain_id=chain_id, 
+                                      #chain_id=chain_id, 
                                       row=row, 
                                       timestamp=timestamp), axis=1)    
     
     profile_elite['overallBalance'] = profile_elite.apply(
         lambda row: get_balance(row=row, 
-                                timestamp=timestamp), axis=1)
+                                timestamp=timestamp, type='train'), axis=1)
 
     profile_elite['aaveAvgDeposit'] = profile_elite.apply(
         lambda row: get_deposit_features(row=row, 

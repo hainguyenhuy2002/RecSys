@@ -25,30 +25,27 @@ def generate_training_data(searching_address, direction, time_stamp, batch_size,
     address_searching = mongodb._db[f'{searching_address}']
     if direction == 'train':
         dapps_name_lst = Dapps().all_projects
-        logger = get_logger(f'Gen training for {dapps_name_lst}')
+        logger = get_logger(f'༼ つ ◕_◕ ༽つ ༼ つ ◕_◕ ༽つ  Gen training for {dapps_name_lst} ༼ つ ◕_◕ ༽つ ༼ つ ◕_◕ ༽つ ')
         for dapps_name in dapps_name_lst:
             logger.info(f"-------------------------------------------------------------------------------------")
-            logger.info(f"༼ つ ◕_◕ ༽つ ༼ つ ◕_◕ ༽つ training data for {dapps_name} ")
+            logger.info(f"training data for {dapps_name} ")
             dapps_tags = Dapps(dapps_name=dapps_name).tags
-            logger.info('༼ つ ◕_◕ ༽つ ༼ つ ◕_◕ ༽つ start to generate training address ༼ つ ◕_◕ ༽つ ༼ つ ◕_◕ ༽つ')
+            logger.info('start to generate training address')
             # with open(address_dapps,'r') as file:
             #     Dapps_user_address = json.load(file)
             Dapps_user_address = []
             training_cursor = address_searching.find({'lattestTags':{'$in':dapps_tags}})  
             for cur in training_cursor:
-                Dapps_user_address.append(cur['_id'])
+                Dapps_user_address.append(cur)
         
             logger.info('Successful get training addresses ( ˵ •̀ ᴗ •́˵) ( ˵ •̀ ᴗ •́˵)')
-            index_list = list(range(batch_size, len(Dapps_user_address), batch_size))
-            index_list.append(len(Dapps_user_address))
             logger.info('༼ つ ◕_◕ ༽つ ༼ つ ◕_◕ ༽つ start to get training data༼ つ ◕_◕ ༽つ ༼ つ ◕_◕ ༽つ')
             job =GenerateData(importer=address_searching, 
                             exporter=mongodb, 
                             klg=klg,
                             dapps_name=dapps_name, 
                             direction=direction, 
-                            index_lst=index_list,
-                            Dapps_user_addresses=Dapps_user_address, 
+                            index_lst=Dapps_user_address, 
                             timestamp=time_stamp, 
                             max_workers=max_workers, 
                             batch_size=batch_size)

@@ -22,8 +22,11 @@ def flatten_and_concat(tuples):
     
     return flattened
 
-def largest_key_smaller_than(dictionary, value):
-    keys = sorted([int(key) for key in list(dictionary.keys())])
+def largest_key_smaller_than(dictionary, value, type='search'):
+    if type =='search':
+        keys = sorted([int(key) for key in list(dictionary.keys())])
+    elif type == 'train':
+        keys = sorted([key for key in list(dictionary.keys())])
     index = bisect.bisect_left(keys, value) - 1
     if index >= 0:
         return keys[index]
