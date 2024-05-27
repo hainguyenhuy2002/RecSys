@@ -1,6 +1,6 @@
 class Dapps:
     def __init__(self, dapps_name=None):
-        self.all_projects = ['trava', 'aave']
+        self.all_projects = ['venus', 'compound']
         if dapps_name =='trava':
             self.tokens = \
             {
@@ -24,5 +24,27 @@ class Dapps:
                 '0xa86a':['0x63a72806098bd3d9520cc43356dd78afe5d386d9']
             }
             self.tags =['aave_v3_borrowers', 'aave_v2_borrowers', 'aave_v2_depositors', 'aave_v3_depositors','stkaave_holders', 'aave_holders']
+
+        if dapps_name =='venus':
+            self.tokens = \
+            {
+                '0x38':['0xcf6bb5389c92bdda8a3747ddb454cb7a64626c63'],\
+                '0x1':['0xd3cc9d8f3689b83c91b7b59cab4946b063eb894a']
+
+            }
+
+            self.tags =['xvs_holders','venus_borrowers', 'venus_depositors']
+
+        if dapps_name =='compound':
+            self.tokens = \
+            {
+                '0x1':['0xc00e94cb662c3520282e6f5717214004a7f26888'],
+                '0x38': ['0x52ce071bd9b1c4b00a0b92d298c512478cad67e8'],
+                '0x89': ['0x8505b9d2254a7ae468c0e9dd10ccea3a837aef5c'],
+                '0xa4b1': ['0x354a6da3fcde098f8389cad84b0182725c6c91de'],
+                '0xa86a': ['0xc3048e19e76cb9a3aa9d77d8c03c29fc906e2437']
+            }
+
+            self.tags =['compound_depositors', 'comp_holders', 'compound_borrowers']
 
 
