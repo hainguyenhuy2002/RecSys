@@ -126,8 +126,8 @@ class GetTransactionInfoService():
                                             try:
                                                 self.mongo_community.update_data(name=self.filename, data=sub_job)
                                             except:
-                                                err_wal = jub_job[0]['wallet']
-                                                print(f'error wallet: {sub_job} in {chain_id}')
+                                                err_wal = sub_job[0]['wallet']
+                                                print(f'error wallet: {err_wal} in {chain_id}')
                                                 continue
 
                         except Exception as e:
