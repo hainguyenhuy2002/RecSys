@@ -91,7 +91,7 @@ class PostGenerationWithRAG(Resource):
                 try:
                     post_of_author = db.query_post_of_author(table, author)
                 except Exception as error:
-                    print(error)
+                    post_of_author = []
 
                 if len(post_of_author) > 10:
                     post_of_author = post_of_author[:10]
@@ -109,7 +109,7 @@ class PostGenerationWithRAG(Resource):
                 try:
                     post_of_author = db.query_post_of_author(table, author)
                 except Exception as error:
-                    print(error)
+                    post_of_author = []
                     
                 if len(post_of_author) > 10:
                     post_of_author = post_of_author[:10]
@@ -132,9 +132,12 @@ class PostGenerationWithRAG(Resource):
             lst_emojis = list(set(lst_emojis))
 
             post_styles = []
-            for value in post_of_author:    
-                for text in value:
-                    post_styles.append(text)
+            try:
+                for value in post_of_author:    
+                    for text in value:
+                        post_styles.append(text)
+            except Exception as error:
+                post_styles = []
         
             if ('rag' in user_input):
                 return  references, 201
