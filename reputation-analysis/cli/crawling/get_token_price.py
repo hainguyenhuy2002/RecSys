@@ -89,7 +89,7 @@ class QueryTokenPriceSchedulerJob(SchedulerJob):
             self.max_workers = max_workers
 
     def _execute(self, *args, **kwargs):
-        chains = Chains.all
+        chains = Chains.alls
         logger.info(f"Get token price from chains: {chains}")
         for chain_id in chains:
             logger.info(f"Get top token price in {chain_id}")
