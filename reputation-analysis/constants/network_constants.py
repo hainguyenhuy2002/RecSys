@@ -33,8 +33,8 @@ class Chains:
 
     none_wrapped_token = [arbitrum, ftm, optimism]
 #    all = [bsc, ethereum, ftm, polygon, arbitrum, optimism, avalanche]
-    alls = [bsc, ethereum, polygon, ftm, arbitrum, optimism, avalanche]
-    all_name = ['bsc', 'ethereum', 'polygon', 'ftm', 'arbitrum', 'optimism', 'avalanche']
+    alls = [bsc, ethereum, polygon, ftm, arbitrum, optimism, avalanche, tron]
+    all_name = ['bsc', 'ethereum', 'polygon', 'ftm', 'arbitrum', 'optimism', 'avalanche','tron']
     mapping = {
         'bsc': bsc,
         'ethereum': ethereum,
@@ -42,7 +42,8 @@ class Chains:
         'polygon': polygon,
         'arbitrum': arbitrum,
         'optimism': optimism,
-        'avalanche': avalanche
+        'avalanche': avalanche,
+        'tron': tron
     }
     reverse_mapping = {
         '0x38': 'bsc',
@@ -51,7 +52,8 @@ class Chains:
         '0xfa': 'ftm',
         '0xa4b1': 'arbitrum',
         '0xa': 'optimism',
-        '0xa86a': 'avalanche'
+        '0xa86a': 'avalanche',
+        '0x2b6653dc':'tron'
     }
     names = {
         bsc: 'bsc',
@@ -60,7 +62,8 @@ class Chains:
         polygon: 'polygon',
         arbitrum: 'arbitrum',
         optimism: 'optimism',
-        avalanche: 'avalanche'
+        avalanche: 'avalanche',
+        tron:'0x2b6653dc'
     }
 
     abi_mapping = {

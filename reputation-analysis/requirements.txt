@@ -21,3 +21,4 @@ texttable
 web3
 psycopg2-binary 
 python-cli-scheduler
+optuna

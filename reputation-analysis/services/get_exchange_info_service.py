@@ -120,6 +120,7 @@ def get_exchange_info_service(name, wallets_per_job, hot_path, burn_mint_path, t
 
     largest_flag = mongo_klg.get_largest_flag() +1
     flagged_lst = [i for i in range(1, largest_flag)]
+    flagged_lst = [1, 2]
     exchange_service = GetTransactionInfoService(
                              mongo_community=mongo_community,
                              historical_token_price=historical_token_price,
