@@ -62,8 +62,8 @@ class MongoDBMain:
         return addresses_info
 
     def get_largest_block(self):
-        #uppper_time =int(time.time()) - TimeConstants.A_DAY #17s/05/2024
-        uppper_time = 1714037151
+        uppper_time =int(time.time()) - TimeConstants.A_DAY #17s/05/2024
+        #uppper_time = 1714037151
         query = {'timestamp':{'$lte':uppper_time}}
         projection =  {'timestamp':1,'number':1}
         cursor = self._db.blocks.find(query, 
@@ -95,8 +95,8 @@ class MongoDBMain:
     
     def get_previous_2day_block(self):
         time_now = int(time.time()) - TimeConstants.A_DAY
-        time_now = 1714027151
-        lower_time = int(time_now) - TimeConstants.AN_HOUR
+    #    time_now = 1714027151
+        lower_time = int(time_now) - TimeConstants.DAYS_7
         query = {'timestamp':{'$gte':lower_time}}
         projection =  {'timestamp':1,'number':1}
         cursor = self._db.blocks.find(filter=query,

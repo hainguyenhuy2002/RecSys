@@ -114,17 +114,20 @@ class GetTransactionInfoService():
                             
                             try:
 #                            for job in update_jobs:
-                                self.mongo_community.update_data(name=self.profile_info_dict, data=job)
+                                self.mongo_community.update_docs(collection_name=self.filename, data = sub_job, merge=True)
                             except Exception as e:
-                                update_jobs = chunk_list(input_list=profile_info_dict, chunk_size=50)
+                                update_jobs = chunk_list(input_list=profile_info_dict, chunk_size=100)
                                 for job in update_jobs:
                                     try:
-                                        self.mongo_community.update_data(name=self.filename, data=job)
+                                        #self.mongo_community.update_data(name=self.filename, data=job)
+                                        self.mongo_community.update_docs(collection_name=self.filename, data = sub_job, merge=True)
+
                                     except:
                                         update_jobss = chunk_list(input_list=job, chunk_size=1)
                                         for sub_job in update_jobss:
                                             try:
-                                                self.mongo_community.update_data(name=self.filename, data=sub_job)
+                                               # self.mongo_community.update_data(name=self.filename, data=sub_job)
+                                                self.mongo_community.update_docs(collection_name=self.filename, data = sub_job, merge=True)
                                             except:
                                                 err_wal = sub_job[0]['wallet']
                                                 print(f'error wallet: {err_wal} in {chain_id}')
