@@ -47,7 +47,6 @@ def get_exchange_info_service(name, wallets_per_job, hot_path, burn_mint_path, t
                 chain_info_update = dict()
                 chain_info = dict()
                 mongo_transaction = MongoDBMain(chain=chain)
-                #postgre = PostgresDB(chain_id=chain_id)
                 if chain in ['bsc', 'ethereum', 'polygon']:
                     for start_block, start in mongo_transaction.get_previous_3month_block().items():
                         start_block = start_block
@@ -80,27 +79,22 @@ def get_exchange_info_service(name, wallets_per_job, hot_path, burn_mint_path, t
 
 
     else:
+        print('ok')
         try:
             for chain in chain_names:
                 chain_id = Chains.mapping[chain]
                 chain_info_update = dict()
                 chain_info = dict()
                 mongo_transaction = MongoDBMain(chain=chain)
-                #postgre = PostgresDB(chain_id=chain_id)
-                if chain in ['bsc', 'ethereum', 'polygon']:
-                    for start_block, start in mongo_transaction.get_previous_2day_block().items():
-                        start_block = start_block
-                        start = start
-                    for end_block, end in mongo_transaction.get_largest_block().items():
-                        end_block = end_block
-                        end = end
-                else:
-                    for start_block, start in mongo_transaction.get_previous_1month_block().items():
-                        start_block = start_block
-                        start = start
-                    for end_block, end in mongo_transaction.get_largest_block().items():
-                        end_block = end_block
-                        end = end
+                logger.info(chain)
+
+                for start_block, start in mongo_transaction.get_previous_2day_block().items():
+                    start_block = start_block
+                    start = start
+                for end_block, end in mongo_transaction.get_largest_block().items():
+                    end_block = end_block
+                    end = end
+               
 
                 block_timestamp_mappings = mongo_transaction.get_block_number_to_timestamp(start_block=start_block, end_block=end_block)
                 chain_info['start'] = start
@@ -118,8 +112,8 @@ def get_exchange_info_service(name, wallets_per_job, hot_path, burn_mint_path, t
         logger.info(f"Successful to get daily chain info of {successful_chains}!!!")
 
 
-    largest_flag = mongo_klg.get_largest_flag() +1
-    flagged_lst = [i for i in range(1, largest_flag)]
+    #largest_flag = mongo_klg.get_largest_flag() +1
+    #flagged_lst = [i for i in range(1, largest_flag)]
     flagged_lst = [1, 2]
     exchange_service = GetTransactionInfoService(
                              mongo_community=mongo_community,
