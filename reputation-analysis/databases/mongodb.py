@@ -108,7 +108,7 @@ class MongoDB:
                                   {"$addToSet": {key: value for key, value in item.items() if key not in ["_id", "lattestTags"]}}, upsert=True)
                         for item in add_to_set]
                     
-                    if collection_name =='testing':
+                    if collection_name =='wallet_exchanges':
                         bulk_operations += [
                             UpdateOne({"_id": item["_id"]},
                                     {"$set": {key: value for key, value in document.items() if key =='lattestTags'}}, upsert=True)
