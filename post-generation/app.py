@@ -93,10 +93,13 @@ class PostGenerationWithRAG(Resource):
                 except Exception as error:
                     post_of_author = []
 
-                if len(post_of_author) > 10:
-                    post_of_author = post_of_author[:10]
-                else:
-                    post_of_author = post_of_author
+                try:
+                    if len(post_of_author) > 10:
+                        post_of_author = post_of_author[:10]
+                    else:
+                        post_of_author = post_of_author
+                except Exception as error:
+                    post_of_author = []
                 
             if social_platform.lower() == 'telegram':
                 references = tweet_vector_query(
@@ -110,11 +113,14 @@ class PostGenerationWithRAG(Resource):
                     post_of_author = db.query_post_of_author(table, author)
                 except Exception as error:
                     post_of_author = []
-                    
-                if len(post_of_author) > 10:
-                    post_of_author = post_of_author[:10]
-                else:
-                    post_of_author = post_of_author
+                
+                try:
+                    if len(post_of_author) > 10:
+                        post_of_author = post_of_author[:10]
+                    else:
+                        post_of_author = post_of_author
+                except Exception as error:
+                    post_of_author = []
 
             # Get emojis from references and post of author
             lst_emojis = []
@@ -152,16 +158,6 @@ class PostGenerationWithRAG(Resource):
          
                 output_post = llm.stream_chat(ragprompt)
                 generated_post = "".join([response.delta for response in output_post])
-
-                prompt_v2 = RAGPrompt(user_order=keywords,
-                    references=references,
-                    lst_emojis=lst_emojis,
-                    social_platform=social_platform,
-                    post_of_author=post_styles).prompt_v2(generated_post)
-      
-                output_post_v2 = llm.stream_chat(prompt_v2)
-
-                generated_post_v2 = "".join([response.delta for response in output_post_v2])
                 generated_post_v2 = clean_generated_content(generated_post)
 
                 return generated_post_v2, 201

@@ -71,16 +71,16 @@ class RAGPrompt:
             ),
         ]
 
-    def prompt_v2(self, first_reponse):
-        prompt_v2 = [
-            ChatMessage(
-                role="user", content=f"""
-                    I have received the first response from you.
-                    Here is the post that you have created: {first_reponse}
-                    Please remove any unnecessary information, only keep the content of the post and give me the final version of the post.
-                    ----------------------------------------------------------------------------------------------
-                    MUST write a post with the length at least {self.max_length} characters, Please create again, MORE CREATIVE, MORE FLEXIBLE.
-                """),
-        ]
+    # def prompt_v2(self, first_reponse):
+    #     prompt_v2 = [
+    #         ChatMessage(
+    #             role="user", content=f"""
+    #                 I have received the first response from you.
+    #                 Here is the post that you have created: {first_reponse}
+    #                 Please remove any unnecessary information, only keep the content of the post and give me the final version of the post.
+    #                 ----------------------------------------------------------------------------------------------
+    #                 MUST write a post with the length at least {self.max_length} characters, Please create again, MORE CREATIVE, MORE FLEXIBLE.
+    #             """),
+    #     ]
 
-        return prompt_v2
+    #     return prompt_v2
