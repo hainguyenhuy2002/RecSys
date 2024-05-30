@@ -1,3 +1,7 @@
+import time
+import pymongo
+
+from constants.time_constants import TimeConstants
 from config import MongoDBConfig
 from pymongo import MongoClient, UpdateOne, InsertOne
 from utils.logger_utils  import get_logger
@@ -134,4 +138,10 @@ class MongoDB:
             logger.exception(ex)
 
 
-  
+    def get_largest_flag(self, db):
+        query = {'flagged':{"$exists":"True"}}
+        projection =  {'flagged':1}
+        cursor = self._db[f'{db}'].find(query, projection=projection).sort('flagged',pymongo.DESCENDING).limit(1)
+        for cur in cursor:
+            largest_flag = cur['flagged']
+        return largest_flag
