@@ -46,7 +46,7 @@ class PostgresDB:
         Session.configure(bind=create_engine(connection_url))
         self.chain_id = chain_id
 
-    @retry_handler(retries_number=10, sleep_time=30)
+    @retry_handler(retries_number=5, sleep_time=30)
     def query_addresses(self, addresses, special_addresses, direction, opposite_direction, from_block, to_block, block_timestamp_mappings ,price_history):
         token_lst = [token for token, _ in price_history.items()]
         if not self.chain_id:
@@ -68,23 +68,27 @@ class PostgresDB:
         #     FROM  {schema}.{PostgresDBConfig.TRANSFER_EVENT_TABLE}
         #     WHERE {direction}_address IN ({addresses_values})
         # """
-        with Session.begin() as session:
-            wallet_transfer = []
-            failed_addresses = []
-            try:                   
+        wallet_transfer = []
+        failed_addresses = []
+        try:
+            with Session.begin() as session:
                 event_transfer = session.execute(text(query))
                 fields_to_select =['contract_address', 'block_number', 'from_address', 'to_address', 'value']
                 for event in event_transfer:
-                    valueInUSD = get_valueInUSD(row = event, token_history =price_history,token_lst = token_lst, block_timestamp_mappings=block_timestamp_mappings)
+                    valueInUSD = get_valueInUSD(row=event,
+                                                token_history=price_history,
+                                                token_lst=token_lst,
+                                                block_timestamp_mappings=block_timestamp_mappings)
+                    
                     modified_event = event[:1] + (block_timestamp_mappings[event[1]],) + event[2:]
                     timestamp_event = dict(zip(fields_to_select, modified_event))
                     timestamp_event['valueInUSD'] = valueInUSD
                     wallet_transfer.append(timestamp_event)
 
-            except Exception as e:
-                log =get_logger("Oh no getting an error in the query Postgres task")
-                log.info(addresses)
-                write_file('postgre_query', 'failed_addresses', addresses)
-                wallet_transfer = []
+        except Exception as e:
+            logger.info('Postgre error !!!')
+            write_file('postgre_query', 'failed_addresses', addresses)
+            wallet_transfer = []
+            raise e
                 
         return wallet_transfer, failed_addresses

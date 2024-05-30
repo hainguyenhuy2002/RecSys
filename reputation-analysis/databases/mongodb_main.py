@@ -96,7 +96,7 @@ class MongoDBMain:
     def get_previous_2day_block(self):
         time_now = int(time.time()) - TimeConstants.A_DAY
     #    time_now = 1714027151
-        lower_time = int(time_now) - TimeConstants.DAYS_7
+        lower_time = int(time_now) - TimeConstants.DAYS_1_5
         query = {'timestamp':{'$gte':lower_time}}
         projection =  {'timestamp':1,'number':1}
         cursor = self._db.blocks.find(filter=query,
