@@ -114,13 +114,13 @@ class GetTransactionInfoService():
                             
                             try:
 #                            for job in update_jobs:
-                                self.mongo_community.update_docs(collection_name=self.filename, data = sub_job, merge=True)
+                                self.mongo_community.update_docs(collection_name=self.filename, data = profile_info_dict, merge=True)
                             except Exception as e:
                                 update_jobs = chunk_list(input_list=profile_info_dict, chunk_size=100)
                                 for job in update_jobs:
                                     try:
                                         #self.mongo_community.update_data(name=self.filename, data=job)
-                                        self.mongo_community.update_docs(collection_name=self.filename, data = sub_job, merge=True)
+                                        self.mongo_community.update_docs(collection_name=self.filename, data = job, merge=True)
 
                                     except:
                                         update_jobss = chunk_list(input_list=job, chunk_size=1)
