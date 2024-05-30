@@ -48,7 +48,7 @@ class GetFlaggedDailyJob(SchedulerJob):
         largest_flag = MongoDB().get_largest_flag(f'{self.name}')
         flag_lst = []
         for cur in cursor:
-            if a%100 ==0:
+            if a%5000 ==0:
                 largest_flag+=1
                 flag_lst.append(largest_flag)
                 if a>1:
