@@ -10,6 +10,8 @@ from models.embedding_models import EmbeddingModel
 from models.embedding_models import LargeLanguageModel
 from services.tweet_vector_query_service import tweet_vector_query
 from constant.prompt import RAGPrompt
+from config import EmbeddingModelConfig, LLMModelConfig
+import time
 
 app = Flask(__name__)
 api = Api(app)
@@ -67,7 +69,7 @@ class PostGenerationWithRAG(Resource):
     def post(self):
         try:
             user_input = request.get_json()
-
+            
             author = user_input['author']
             keywords = user_input['keyWords']
             social_platform = user_input['socialPlatform']
@@ -156,8 +158,16 @@ class PostGenerationWithRAG(Resource):
                     post_of_author=post_styles
                 ).prompt
          
-                output_post = llm.stream_chat(ragprompt)
-                generated_post = "".join([response.delta for response in output_post])
+                # output_post = llm.stream_chat(ragprompt)
+                # generated_post = "".join([response.delta for response in output_post])
+                output_post = llm.chat.completions.create(
+                    messages=ragprompt, 
+                    model=LLMModelConfig.MODEL_NAME, 
+                    max_tokens=LLMModelConfig.MODEL_KWARGS['max_length'], 
+                    temperature=LLMModelConfig.MODEL_KWARGS['temperature'],
+                    top_p=LLMModelConfig.MODEL_KWARGS['top_p']
+                )
+                generated_post = output_post.choices[0].message.content
                 generated_post_v2 = clean_generated_content(generated_post)
 
                 return generated_post_v2, 201

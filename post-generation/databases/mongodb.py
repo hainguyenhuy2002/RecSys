@@ -59,7 +59,7 @@ class MongoDB:
     def get_tweet(self):
         tweets_lst = []
         cursor = self.get_documents_by_time('tweets')
-        for da in cursor:
+        for da in cursor[:50]:
             da_dct ={}
             da_dct['authorName'] = da['authorName']
             da_dct['_id'] = da['_id']

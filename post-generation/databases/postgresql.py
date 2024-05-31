@@ -21,6 +21,7 @@ class Columns:
     NODE_ID = 'node_id'
     EMBEDDING = 'embedding'
     TIMESTAMP = 'timestamp'
+    AUTHOR = 'author'
 
 
 class PostgresDB:
@@ -79,6 +80,19 @@ class PostgresDB:
         except SQLAlchemyError as e:
             logger.error(f"Error adding timestamp column: {e}")
 
+    def add_author_column(self):
+        """Add an author column to the table if it doesn't already exist."""
+        try:
+            with self.session.begin():
+                add_author_column_query = text(f"""
+                ALTER TABLE data_{PostgresRAGDBConfig.RAG_TABLE}
+                ADD COLUMN IF NOT EXISTS {Columns.AUTHOR} TEXT
+                """)
+                self.session.execute(add_author_column_query)
+                logger.info("Author column added successfully.")
+        except SQLAlchemyError as e:
+            logger.error(f"Error adding author column: {e}")
+
     def update_timestamps(self, nodes_with_timestamp):
         """Update the timestamp values for the nodes."""
         try:
@@ -92,6 +106,20 @@ class PostgresDB:
                     self.session.execute(update_timestamp_query, {'timestamp': timestamp, 'node_id': node_id})
         except SQLAlchemyError as e:
             logger.error(f"Error updating timestamp values: {e}")
+        
+    def update_authors(self, nodes_with_author):
+        """Update the author values for the nodes."""
+        try:
+            with self.session.begin():
+                update_author_query = text(f"""
+                UPDATE data_{PostgresRAGDBConfig.RAG_TABLE}
+                SET {Columns.AUTHOR} = :author
+                WHERE {Columns.NODE_ID} = :node_id
+                """)
+                for node_id, author in nodes_with_author.items():
+                    self.session.execute(update_author_query, {'author': author, 'node_id': node_id})
+        except SQLAlchemyError as e:
+            logger.error(f"Error updating author values: {e}")
 
     def query_post_of_author(self, table, author_name):
         author_name = author_name.lower()
