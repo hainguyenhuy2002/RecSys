@@ -57,22 +57,22 @@ class PostgresDB:
         inspector = inspect(self.engine)
         return inspector.has_table(table_name)
 
-    def ensure_unique_constraint(self):
+    def ensure_unique_constraint(self, table):
         """Ensure the node_id column has a unique constraint."""
         with self.session.begin():
             alter_query = text(f"""
-            ALTER TABLE data_{PostgresRAGDBConfig.RAG_TABLE}
-            ADD CONSTRAINT {PostgresRAGDBConfig.RAG_TABLE}_node_id UNIQUE ({Columns.NODE_ID})
+            ALTER TABLE {table}
+            ADD CONSTRAINT {table}_node_id UNIQUE ({Columns.NODE_ID})
             """)
             self.session.execute(alter_query)
             logger.info("Unique constraint on node_id added successfully.")
 
-    def add_timestamp_column(self):
+    def add_timestamp_column(self, table):
         """Add a timestamp column to the table if it doesn't already exist."""
         try:
             with self.session.begin():
                 add_timestamp_column_query = text(f"""
-                ALTER TABLE data_{PostgresRAGDBConfig.RAG_TABLE}
+                ALTER TABLE {table}
                 ADD COLUMN IF NOT EXISTS {Columns.TIMESTAMP} BIGINT
                 """)
                 self.session.execute(add_timestamp_column_query)
@@ -80,12 +80,12 @@ class PostgresDB:
         except SQLAlchemyError as e:
             logger.error(f"Error adding timestamp column: {e}")
 
-    def add_author_column(self):
+    def add_author_column(self, table):
         """Add an author column to the table if it doesn't already exist."""
         try:
             with self.session.begin():
                 add_author_column_query = text(f"""
-                ALTER TABLE data_{PostgresRAGDBConfig.RAG_TABLE}
+                ALTER TABLE {table}
                 ADD COLUMN IF NOT EXISTS {Columns.AUTHOR} TEXT
                 """)
                 self.session.execute(add_author_column_query)
@@ -93,12 +93,12 @@ class PostgresDB:
         except SQLAlchemyError as e:
             logger.error(f"Error adding author column: {e}")
 
-    def update_timestamps(self, nodes_with_timestamp):
+    def update_timestamps(self, nodes_with_timestamp, table):
         """Update the timestamp values for the nodes."""
         try:
             with self.session.begin():
                 update_timestamp_query = text(f"""
-                UPDATE data_{PostgresRAGDBConfig.RAG_TABLE}
+                UPDATE {table}
                 SET {Columns.TIMESTAMP} = :timestamp
                 WHERE {Columns.NODE_ID} = :node_id
                 """)
@@ -107,12 +107,12 @@ class PostgresDB:
         except SQLAlchemyError as e:
             logger.error(f"Error updating timestamp values: {e}")
         
-    def update_authors(self, nodes_with_author):
+    def update_authors(self, nodes_with_author, table):
         """Update the author values for the nodes."""
         try:
             with self.session.begin():
                 update_author_query = text(f"""
-                UPDATE data_{PostgresRAGDBConfig.RAG_TABLE}
+                UPDATE {table}
                 SET {Columns.AUTHOR} = :author
                 WHERE {Columns.NODE_ID} = :node_id
                 """)
