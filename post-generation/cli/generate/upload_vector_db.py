@@ -21,7 +21,7 @@ from langdetect import detect
 @click.option('-b', '--batch-size', default=500, type=int)
 @click.option('-w', '--max-workers', default=4, show_default=True, type=int,
               help='The number of workers')
-@click.option('-s', '--social', default=['twitter', 'telegram'], type=str, help='social type')
+@click.option('-s', '--social', default=['twitter', 'telegram'], show_default=True, type=str, help='social type')
 
 def upload_vector_db(interval, batch_size, max_workers, social):
     jobb = UploadVectorDataBase(interval=interval, batch_size=batch_size, max_workers=max_workers, social=social)
@@ -42,7 +42,7 @@ class UploadVectorDataBase(CLIJob):
         self.social = social
         super().__init__(interval, end_timestamp, retry)
         self.logg, self.progress_logger, self.execute_logger = configure_loggers()
-
+        self.social = social
     def _pre_start(self):
         self.logg.info("Start to connect model and database ...")
 

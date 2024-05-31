@@ -45,7 +45,7 @@ class MongoDB:
     # get documents that is in 2 days latest
     
     def get_documents_by_time(self, col_name: str):
-        interval = TimeConstants.DAYS_2
+        interval = TimeConstants.DAYS_7
         timestamp = round_timestamp(int(time.time()), TimeConstants.A_DAY)
         time_interval = timestamp - int(interval)
 
@@ -72,7 +72,7 @@ class MongoDB:
     def get_tele(self):
         teles_lst = []
         cursor = self.get_documents_by_time('telegram_messages_announcement')
-        for da in cursor[:100]:
+        for da in cursor:
             if 'message' in da:
                 da_dct ={}
                 da_dct['content'] = da['message']
