@@ -66,6 +66,9 @@ class PostgresDB:
             """)
             self.session.execute(alter_query)
             logger.info("Unique constraint on node_id added successfully.")
+        
+        self.session.commit()
+        self.session.close()
 
     def add_timestamp_column(self, table):
         """Add a timestamp column to the table if it doesn't already exist."""
@@ -80,6 +83,9 @@ class PostgresDB:
         except SQLAlchemyError as e:
             logger.error(f"Error adding timestamp column: {e}")
 
+        self.session.commit()
+        self.session.close()
+
     def add_author_column(self, table):
         """Add an author column to the table if it doesn't already exist."""
         try:
@@ -92,6 +98,9 @@ class PostgresDB:
                 logger.info("Author column added successfully.")
         except SQLAlchemyError as e:
             logger.error(f"Error adding author column: {e}")
+
+        self.session.commit()
+        self.session.close()
 
     def update_timestamps(self, nodes_with_timestamp, table):
         """Update the timestamp values for the nodes."""
@@ -106,6 +115,9 @@ class PostgresDB:
                     self.session.execute(update_timestamp_query, {'timestamp': timestamp, 'node_id': node_id})
         except SQLAlchemyError as e:
             logger.error(f"Error updating timestamp values: {e}")
+
+        self.session.commit()
+        self.session.close()
         
     def update_authors(self, nodes_with_author, table):
         """Update the author values for the nodes."""
@@ -121,6 +133,9 @@ class PostgresDB:
         except SQLAlchemyError as e:
             logger.error(f"Error updating author values: {e}")
 
+        self.session.commit()
+        self.session.close()
+
     def query_post_of_author(self, table, author_name):
         author_name = author_name.lower()
         query = f"""
@@ -131,4 +146,9 @@ class PostgresDB:
         with self.session.begin():
             result = self.session.execute(text(query), {'author_name': author_name})
             results = result.fetchall()
-            return results
+        
+        self.session.commit()
+        self.session.close()
+        return results
+        
+        

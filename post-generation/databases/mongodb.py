@@ -45,9 +45,10 @@ class MongoDB:
     # get documents that is in 2 days latest
     
     def get_documents_by_time(self, col_name: str):
-        interval = TimeConstants.DAYS_7
+        interval = TimeConstants.DAYS_2
         timestamp = round_timestamp(int(time.time()), TimeConstants.A_DAY)
         time_interval = timestamp - int(interval)
+        time_interval = 1704067200
 
         return self._db[col_name].find({'timestamp': {'$gt': time_interval}})
     
