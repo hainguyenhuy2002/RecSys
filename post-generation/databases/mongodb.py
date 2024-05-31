@@ -48,7 +48,6 @@ class MongoDB:
         interval = TimeConstants.DAYS_2
         timestamp = round_timestamp(int(time.time()), TimeConstants.A_DAY)
         time_interval = timestamp - int(interval)
-        time_interval = 1704067200
 
         return self._db[col_name].find({'timestamp': {'$gt': time_interval}})
     
