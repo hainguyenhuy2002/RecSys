@@ -74,11 +74,14 @@ class PostGenerationWithRAG(Resource):
             keywords = user_input['keyWords']
             social_platform = user_input['socialPlatform']
             
+            start_time = time.time()
             if social_platform.lower() == 'twitter':
                 simi_tweets = tweet_vector_query(
                     EmbedModel=model,
                     vector_store=vector_store,
                     input=keywords,top_simi=20)
+                
+                print(f"Time taken to get similar tweets: {time.time() - start_time}")
                 
                 # Filter the query result which have the length of content < 350
                 references = {}

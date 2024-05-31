@@ -78,7 +78,7 @@ class UploadVectorDB(BaseJob):
         except:
             pass
 
-        self.importer.add_author_column()
+        # self.importer.add_author_column()
         
         # Prepare the insert query with ON CONFLICT clause
         insert_query = text(f"""
@@ -116,27 +116,24 @@ class UploadVectorDB(BaseJob):
                     except SQLAlchemyError as e:
                         logg.error(f"Error upserting nodes: {e}")
             
-            # Với những hàng có author rỗng thì cập nhật lại author từ node_id
-            update_author_query = text(f"""
-            UPDATE {self.exporter}
-            SET {Columns.AUTHOR} = :author
-            WHERE {Columns.NODE_ID} = :node_id
-            """)
-            select_all_data_query = text(f"""                          
-            SELECT * FROM {self.exporter}
-            """)
+            # # Với những hàng có author rỗng thì cập nhật lại author từ node_id
+            # update_author_query = text(f"""
+            # UPDATE {self.exporter}
+            # SET {Columns.AUTHOR} = :author
+            # WHERE {Columns.NODE_ID} = :node_id
+            # """)
+            # select_all_data_query = text(f"""                          
+            # SELECT * FROM {self.exporter}
+            # """)
 
-            # Kiểm tra xem author có rỗng không
-            with self.importer.session.begin():
-                result = self.importer.session.execute(select_all_data_query)
-                results = result.fetchall()
-                for row in results:
-                    if row[6] is None:
-                        author = '_'.join(row[3].split('_')[:-1])
-                        self.importer.session.execute(update_author_query, {'author': author, 'node_id': row[3]})
-
-        logg.info("Successfully upload tweet data ...")
-
+            # # Kiểm tra xem author có rỗng không
+            # with self.importer.session.begin():
+            #     result = self.importer.session.execute(select_all_data_query)
+            #     results = result.fetchall()
+            #     for row in results:
+            #         if row[6] is None:
+            #             author = '_'.join(row[3].split('_')[:-1])
+            #             self.importer.session.execute(update_author_query, {'author': author, 'node_id': row[3]})
 
     def _end(self):
         self.batch_executor.shutdown()
