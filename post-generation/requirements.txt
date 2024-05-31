@@ -4,6 +4,7 @@ llama-index-vector-stores-postgres
 llama-index-embeddings-huggingface
 llama-index-llms-llama-cpp
 llama-cpp-python
+llama-index-llms-together
 pymupdf
 psycopg2-binary
 pgvector
@@ -16,4 +17,12 @@ transformers
 accelerate
 peft
 flasgger
+flask_restful
+flask_cors
 langchain_community
+replicate
+langdetect
+replicate
+emoji
+multithread_parallel_processing
+langdetect

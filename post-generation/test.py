@@ -1,0 +1,2 @@
+str = "🚀 [APRIL RECAP] #Trava Ecosystem Shines in April 2024 🚀\n\nApril was an exciting month with universal growth & developments at Trava 🔥\n- 🆕 New releases & updates in products listed in this infographic ⬇️ [follow for more](https://t.co/JNl58x2c4y)\n\n\n\n📢 #Reminder: Join Trava's Flourish Initiative — Idea Contest!\n- 🏆 $50k total prize pool"
+print(str)
