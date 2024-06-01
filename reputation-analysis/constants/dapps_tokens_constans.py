@@ -1,6 +1,7 @@
 class Dapps:
     def __init__(self, dapps_name=None):
         self.all_projects = ['venus', 'compound']
+        #lending
         if dapps_name =='trava':
             self.tokens = \
             {
@@ -47,4 +48,105 @@ class Dapps:
 
             self.tags =['compound_depositors', 'comp_holders', 'compound_borrowers']
 
+        if dapps_name == 'onyx-protocol':
+            self.tokens = \
+            {
+                '0x1':['0xa2cd3d43c775978a96bdbf12d733d5a1ed94fb18']
+            }
+            self.tags = ['xcn_holders', 'onyx_protocol_depositors', 'onyx_protocol_borrowers']
+
+        if dapps_name == 'valas-finance':
+            self.tokens = \
+            {
+                '0x38':['0xb1ebdd56729940089ecc3ad0bbeeb12b6842ea6f']
+            }
+            self.tags = ['valas_finance_depositors', 'valas_finance_borrowers', 'valas_holders']
+
+        if dapps_name == 'spark':
+            self.tokens = \
+            {
+                '0x1':['0x83f20f44975d03b1b09e64809b757c47f942beea']
+            }
+            self.tags = ['spark_borrowers', 'spark_depositors', 'sdai_holders']
+
+        if dapps_name == 'radiant':
+            self.tags = ['radiant_v2_depositors', 'radiant_v2_borrowers', 'rdnt_holders']
+            self.tokens = \
+            {
+                '0x38':'0xf7de7e8a6bd59ed41a4b5fe50278b3b7f31384df',
+            }
+
+        if dapps_name == 'flux-finance':  #where is holders???
+            self.tags = ['flux_finance_borrowers', 'flux_finance_depositors']
+            self.tokens = \
+            {
+                '0x1':['0xfaba6f8e4a5e8ab82f62fe7c39859fa577269be3']
+            }
+
+        if dapps_name == 'strike':
+            self.tags = ['strike_depositors', 'strike_borrowers', 'strk_holders']
+            self.tokens = \
+            {
+                '0x1':['0x74232704659ef37c08995e386a2e26cc27a8d7b1']
+            }
+        if dapps_name == 'granary-finance':
+            self.tags = ['granary_finance_depositors', 'granary_finance_borrowers', 'grain_holders']
+            self.tokens = \
+            {   
+                '0x1':['0xf88baf18fab7e330fa0c4f83949e23f52fececce'],
+                '0x38': ['0x8f87a7d376821c7b2658a005aaf190ec778bf37a'],
+                '0xa4b1': ['0x80bb30d62a16e1f2084deae84dc293531c3ac3a1'],
+                '0xa86a': ['0x80bb30d62a16e1f2084deae84dc293531c3ac3a1'],
+                '0xa': ['0xfd389dc9533717239856190f42475d3f263a270d'],
+                '0xfa': ['0x02838746d9e1413e07ee064fcbada57055417f21']
+            }
+
+        if  dapps_name == 'silo-finance':
+            self.tokens = \
+            {
+                '0x1':['0x6f80310ca7f2c654691d1383149fa1a57d8ab1f8'],
+                '0xa4b1':['0x0341c0c0ec423328621788d4854119b97f44e391']
+            }
+            self.tags = ['silo_holders']  ## Where is silo depositors and borrowers?
+
+        if dapps_name == 'wepiggy':
+            self.tokens = \
+            {
+                '0x1':['0x6f620ec89b8479e97a6985792d0c64f237566746'],
+                '0x38':['0x6f620ec89b8479e97a6985792d0c64f237566746'],
+                '0x89':['0x6f620ec89b8479e97a6985792d0c64f237566746'],
+                '0xa4b1':['0x6f620ec89b8479e97a6985792d0c64f237566746'],
+                '0xa':['0x6f620ec89b8479e97a6985792d0c64f237566746']
+
+            }
+            self.tags = ['wepiggy_depositors', 'wepiggy_borrowers', 'wpc_holders']
+
+        if dapps_name == 'iron-bank':
+            self.tokens = \
+            {
+                '0x1':['0x00a35fd824c717879bf370e70ac6868b95870dfb'],
+                '0xa86a':['0x00a35fd824c717879bf370e70ac6868b95870dfb'],
+                '0xa': ['0x00a35fd824c717879bf370e70ac6868b95870dfb']
+            }
+
+        # derivatives
+        if dapps_name == 'dydx':
+            self.tokens = \
+            {
+                '0x1':['0x92d6c1e31e14520e676a687f0a93788b716beff5']
+            }
+            self.tags = ['dydx_holders']
+
+        #liquidity staking
+        if dapps_name == 'lido':
+            self.tokens = \
+            {
+                '0x1': '0x5a98fcbea516cf06857215779fd812ca3bef1b32',
+                '0x38':'0x986854779804799c1d68867f5e03e601e781e41b',
+                '0x89':'0xc3c7d422809852031b44ab29eec9f1eff2a58756',
+                '0xa4b1':'0x13ad51ed4f1b7e9dc168d8a00cb3f4ddd85efa60',
+                '0xa':'0xfdb794692724153d1488ccdbe0c56c252596735f'
+            }
+            self.tags = ['ldo_holders']
+            
 
