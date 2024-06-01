@@ -1,6 +1,6 @@
 class Dapps:
     def __init__(self, dapps_name=None):
-        self.all_projects = ['venus', 'compound']
+        self.all_projects = ['trava','venus', 'compound', 'aave', 'onyx-protocol', 'valas-finance', 'spark', 'radiant', 'flux-finance', 'strike', 'granary-finance', 'silo-finance', 'wepiggy', 'iron-bank', 'dydx', 'lido']
         #lending
         if dapps_name =='trava':
             self.tokens = \
