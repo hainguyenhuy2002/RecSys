@@ -56,8 +56,6 @@ def generate_training_data(searching_address, direction, time_stamp, batch_size,
                             batch_size=batch_size)
             job.run()
 
-
-
             logger.info('Done ( ๑ ˃̵ᴗ˂̵)و ♡ ( ๑ ˃̵ᴗ˂̵)و ♡')
     elif direction =='search':
         logger = get_logger(f'Gen searching for multichain')
