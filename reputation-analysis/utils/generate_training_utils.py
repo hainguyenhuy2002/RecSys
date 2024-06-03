@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 from utils.list_dict_utils import largest_key_smaller_than, flatten_and_concat
 from constants.dapps_tokens_constans import Dapps
+from databases.mongodb_entity import MongoDBEntity
 
 def get_label(row, threshold):
     if row['reputationScore'] >= threshold:
@@ -45,7 +46,7 @@ def get_dapps_balance(dapps_name, dapps_balance, row, timestamp):
                             value = 0
                         else:
                             largest_key = largest_key_smaller_than(value_history, timestamp,  type='train')
-                            if largest_key ==0:
+                            if largest_key == 0:
                                 value = 0
                             else:
                                 last_value = value_history[largest_key]
@@ -54,8 +55,22 @@ def get_dapps_balance(dapps_name, dapps_balance, row, timestamp):
                 else: 
                     tokens_balance.append(0)        
     elif 'tokens' in dapps_balance:
+        chain_id = row['chainId']
         for token, value_history in row['tokens'].items():
-            tokens_balance.append(value_history)
+            if token in dapps_tokens.tokens[row['chainId']]:
+                tokens = list(MongoDBEntity()._db['smart_contracts'].find({'_id':f'{chain_id}_{token}'}, {'priceChangeLogs':1, 'price':1}))[0]
+                if 'priceChangeLogs' in tokens:
+                    largest_key = largest_key_smaller_than(tokens['priceChangeLogs'], timestamp, type='train')
+                    if largest_key == 0:
+                        value = 0
+                    else:
+                        value = value_history*(tokens['priceChangeLogs'][largest_key])
+                else:
+                    value = value_history*(tokens['price'])
+                tokens_balance.append(value)
+            else:
+                tokens_balance.append(0)
+
     else:
         tokens_balance.append(0)
 
@@ -108,30 +123,37 @@ def average_value(dictionary, timestamp):
 
     return value_of_largest_key
 
-def get_deposit_features(row, timestamp, dapps_balance):
-    if ('depositChangeLogs' in dapps_balance):
-        avg_value = average_value(dictionary=row['depositChangeLogs'],
-                      timestamp=timestamp)
-        return avg_value
-    elif 'depositInUSD' in dapps_balance:
-        if dapps_balance['depositInUSD'] == 0:
-            return 'outdated'
+def get_deposit_features(row, timestamp, dapps_balance, lending_tags, dapps_tags):
+    if have_common_tags(lending_tags[0], dapps_tags):
+        if ('depositChangeLogs' in dapps_balance):
+            avg_value = average_value(dictionary=row['depositChangeLogs'],
+                        timestamp=timestamp)
+            return avg_value
+        elif 'depositInUSD' in dapps_balance:
+            if dapps_balance['depositInUSD'] == 0:
+                return 'outdated'
+            else:
+                return dapps_balance['depositInUSD']
         else:
-            return dapps_balance['depositInUSD']
+            return 'outdated'
+        
     else:
         return 'outdated'
 
-def get_borrow_features(row, timestamp, dapps_balance):
-    if ('borrowChangeLogs' in dapps_balance):
-        avg_value = average_value(dictionary=row['borrowChangeLogs'],
-                      timestamp=timestamp)
-        return avg_value
-    elif 'borrowInUSD' in dapps_balance:
-        if dapps_balance['borrowInUSD'] == 0:
-            return 'outdated'
+def get_borrow_features(row, timestamp, dapps_balance, lending_tags, dapps_tags):
+    if have_common_tags(lending_tags[1], dapps_tags):
+        if ('borrowChangeLogs' in dapps_balance):
+            avg_value = average_value(dictionary=row['borrowChangeLogs'],
+                        timestamp=timestamp)
+            return avg_value
+        elif 'borrowInUSD' in dapps_balance:
+            if dapps_balance['borrowInUSD'] == 0:
+                return 'outdated'
+            else:
+                return dapps_balance['borrowInUSD']        
         else:
-            return dapps_balance['borrowInUSD']
-    
+            return 'outdated'
+        
     else:
         return 'outdated'
 
@@ -251,7 +273,10 @@ def get_df_v2(data):
     df = pd.DataFrame(rows)
     return df
 
-def get_balance_features(dapps_name, dapps_balance, timestamp):
+def get_balance_features(dapps_name, lending_tags, dapps_balance, timestamp):
+    #tags 
+
+    dapps_tags = dapps_balance['tags']
     #balance
     profile_elite = pd.DataFrame([dapps_balance])
     profile_elite['dappsBalance'] = profile_elite.apply(
@@ -265,17 +290,24 @@ def get_balance_features(dapps_name, dapps_balance, timestamp):
         lambda row: get_balance(row=row, 
                                 timestamp=timestamp, type='train'), axis=1)
 
+    #if have_common_tags(lending_tags[0], dapps_tags):
     profile_elite['aaveAvgDeposit'] = profile_elite.apply(
         lambda row: get_deposit_features(row=row, 
-                                         timestamp=timestamp,
-                                         dapps_balance=dapps_balance), axis=1
+                                        timestamp=timestamp,
+                                        lending_tags=lending_tags, 
+                                        dapps_tags=dapps_tags,
+                                        dapps_balance=dapps_balance), axis=1
         )
+
     
     profile_elite['aaveAvgBorrow'] = profile_elite.apply(
         lambda row: get_borrow_features(row=row, 
                                          timestamp=timestamp,
+                                         lending_tags=lending_tags,
+                                         dapps_tags=dapps_tags,
                                          dapps_balance=dapps_balance), axis=1
         )
+    
     
     #profile_elite['aaveAvgBorrow'] = profile_elite['borrowChangeLogs'].apply(lambda row: average_value(row, timestamp))
     if profile_elite['dappsBalance'].iloc[0] ==0:
@@ -324,3 +356,20 @@ def update_json_file(address, removed_path):
         file.seek(0)
         json.dump(existing_data, file, indent=4)
 
+def get_tags(tags):
+    depositors = []
+    borrowers = []
+    for tag in tags:
+        if tag.split('_')[-1] =='depositors':
+            depositors.append(tag)
+        if tag.split('_')[-1] =='borrowers':
+            borrowers.append(tag)
+    lending_tags = [depositors, borrowers]
+    return lending_tags
+
+def have_common_tags(tag1, tag2):
+    set1 = set(tag1)
+    set2 = set(tag2)
+    common_elements = set1.intersection(set2)
+    return len(common_elements) > 0
+        

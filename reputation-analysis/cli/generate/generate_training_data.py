@@ -1,6 +1,7 @@
 import click
 import json
 from utils.logger_utils import get_logger
+from utils.generate_training_utils import get_tags
 from databases.mongodb import MongoDB
 from databases.mongodb_entity import MongoDBEntity
 from services.generate_training_data_service import GenerateData
@@ -32,8 +33,10 @@ def generate_training_data(searching_address, direction, time_stamp, batch_size,
             logger.info(f"training data for {dapps_name} ")
             dapps_tags = Dapps(dapps_name=dapps_name).tags
             logger.info('start to generate training address')
-            # with open(address_dapps,'r') as file:
-            #     Dapps_user_address = json.load(file)
+            ## get lending tags - depositors, borrowers
+            lending_tags = get_tags(dapps_tags)
+            print(lending_tags)
+            
             Dapps_user_address = []
             training_cursor = address_searching.find({'lattestTags':{'$in':dapps_tags}})  
             for cur in training_cursor:
@@ -48,6 +51,7 @@ def generate_training_data(searching_address, direction, time_stamp, batch_size,
                             direction=direction, 
                             index_lst=Dapps_user_address, 
                             timestamp=time_stamp, 
+                            lending_tags=lending_tags,
                             max_workers=max_workers, 
                             batch_size=batch_size)
             job.run()

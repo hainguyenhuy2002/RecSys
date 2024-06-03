@@ -12,7 +12,7 @@ from IPython.utils import io
 logger = get_logger("Generate training data")
 
 class GenerateData(BaseJob):
-    def __init__(self, direction, importer, exporter, klg, index_lst, timestamp, dapps_name=None, max_workers= 4, batch_size=500):
+    def __init__(self, direction, importer, exporter, klg, index_lst, timestamp, lending_tags =list(), dapps_name=None, max_workers= 4, batch_size=500):
         self.importer = importer
         self.exporter = exporter
         self.klg = klg 
@@ -25,6 +25,7 @@ class GenerateData(BaseJob):
         self.timestamp_str = str(timestamp)
         self.df_lst = []
         self.token_interact = []
+        self.lending_tags = lending_tags
         super().__init__(work_iterable=index_lst,
                          max_workers=max_workers,
                          batch_size=batch_size)
@@ -46,7 +47,8 @@ class GenerateData(BaseJob):
                                                                                 'depositChangeLogs':1,
                                                                                 'borrowChangeLogs':1,
                                                                                 'tokenChangeLogs':1,
-                                                                                'chainId':1})
+                                                                                'chainId':1,
+                                                                                'tags':1})
 
                 #dapps_balance =  {key: dapps_users.get(key) for key in balance_lst}
                 dapps_balance = list(klg_cursor)[0]
@@ -54,6 +56,7 @@ class GenerateData(BaseJob):
                 transac_df = transac_df[transac_df['timestampHistory'].apply(int)<self.timestamp]
                 balance_df, text = get_balance_features(
                     dapps_name=self.dapps_name,
+                    lending_tags=self.lending_tags,
                     #   chain_id=chain_id,
                     dapps_balance=dapps_balance, 
                     timestamp=self.timestamp_str
@@ -140,11 +143,12 @@ class GenerateData(BaseJob):
                 info_df = info_df.merge(balance_df, on='_id', how='inner')
 
                 if info_df.empty:
-                    write_file(
-                        folder_direction=f'search/{self.timestamp}/search',
-                        name='failed_addresses.json', 
-                        file=dapps_users['_id']
-                    )
+                    # write_file(
+                    #     folder_direction=f'search/{self.timestamp}/search',
+                    #     name='failed_addresses.json', 
+                    #     file=dapps_users['_id']
+                    # )
+                    continue
                 else:
                     self.df_lst.append(info_df)
 
