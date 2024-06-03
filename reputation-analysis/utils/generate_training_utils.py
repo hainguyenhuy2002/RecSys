@@ -281,7 +281,8 @@ def get_balance_features(dapps_name, dapps_balance, timestamp):
     if profile_elite['dappsBalance'].iloc[0] ==0:
         
         if (profile_elite['aaveAvgDeposit'].iloc[0]=='outdated')&(profile_elite['aaveAvgBorrow'].iloc[0]=='outdated'):
-            return pd.DataFrame(), 'outdated'
+            profile_elite['reputationScore'] = 0
+            return  profile_elite[['_id','overallBalance','reputationScore']], 'outdated'
         elif (((profile_elite['aaveAvgDeposit'].iloc[0] in ['future data','outdated'])&(profile_elite['aaveAvgBorrow'].iloc[0]=='future data'))|((profile_elite['aaveAvgBorrow'].iloc[0] in ['future data','outdated'])&(profile_elite['aaveAvgDeposit'].iloc[0]=='future data'))):
             return pd.DataFrame(), 'future data'
         else:

@@ -61,7 +61,7 @@ class GenerateData(BaseJob):
 
                 if (transac_df.empty) &(text =='future data'):
                     write_file1(
-                        folder_direction=f'{self.dapps_name}_train/{self.timestamp}/future_wallet',
+                        folder_direction=f'train/{self.dapps_name}_train/{self.timestamp}/future_wallet',
                         name='future_addresses.json', 
                         file=dapps_users['_id']
                     )
@@ -69,21 +69,21 @@ class GenerateData(BaseJob):
 
                 elif text =='future data':
                     write_file1(
-                        folder_direction=f'{self.dapps_name}_train/{self.timestamp}/potential_wallet',
+                        folder_direction=f'train/{self.dapps_name}_train/{self.timestamp}/potential_wallet',
                         name='potential_addresses.json', 
                         file=dapps_users['_id']
                     )
                     continue
                 
-                elif text =='outdated':
-                    write_file1(
-                        folder_direction=f'{self.dapps_name}_train/{self.timestamp}/outdated_wallet',
-                        name='outdated_addresses.json', 
-                        file=dapps_users['_id']
-                    )
-                    continue
+                # elif text =='outdated':
+                #     write_file1(
+                #         folder_direction=f'{self.dapps_name}_train/{self.timestamp}/outdated_wallet',
+                #         name='outdated_addresses.json', 
+                #         file=dapps_users['_id']
+                #     )
+                #     continue
 
-                elif text == 'acceptable':
+                elif (text == 'acceptable') |(text =='outdated'):
                     # print(transac_df)
                     value_df = get_only_value_features(transac_df)
                     freq_df = get_freq_features(transac_df)
@@ -187,16 +187,16 @@ class GenerateData(BaseJob):
             df = pd.concat(self.df_lst).fillna(0)
             df = df.reindex(sorted(df.columns), axis=1)
 
-            if not os.path.exists(f'data/{self.dapps_name}/train'):
-                os.makedirs(f'data/{self.dapps_name}/train')
-            df.to_parquet(f'data/{self.dapps_name}/train/train_{self.timestamp}.parquet')
+            if not os.path.exists(f'data/modeling/{self.dapps_name}/train'):
+                os.makedirs(f'data/modeling/{self.dapps_name}/train')
+            df.to_parquet(f'data/modeling/{self.dapps_name}/train/train_{self.timestamp}.parquet')
 
 
         if self.direction =='search':
             df = pd.concat(self.df_lst).fillna(0)
-            if not os.path.exists(f'data/search'):
-                os.makedirs(f'data/search')
-            df.to_parquet(f'data/search/search_{self.timestamp}.parquet')
+            if not os.path.exists(f'data/modeling/search'):
+                os.makedirs(f'data/modeling/search')
+            df.to_parquet(f'data/modeling/search/search_{self.timestamp}.parquet')
 
 
 

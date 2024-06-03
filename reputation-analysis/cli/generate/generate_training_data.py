@@ -25,7 +25,8 @@ def generate_training_data(searching_address, direction, time_stamp, batch_size,
     address_searching = mongodb._db[f'{searching_address}']
     if direction == 'train':
         dapps_name_lst = Dapps().all_projects
-        logger = get_logger(f'༼ つ ◕_◕ ༽つ ༼ つ ◕_◕ ༽つ  Gen training for {dapps_name_lst} ༼ つ ◕_◕ ༽つ ༼ つ ◕_◕ ༽つ ')
+        logger = get_logger('Generate data process')
+        logger.info(f'༼ つ ◕_◕ ༽つ ༼ つ ◕_◕ ༽つ  Gen training for {dapps_name_lst} ༼ つ ◕_◕ ༽つ ༼ つ ◕_◕ ༽つ ')
         for dapps_name in dapps_name_lst:
             logger.info(f"-------------------------------------------------------------------------------------")
             logger.info(f"training data for {dapps_name} ")
