@@ -65,8 +65,10 @@ def get_dapps_balance(dapps_name, dapps_balance, row, timestamp):
                         value = 0
                     else:
                         value = value_history*(tokens['priceChangeLogs'][largest_key])
-                else:
+                elif 'price' in tokens:
                     value = value_history*(tokens['price'])
+                else:
+                    value = 0
                 tokens_balance.append(value)
             else:
                 tokens_balance.append(0)
@@ -307,8 +309,6 @@ def get_balance_features(dapps_name, lending_tags, dapps_balance, timestamp):
                                          dapps_tags=dapps_tags,
                                          dapps_balance=dapps_balance), axis=1
         )
-    
-    
     #profile_elite['aaveAvgBorrow'] = profile_elite['borrowChangeLogs'].apply(lambda row: average_value(row, timestamp))
     if profile_elite['dappsBalance'].iloc[0] ==0:
         

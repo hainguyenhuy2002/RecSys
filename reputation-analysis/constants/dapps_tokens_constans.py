@@ -1,7 +1,7 @@
 class Dapps:
     def __init__(self, dapps_name=None):
-        self.all_projects = ['trava','venus', 'compound', 'aave', 'onyx-protocol', 'valas-finance', 'spark', 'radiant', 'flux-finance', 'strike', 'granary-finance', 'silo-finance', 'wepiggy', 'iron-bank', 'dydx', 'lido']
-        # self.all_projects = ['onyx-protocol', 'valas-finance', 'spark', 'radiant', 'flux-finance', 'strike', 'granary-finance', 'silo-finance', 'wepiggy', 'iron-bank', 'dydx', 'lido']
+        #self.all_projects = ['trava','venus', 'compound', 'aave', 'onyx-protocol', 'valas-finance', 'spark', 'radiant', 'flux-finance', 'strike', 'granary-finance', 'silo-finance', 'wepiggy', 'iron-bank', 'dydx', 'lido']
+        self.all_projects =['wepiggy', 'iron-bank', 'dydx', 'lido']
         #self.all_projects = ['iron-bank', 'dydx', 'lido']
         #lending
         if dapps_name =='trava':
