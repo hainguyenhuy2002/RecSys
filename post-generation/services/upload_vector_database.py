@@ -112,7 +112,7 @@ class UploadVectorDB(BaseJob):
                     for node in nodes:
                         metadata_json = json.dumps(node.metadata)
                         timestamp = nodes_with_timestamp[node.id_]
-                        author = node.id_.split('_')[0]
+                        author = nodes_with_author[node.id_]
                         values_to_insert.append({
                             'text': node.text,
                             'metadata_': metadata_json,
@@ -167,7 +167,7 @@ class UploadVectorDB(BaseJob):
                     for node in nodes:
                         metadata_json = json.dumps(node.metadata)
                         timestamp = nodes_with_timestamp[node.id_]
-                        author = node.id_.split('_')[0]
+                        author = nodes_with_author[node.id_]
                         values_to_insert.append({
                             'text': node.text,
                             'metadata_': metadata_json,
