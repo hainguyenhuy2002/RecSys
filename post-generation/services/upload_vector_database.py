@@ -59,7 +59,7 @@ class UploadVectorDB(BaseJob):
                     node = TextNode(text=row['content'], id_=f"{row['_id']}", )
                     nodes.append(node)
                     nodes_with_timestamp[node.id_] = row['timestamp']
-                    nodes_with_author[node.id_] = row['_id'].split('_')[0]
+                    nodes_with_author[node.id_] = row['_id'].split('_')[:-1]
 
         for node in nodes:
             node_embedding = self.embed_model._embed_model.get_text_embedding(
