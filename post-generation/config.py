@@ -18,7 +18,6 @@ class EmbeddingModelConfig:
     
 class LLMModelConfig:
     MODEL_NAME = os.getenv("LARGE_LANGUAGE_MODEL")
-    # MODEL_API = os.getenv("REPLICATE_API")
     MODEL_API = os.getenv("TOGETHER_AI_API")
     MODEL_KWARGS={
         "temperature": 0.75, 

@@ -7,10 +7,8 @@ from flasgger import Swagger
 from llama_index.llms.together import TogetherLLM
 from openai import OpenAI
 
-# os.environ["REPLICATE_API_TOKEN"] =LLMModelConfig.MODEL_API
-# os.environ["TOGETHER_API_KEY"] = LLMModelConfig.MODEL_API
+os.environ["TOGETHER_API_KEY"] = LLMModelConfig.MODEL_API
 
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 class EmbeddingModel:
     def __init__(self, model_name: str = None):
@@ -21,43 +19,17 @@ class EmbeddingModel:
 
 class LargeLanguageModel:
     def __init__(self, model_name: str = None, model_kwargs: dict = None):
-        # if (model_name == None) & (model_kwargs == None):
-        #     self._embed_model = Replicate(
-        #         model=LLMModelConfig.MODEL_NAME,
-        #         model_kwargs=LLMModelConfig.MODEL_KWARGS,
-        #     )
-        # elif (model_name != None) & (model_kwargs != None):
-        #     self._embed_model = Replicate(
-        #         model=model_name,
-        #         model_kwargs=model_kwargs,
-        #     )
-        # if (model_name == None) & (model_kwargs == None):
-        #     self._embed_model = TogetherLLM(
-        #         model=LLMModelConfig.MODEL_NAME,
-        #         model_kwargs=LLMModelConfig.MODEL_KWARGS,
-        #         api_key=LLMModelConfig.MODEL_API
-        #     )
-        # elif (model_name != None) & (model_kwargs != None):
-        #     self._embed_model = TogetherLLM(
-        #         model=model_name,
-        #         model_kwargs=model_kwargs,
-        #         api_key=LLMModelConfig.MODEL_API
-        #     )
-        # else:
-        #     get_logger("Invalid initial input parameter")
-
-        # using OpenAI API directly, not using Replicate or TogetherLLM
-        if model_name == None:
-            self._embed_model = OpenAI(
-                api_key=OPENAI_API_KEY,
-                # model_name=LLMModelConfig.MODEL_NAME,
-                # model_kwargs=LLMModelConfig.MODEL_KWARGS
+        if (model_name == None) & (model_kwargs == None):
+            self._embed_model = TogetherLLM(
+                model=LLMModelConfig.MODEL_NAME,
+                model_kwargs=LLMModelConfig.MODEL_KWARGS,
+                api_key=LLMModelConfig.MODEL_API
             )
         elif (model_name != None) & (model_kwargs != None):
-            self._embed_model = OpenAI(
-                api_key=OPENAI_API_KEY,
-                # model_name=model_name,
-                # model_kwargs=model_kwargs
+            self._embed_model = TogetherLLM(
+                model=model_name,
+                model_kwargs=model_kwargs,
+                api_key=LLMModelConfig.MODEL_API
             )
         else:
             get_logger("Invalid initial input parameter")
