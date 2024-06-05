@@ -20,39 +20,57 @@ BSC_VENUS_ADDRESS = '0xfd36e2c2a6789db23113685031d7f16329158384'
 
 
 class Chains:
+
     bsc = '0x38'
     ethereum = '0x1'
-    fantom = '0xfa'
+    ftm = '0xfa'
     polygon = '0x89'
     arbitrum = '0xa4b1'
     optimism = '0xa'
     avalanche = '0xa86a'
-    none_wrapped_token = [arbitrum, fantom, optimism]
-    all = [bsc, ethereum, fantom, polygon, arbitrum, optimism, avalanche]
+#    tron = '0x2b6653dc'
+
+
+    none_wrapped_token = [arbitrum, ftm, optimism]
+#    all = [bsc, ethereum, ftm, polygon, arbitrum, optimism, avalanche]
+    alls = [bsc, ethereum, polygon, ftm, arbitrum, optimism, avalanche]
+    all_name = ['bsc', 'ethereum', 'polygon', 'ftm', 'arbitrum', 'optimism', 'avalanche']
+#    all_name = ['ethereum']
     mapping = {
         'bsc': bsc,
         'ethereum': ethereum,
-        'fantom': fantom,
+        'ftm': ftm,
         'polygon': polygon,
         'arbitrum': arbitrum,
         'optimism': optimism,
-        'avalanche': avalanche
+        'avalanche': avalanche,
+    #    'tron': tron
     }
-
+    reverse_mapping = {
+        '0x38': 'bsc',
+        '0x1': 'ethereum',
+        '0x89': 'polygon',
+        '0xfa': 'ftm',
+        '0xa4b1': 'arbitrum',
+        '0xa': 'optimism',
+        '0xa86a': 'avalanche',
+        #'0x2b6653dc':'tron'
+    }
     names = {
         bsc: 'bsc',
         ethereum: "ethereum",
-        fantom: 'fantom',
+        ftm: 'ftm',
         polygon: 'polygon',
         arbitrum: 'arbitrum',
         optimism: 'optimism',
-        avalanche: 'avalanche'
+        avalanche: 'avalanche',
+        #tron:'0x2b6653dc'
     }
 
     abi_mapping = {
         bsc: 'bep20_abi',
         ethereum: 'erc20_abi',
-        fantom: 'erc20_abi',
+        ftm: 'erc20_abi',
         polygon: 'erc20_abi',
         arbitrum: 'erc20_abi',
         optimism: 'erc20_abi',
@@ -62,7 +80,7 @@ class Chains:
     block_time = {
         bsc: 3,
         ethereum: 12,
-        fantom: 1,
+        ftm: 1,
         polygon: 2,
         arbitrum: 0.3,
         avalanche: 2
@@ -71,14 +89,14 @@ class Chains:
         bsc: "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
         ethereum: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
         polygon: "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
-        fantom: "0x21be370d5312f44cb42ce377bc9b8a0cef1a4c83",
+        ftm: "0x21be370d5312f44cb42ce377bc9b8a0cef1a4c83",
         arbitrum: "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
         optimism: "0x4200000000000000000000000000000000000006",
         avalanche: "0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7"
     }
 
     evm = {
-        ethereum: True, bsc: True, polygon: True, fantom: True,
+        ethereum: True, bsc: True, polygon: True, ftm: True,
         arbitrum: True, optimism: True, avalanche: True
     }
 
@@ -93,7 +111,7 @@ class Scans:
     mapping = {
         'bscscan': Chains.bsc,
         'etherscan': Chains.ethereum,
-        'ftmscan': Chains.fantom,
+        'ftmscan': Chains.ftm,
         'polygonscan': Chains.polygon,
         'arbiscan': Chains.arbitrum,
         'optimistic': Chains.optimism,
@@ -112,7 +130,7 @@ class Scans:
         # Chains.ethereum: [
         #     'https://etherscan-io.translate.goog/token',
         # ],
-        Chains.fantom: [
+        Chains.ftm: [
             'https://ftmscan.com/token',
             'https://ftmscan-com.translate.goog/token'
         ],
@@ -136,7 +154,7 @@ class Scans:
 class Networks:
     bsc = 'bsc'
     ethereum = 'ethereum'
-    fantom = 'fantom'
+    ftm = 'ftm'
     polygon = 'polygon'
     arbitrum = 'arbitrum'
     optimism = 'optimism'
@@ -145,7 +163,7 @@ class Networks:
     providers = {
         bsc: os.getenv('BSC_PROVIDER_URI', 'https://bsc-dataseed1.binance.org/'),
         ethereum: os.getenv('ETHEREUM_PROVIDER_URI', 'https://rpc.ankr.com/eth'),
-        fantom: os.getenv('FANTOM_PROVIDER_URI', 'https://rpc.ftm.tools/'),
+        ftm: os.getenv('FANTOM_PROVIDER_URI', 'https://rpc.ftm.tools/'),
         polygon: os.getenv('POLYGON_PROVIDER_URI', 'https://polygon-rpc.com'),
         arbitrum: os.getenv('ARBITRUM_PROVIDER_URI', 'https://endpoints.omniatech.io/v1/arbitrum/one/public'),
         optimism: os.getenv('OPTIMISM_PROVIDER_URI', 'https://rpc.ankr.com/optimism'),
@@ -155,7 +173,7 @@ class Networks:
     archive_node = {
         bsc: os.getenv('BSC_PROVIDER_ARCHIVE_URI', 'https://rpc.ankr.com/bsc'),
         ethereum: os.getenv('ETHEREUM_PROVIDER_ARCHIVE_URI', 'https://rpc.ankr.com/eth'),
-        fantom: os.getenv('FANTOM_PROVIDER_ARCHIVE_URI', 'https://rpc.ankr.com/fantom'),
+        ftm: os.getenv('FANTOM_PROVIDER_ARCHIVE_URI', 'https://rpc.ankr.com/ftm'),
         polygon: os.getenv('POLYGON_PROVIDER_ARCHIVE_URI', 'https://rpc.ankr.com/polygon'),
         arbitrum: os.getenv('ARBITRUM_PROVIDER_ARCHIVE_URI', 'https://rpc.ankr.com/arbitrum'),
         optimism: os.getenv('OPTIMISM_PROVIDER_ARCHIVE_URI', 'https://rpc.ankr.com/optimism'),
@@ -168,7 +186,7 @@ NATIVE_TOKEN = '0x0000000000000000000000000000000000000000'
 NATIVE_TOKENS = {
     Chains.bsc: '0x0000000000000000000000000000000000000000',
     Chains.ethereum: '0x0000000000000000000000000000000000000000',
-    Chains.fantom: '0x0000000000000000000000000000000000000000',
+    Chains.ftm: '0x0000000000000000000000000000000000000000',
     Chains.polygon: '0x0000000000000000000000000000000000000000',
     Chains.arbitrum: '0x0000000000000000000000000000000000000000',
     Chains.optimism: '0x0000000000000000000000000000000000000000',
@@ -178,7 +196,7 @@ NATIVE_TOKENS = {
 NATIVE_TOKENS_DECIMALS = {
     Chains.bsc: 10**18,
     Chains.ethereum: 10**18,
-    Chains.fantom: 10**18,
+    Chains.ftm: 10**18,
     Chains.polygon: 10**18,
     Chains.arbitrum: 10**18,
     Chains.optimism: 10**18,

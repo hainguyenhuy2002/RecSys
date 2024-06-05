@@ -27,8 +27,7 @@ def get_logger(logger_name):
     # logger.addHandler(get_file_handler())
     return logger
 
-
-def write_file(folder_direction, name, file):
+def write_file1(folder_direction, name, file):
     if not os.path.exists(f'data/log_file/{folder_direction}'):
         try:
             os.makedirs(f'data/log_file/{folder_direction}')
@@ -40,4 +39,25 @@ def write_file(folder_direction, name, file):
     with open(f'data/log_file/{folder_direction}/{name}.json', 'a') as f:
                 f.write(json.dumps(file))
                 f.write("\n")
-    
+
+def write_file(folder_direction, name, file):
+    if not os.path.exists(f'data/log_file/{folder_direction}/{name}.json'):
+        try:
+            os.makedirs(f'data/log_file/{folder_direction}')
+            with open(f'data/log_file/{folder_direction}/{name}.json', 'w') as f:
+                f.write(json.dumps(file))
+                f.write("\n")
+
+        except Exception as ex:
+            with open(f'data/log_file/{folder_direction}/{name}.json', 'w') as f:
+                f.write(json.dumps(file))
+                f.write("\n")
+    else:            
+        with open(f'data/log_file/{folder_direction}/{name}.json', 'r') as f:
+            data_lst= json.load(f)
+
+        data_lst.extend(file)
+
+        with open(f'data/log_file/{folder_direction}/{name}.json', 'w') as f:
+                    f.write(json.dumps(data_lst))
+                    f.write("\n")

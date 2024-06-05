@@ -3,8 +3,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import text
 from config import PostgresDBConfig
-from utils.logger_utils import get_logger
-
+from utils.logger_utils import get_logger, write_file
+from utils.retry_utils import retry_handler
 logger = get_logger('PostgreSQL thread safe')
 
 Session = sessionmaker()
@@ -39,19 +39,20 @@ def get_valueInUSD(row, token_history, token_lst, block_timestamp_mappings):
         return None
 
 class PostgresDB:
-    def __init__(self, connection_url: str = None):
+    def __init__(self, chain_id, connection_url: str = None):
         # Set up the database connection and create the table
         if not connection_url:
             connection_url = PostgresDBConfig.CONNECTION_URL
         Session.configure(bind=create_engine(connection_url))
+        self.chain_id = chain_id
 
-    @staticmethod
-    def query_addresses(addresses, special_addresses, direction, opposite_direction, from_block, to_block, chain_id, block_timestamp_mappings ,price_history):
+    @retry_handler(retries_number=5, sleep_time=30)
+    def query_addresses(self, addresses, special_addresses, direction, opposite_direction, from_block, to_block, block_timestamp_mappings ,price_history):
         token_lst = [token for token, _ in price_history.items()]
-        if not chain_id:
+        if not self.chain_id:
             schema = PostgresDBConfig.SCHEMA
         else:
-            schema = f"chain_{chain_id}"
+            schema = f"chain_{self.chain_id}"
         addresses_values = ', '.join([f"'{cls}'" for cls in addresses])
         special_addresses_values = ', '.join([f"'{cls}'" for cls in special_addresses])
 
@@ -67,55 +68,27 @@ class PostgresDB:
         #     FROM  {schema}.{PostgresDBConfig.TRANSFER_EVENT_TABLE}
         #     WHERE {direction}_address IN ({addresses_values})
         # """
-        with Session.begin() as session:
-            wallet_transfer = []
-            failed_addresses = []
-            try:
-                # num_event = session.execute(text(count_query)).fetchone()[0]
-                # if num_event >= 50000:
-                #     failed_addresses.extend(addresses)
-                #     # for address in addresses:
-                #     #     query_v2 = f"""
-                #     #     SELECT contract_address, block_number, from_address, to_address, value
-                #     #     FROM {schema}.{PostgresDBConfig.TRANSFER_EVENT_TABLE}
-                #     #     WHERE {direction}_address={address}
-                #     #     AND {opposite_direction}_address NOT IN ({special_addresses_values})
-                #     #     AND block_number BETWEEN {from_block} AND {to_block}
-                #     #     """
-                #     #     count_query_v2 =f"""
-                #     #         SELECT COUNT(*)
-                #     #         FROM  {schema}.{PostgresDBConfig.TRANSFER_EVENT_TABLE}
-                #     #         WHERE {direction}_address IN ({addresses_values})
-                #     #     """
-                #     #     with Session.begin() as session_2:
-                #     #         num_event_v2 = session_2.execute(text(count_query_v2)).fetchone()[0]
-                #     #         if num_event_v2 >2500:
-                #     #             failed_addresses.append(address)
-                #     #             continue
-                #     #         else:
-                #     #             event_transfer = session_2.execute(text(query_v2))
-                #     #             fields_to_select =['contract_address', 'block_number', 'from_address', 'to_address', 'value']
-                #     #             for event in event_transfer:
-                #     #                 valueInUSD = get_valueInUSD(row = event, token_history =price_history,token_lst = token_lst, block_timestamp_mappings=block_timestamp_mappings)
-                #     #                 modified_event = event[:1] + (block_timestamp_mappings[event[1]],) + event[2:]
-                #     #                 timestamp_event = dict(zip(fields_to_select, modified_event))
-                #     #                 timestamp_event['valueInUSD'] = valueInUSD
-                #     #                 wallet_transfer.append(timestamp_event)
-
-                # else:                        
+        wallet_transfer = []
+        failed_addresses = []
+        try:
+            with Session.begin() as session:
                 event_transfer = session.execute(text(query))
                 fields_to_select =['contract_address', 'block_number', 'from_address', 'to_address', 'value']
                 for event in event_transfer:
-                    valueInUSD = get_valueInUSD(row = event, token_history =price_history,token_lst = token_lst, block_timestamp_mappings=block_timestamp_mappings)
+                    valueInUSD = get_valueInUSD(row=event,
+                                                token_history=price_history,
+                                                token_lst=token_lst,
+                                                block_timestamp_mappings=block_timestamp_mappings)
+                    
                     modified_event = event[:1] + (block_timestamp_mappings[event[1]],) + event[2:]
                     timestamp_event = dict(zip(fields_to_select, modified_event))
                     timestamp_event['valueInUSD'] = valueInUSD
                     wallet_transfer.append(timestamp_event)
 
-            except Exception as e:
-                log =get_logger("Oh no getting an error in the query Postgres task")
-                log.info(addresses)
-                log.info(e)
-                wallet_transfer = []
+        except Exception as e:
+            logger.info('Postgre error !!!')
+            write_file('postgre_query', 'failed_addresses', addresses)
+            wallet_transfer = []
+            raise e
                 
         return wallet_transfer, failed_addresses

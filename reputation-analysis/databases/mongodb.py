@@ -1,3 +1,7 @@
+import time
+import pymongo
+
+from constants.time_constants import TimeConstants
 from config import MongoDBConfig
 from pymongo import MongoClient, UpdateOne, InsertOne
 from utils.logger_utils  import get_logger
@@ -93,6 +97,7 @@ class MongoDB:
             
             for document in data:
                 unset, set_, add_to_set = self.create_update_doc(document, keep_none, merge, shard_key)
+                
                 if not shard_key:
                     bulk_operations += [
                         UpdateOne({"_id": item["_id"]},
@@ -104,9 +109,14 @@ class MongoDB:
                         for item in set_]
                     bulk_operations += [
                         UpdateOne({"_id": item["_id"]},
-                                  {"$addToSet": {key: value for key, value in item.items() if key != "_id"}},
-                                  upsert=True)
+                                  {"$addToSet": {key: value for key, value in item.items() if key not in ["_id", "lattestTags"]}}, upsert=True)
                         for item in add_to_set]
+                    
+                    if collection_name =='wallet_exchanges':
+                        bulk_operations += [
+                            UpdateOne({"_id": item["_id"]},
+                                    {"$set": {key: value for key, value in document.items() if key =='lattestTags'}}, upsert=True)
+                            for item in add_to_set]
                 if shard_key:
                     keys = ["_id", shard_key]
                     bulk_operations += [
@@ -128,4 +138,10 @@ class MongoDB:
             logger.exception(ex)
 
 
-  
+    def get_largest_flag(self, db):
+        query = {'flagged':{"$exists":"True"}}
+        projection =  {'flagged':1}
+        cursor = self._db[f'{db}'].find(query, projection=projection).sort('flagged',pymongo.DESCENDING).limit(1)
+        for cur in cursor:
+            largest_flag = cur['flagged']
+        return largest_flag
