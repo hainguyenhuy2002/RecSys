@@ -136,19 +136,25 @@ class PostgresDB:
         self.session.commit()
         self.session.close()
 
-    def query_post_of_author(self, table, author_name):
-        author_name = author_name.lower()
-        query = f"""
-        SELECT {Columns.TEXT} FROM {table}
-        WHERE LOWER({Columns.NODE_ID}) LIKE '%{author_name}%'
-        """
+    def query_post_of_author(self, table, list_authors):
+        try:
+            query = text(f"""
+                    SELECT {Columns.TEXT}
+                    FROM {table}
+                    WHERE {Columns.AUTHOR} IN :authors
+                    ORDER BY {Columns.TIMESTAMP} DESC
+                    """)
+            result = self.session.execute(query, {'authors': tuple(list_authors)})
+            result = result.fetchall()
+            self.session.commit()
+            self.session.close()
         
-        with self.session.begin():
-            result = self.session.execute(text(query), {'author_name': author_name})
-            results = result.fetchall()
+            return result
+
+        except SQLAlchemyError as e:
+            logger.error(f"Error querying post of author: {e}")
+            self.session.commit()
+            self.session.close()
         
-        self.session.commit()
-        self.session.close()
-        return results
-        
+            return []
         
