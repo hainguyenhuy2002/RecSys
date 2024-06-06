@@ -1,24 +1,22 @@
 python-arango==7.5.2
 multithread-parallel-processing==1.0.0
-numpy ==1.21.5
-pandas ==2.0.1
+numpy==1.21.5
 click==8.0.1
 #lightgbm~=4.1.0
-notebook
+notebook==7.2.0
 #psycopg2
-psycopg-binary
+psycopg-binary==3.1.18
 pymongo==4.3.3
-python-dotenv
-seaborn
-sqlalchemy
-imblearn
-scikit-learn
-matplotlib
+python-dotenv==1.0.11
+seaborn==0.13.2
+sqlalchemy==2.0.30
+imblearn==0.0
+scikit-learn==1.4.2
+matplotlib==3.8.4
 optuna==3.2.0
 joblib==1.3.2
 tqdm==4.66.1
-texttable    
-web3
-psycopg2-binary 
-python-cli-scheduler
-optuna
+texttable==1.7.0
+web3==6.19.0
+psycopg2-binary==2.9.9
+python-cli-scheduler==1.1.1
