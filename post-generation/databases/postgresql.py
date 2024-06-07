@@ -8,8 +8,10 @@ from utils.logger_utils import get_logger
 from utils.postgres_utils import extract_db_details
 from llama_index.vector_stores.postgres import PGVectorStore
 from llama_index.core.schema import TextNode
+from constant.time_constant import TimeConstants
 
 import json
+import time
 
 logger = get_logger('PostgreSQL thread safe')
 Session = sessionmaker()
@@ -50,7 +52,6 @@ class PostgresDB:
         )
         self.engine = create_engine(connection_url)
         self.session = Session(bind=self.engine)
-        self.embedding_model = EmbeddingModel()
 
     def table_exists(self, table_name):
         """Check if a table exists in the database."""
@@ -157,4 +158,39 @@ class PostgresDB:
             self.session.close()
         
             return []
+
+    def prune_vector_db_tweet(self):
+        posgre_table = f"data_{PostgresRAGDBConfig.RAG_TABLE}"
+        end_timestamp = int(time.time())
+        start_timestamp = end_timestamp - TimeConstants.DAYS_30*3
         
+        try:
+            with self.session.begin():
+                prune_query = text(f"""
+                DELETE FROM {posgre_table}
+                WHERE {Columns.TIMESTAMP} < :start_timestamp
+                """)
+                self.session.execute(prune_query, {'start_timestamp': start_timestamp})
+        except SQLAlchemyError as e:
+            logger.error(f"Error pruning tweet data: {e}")
+        
+        self.session.commit()
+        self.session.close()
+
+    def prune_vector_db_telegram(self):
+        posgre_table = f"data_{PostgresRAGDBConfig.RAG_TABLE_V2}"
+        end_timestamp = int(time.time())
+        start_timestamp = end_timestamp - TimeConstants.DAYS_30*12
+
+        try:
+            with self.session.begin():
+                prune_query = text(f"""
+                DELETE FROM {posgre_table}
+                WHERE {Columns.TIMESTAMP} < :start_timestamp
+                """)
+                self.session.execute(prune_query, {'start_timestamp': start_timestamp})
+        except SQLAlchemyError as e:
+            logger.error(f"Error pruning telegram data: {e}")
+
+        self.session.commit()
+        self.session.close()

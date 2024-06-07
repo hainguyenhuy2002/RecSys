@@ -42,7 +42,7 @@ class UploadVectorDataBase(CLIJob):
         self.social = social
         super().__init__(interval, end_timestamp, retry)
         self.logg, self.progress_logger, self.execute_logger = configure_loggers()
-        self.social = social
+      
     def _pre_start(self):
         self.logg.info("Start to connect model and database ...")
 

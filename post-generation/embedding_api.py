@@ -7,6 +7,7 @@ from services.tweet_vector_query_service import tweet_vector_query
 from databases.postgresql import PostgresDB
 from models.embedding_models import LargeLanguageModel
 from constant.prompt import RAGPrompt
+from constant.time_constant import TimeConstants
 from llama_index.core.vector_stores import VectorStoreQuery
 from utils.logger_utils import get_logger
 import time

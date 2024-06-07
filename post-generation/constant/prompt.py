@@ -9,6 +9,11 @@ class RAGPrompt:
                 max_length = len(value)
 
         self.max_length = max_length
+        if post_of_author != []:
+            post_of_author = ', '.join(post_of_author)
+        else:
+            post_of_author = "a professional marketer"
+
         self.prompt = [
             ChatMessage(
                 role="user", content="""
@@ -34,7 +39,8 @@ class RAGPrompt:
             ),
             ChatMessage(
                 role="user", content=f"""
-                    Create a post for the {social_platform} platform. You should base the content on the examples below but follow the style and format of {post_of_author}.
+                    Create a post for the {social_platform} platform. 
+                    You should base the content on the examples below but follow the style and format of {post_of_author}.
                     - Post1: {random.choice(list(references.values()))}
                     - Post2: {random.choice(list(references.values()))}
                     - Post3: {random.choice(list(references.values()))}
