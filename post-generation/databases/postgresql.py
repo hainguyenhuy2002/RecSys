@@ -8,8 +8,10 @@ from utils.logger_utils import get_logger
 from utils.postgres_utils import extract_db_details
 from llama_index.vector_stores.postgres import PGVectorStore
 from llama_index.core.schema import TextNode
+from constant.time_constant import TimeConstants
 
 import json
+import time
 
 logger = get_logger('PostgreSQL thread safe')
 Session = sessionmaker()
@@ -50,7 +52,6 @@ class PostgresDB:
         )
         self.engine = create_engine(connection_url)
         self.session = Session(bind=self.engine)
-        self.embedding_model = EmbeddingModel()
 
     def table_exists(self, table_name):
         """Check if a table exists in the database."""
@@ -136,19 +137,60 @@ class PostgresDB:
         self.session.commit()
         self.session.close()
 
-    def query_post_of_author(self, table, author_name):
-        author_name = author_name.lower()
-        query = f"""
-        SELECT {Columns.TEXT} FROM {table}
-        WHERE LOWER({Columns.NODE_ID}) LIKE '%{author_name}%'
-        """
+    def query_post_of_author(self, table, list_authors):
+        try:
+            query = text(f"""
+                    SELECT {Columns.TEXT}
+                    FROM {table}
+                    WHERE {Columns.AUTHOR} IN :authors
+                    ORDER BY {Columns.TIMESTAMP} DESC
+                    """)
+            result = self.session.execute(query, {'authors': tuple(list_authors)})
+            result = result.fetchall()
+            self.session.commit()
+            self.session.close()
         
-        with self.session.begin():
-            result = self.session.execute(text(query), {'author_name': author_name})
-            results = result.fetchall()
+            return result
+
+        except SQLAlchemyError as e:
+            logger.error(f"Error querying post of author: {e}")
+            self.session.commit()
+            self.session.close()
+        
+            return []
+
+    def prune_vector_db_tweet(self):
+        posgre_table = f"data_{PostgresRAGDBConfig.RAG_TABLE}"
+        end_timestamp = int(time.time())
+        start_timestamp = end_timestamp - TimeConstants.DAYS_30*3
+        
+        try:
+            with self.session.begin():
+                prune_query = text(f"""
+                DELETE FROM {posgre_table}
+                WHERE {Columns.TIMESTAMP} < :start_timestamp
+                """)
+                self.session.execute(prune_query, {'start_timestamp': start_timestamp})
+        except SQLAlchemyError as e:
+            logger.error(f"Error pruning tweet data: {e}")
         
         self.session.commit()
         self.session.close()
-        return results
-        
-        
+
+    def prune_vector_db_telegram(self):
+        posgre_table = f"data_{PostgresRAGDBConfig.RAG_TABLE_V2}"
+        end_timestamp = int(time.time())
+        start_timestamp = end_timestamp - TimeConstants.DAYS_30*12
+
+        try:
+            with self.session.begin():
+                prune_query = text(f"""
+                DELETE FROM {posgre_table}
+                WHERE {Columns.TIMESTAMP} < :start_timestamp
+                """)
+                self.session.execute(prune_query, {'start_timestamp': start_timestamp})
+        except SQLAlchemyError as e:
+            logger.error(f"Error pruning telegram data: {e}")
+
+        self.session.commit()
+        self.session.close()
