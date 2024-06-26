@@ -4,8 +4,6 @@ from multithread_processing.base_job import BaseJob
 from utils.history_price_utils import get_historical_prices
 from utils.logger_utils import write_file
 
-
-
 class GetTokenPrice(BaseJob):
     def __init__(self, exporter, chain_id, name, token_addresses: list,
                  max_workers= 2, batch_size=2):

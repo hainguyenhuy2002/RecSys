@@ -86,14 +86,6 @@ def get_exchange_info_service(name, wallets_per_job, hot_path, burn_mint_path, t
                 chain_info = dict()
                 mongo_transaction = MongoDBMain(chain=chain)
                 logger.info(chain)
-                # if chain =='tron':
-                #     for start_block, start in mongo_transaction.get_previous_1month_block().items():
-                #         start_block = start_block
-                #         start = start
-                #     for end_block, end in mongo_transaction.get_largest_block().items():
-                #         end_block = end_block
-                #         end = end
-           #     else:
                 for start_block, start in mongo_transaction.get_previous_2day_block().items():
                     start_block = start_block
                     start = start

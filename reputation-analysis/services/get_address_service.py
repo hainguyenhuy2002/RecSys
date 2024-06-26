@@ -1,15 +1,8 @@
-import os
-import json
 import calendar
-import pandas as pd
-from pymongo import MongoClient
 from typing import Dict, Set, List
 from datetime import datetime, timedelta
-from utils.logger_utils import get_logger
 from utils.list_dict_utils import chunk_list
 from multithread_processing.base_job import BaseJob
-
-
 
 class GetAddress(BaseJob):
     def __init__(self, importer, exporter, hot_wallets, name, wallets_per_job, exchange_service, flagged_lst: list, max_workers= 4, batch_size=500):

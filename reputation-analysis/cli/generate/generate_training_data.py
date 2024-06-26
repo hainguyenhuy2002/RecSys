@@ -23,6 +23,9 @@ def generate_training_data(searching_address, direction, time_stamp, batch_size,
 
     mongodb = MongoDB()
     klg = MongoDBEntity()
+
+
+    
     address_searching = mongodb._db[f'{searching_address}']
     if direction == 'train':
         dapps_name_lst = Dapps().all_projects
@@ -60,16 +63,18 @@ def generate_training_data(searching_address, direction, time_stamp, batch_size,
     elif direction =='search':
         logger = get_logger(f'Gen searching for multichain')
 
-        num_documents = address_searching.estimated_document_count()
-        index_list = list(range(batch_size, num_documents, batch_size))
-        logger.info(f"start to search with {num_documents} addresses")
-        index_list.append(num_documents)
+        #index_list = list(range(batch_size, num_documents, batch_size))
+        largest_flag = address_searching.get_largest_flag() +1
+        flagged_lst = [i for i in range(1, largest_flag)]
+        num_flags = len(flagged_lst)
+        logger.info(f"start to search with {num_flags} flags")
+        #index_list.append(num_documents)
         #index_list = [1000, 2000, 3000, 4000]
         job =GenerateData(importer=address_searching, 
                           exporter= mongodb,
                           klg = klg, 
                           direction=direction, 
-                          index_lst=index_list, 
+                          index_lst=flagged_lst, 
                           timestamp=time_stamp, 
                           max_workers=max_workers, 
                           batch_size=batch_size)
