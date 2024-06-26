@@ -100,6 +100,7 @@ class QueryTokenPriceSchedulerJob(SchedulerJob):
                 idCoin = c['idCoingecko']
                 address = c['address']
                 id = c['_id']
+                marketCap = c['marketCap']
                 if 'priceChangeLogs' in c:
                     historical_token_price = c['priceChangeLogs']
                     if (historical_token_price!= {}):
@@ -111,6 +112,7 @@ class QueryTokenPriceSchedulerJob(SchedulerJob):
                             historical_token_round_price['chainId'] = chain_id
                             historical_token_round_price['address'] = address
                             historical_token_round_price['idCoingecko'] = idCoin
+                            historical_token_round_price['marketCap'] = marketCap
                             historical_token_round_price['priceHistory'] = {get_daily_timestamp(int(timestamp)*1000): value \
                                                                             for timestamp, value in historical_token_price.items()}
                             token_list.append(historical_token_round_price)
