@@ -28,13 +28,13 @@ class Chains:
     arbitrum = '0xa4b1'
     optimism = '0xa'
     avalanche = '0xa86a'
-#    tron = '0x2b6653dc'
+    tron = '0x2b6653dc'
 
 
     none_wrapped_token = [arbitrum, ftm, optimism]
-#    all = [bsc, ethereum, ftm, polygon, arbitrum, optimism, avalanche]
-    alls = [bsc, ethereum, polygon, ftm, arbitrum, optimism, avalanche]
-    all_name = ['bsc', 'ethereum', 'polygon', 'ftm', 'arbitrum', 'optimism', 'avalanche']
+    all = [bsc, ethereum, ftm, polygon, arbitrum, optimism, avalanche]
+    alls = [bsc, ethereum, polygon, ftm, arbitrum, optimism, avalanche, tron]
+    all_name = ['bsc', 'ethereum', 'polygon', 'ftm', 'arbitrum', 'optimism', 'avalanche', 'tron']
 #    all_name = ['ethereum']
     mapping = {
         'bsc': bsc,
@@ -44,7 +44,7 @@ class Chains:
         'arbitrum': arbitrum,
         'optimism': optimism,
         'avalanche': avalanche,
-    #    'tron': tron
+        'tron': tron
     }
     reverse_mapping = {
         '0x38': 'bsc',
@@ -54,7 +54,7 @@ class Chains:
         '0xa4b1': 'arbitrum',
         '0xa': 'optimism',
         '0xa86a': 'avalanche',
-        #'0x2b6653dc':'tron'
+        '0x2b6653dc':'tron'
     }
     names = {
         bsc: 'bsc',
@@ -64,7 +64,7 @@ class Chains:
         arbitrum: 'arbitrum',
         optimism: 'optimism',
         avalanche: 'avalanche',
-        #tron:'0x2b6653dc'
+        tron:'0x2b6653dc'
     }
 
     abi_mapping = {
