@@ -1,22 +1,28 @@
 import json
 import os
+import time
 import pandas as pd 
+from IPython.utils import io
 from collections import Counter
+from utils.time_utils import round_timestamp
+from utils.token_utils import get_token_type
+from constants.network_constants import Chains
+from constants.dapps_tokens_constans import Dapps
+from constants.time_constants import TimeConstants
 from multithread_processing.base_job import BaseJob
 from utils.logger_utils import get_logger, write_file1, write_file
 from utils.generate_training_utils import get_df_v2, get_balance_features, get_value_features, get_freq_features, search_balance_feature, get_only_value_features
-from constants.network_constants import Chains
-from constants.dapps_tokens_constans import Dapps
-from IPython.utils import io
 
 logger = get_logger("Generate training data")
 
 class GenerateData(BaseJob):
-    def __init__(self, direction, importer, exporter, klg, index_lst, timestamp, lending_tags =list(), dapps_name=None, max_workers= 4, batch_size=500):
+    def __init__(self, direction, importer, exporter, klg, index_lst, timestamp, name, batch, lending_tags =list(), dapps_name=None, max_workers= 4, batch_size=500):
         self.importer = importer
         self.exporter = exporter
         self.klg = klg 
-        self.dapps_name = dapps_name
+        self.name = name #name of collection
+        self.dapps_name = dapps_name #name of dapps to create train data
+        self.batch = batch ## batch to upate in mongodb
         self.batch_size = batch_size
         if dapps_name != None:
            self.tokens = Dapps(dapps_name=dapps_name).tokens
@@ -29,6 +35,10 @@ class GenerateData(BaseJob):
         super().__init__(work_iterable=index_lst,
                          max_workers=max_workers,
                          batch_size=batch_size)
+        
+        native_tokens, stable_tokens, top_tokens, other_tokens = get_token_type(MongoDB=exporter, MongoDBEntity=klg)
+        self.token_lst = [native_tokens, stable_tokens, top_tokens, other_tokens]
+        self.exists_exporter = self.exporter._db.list_collection_names()
 
     def _execute_batch(self, works):
         if self.direction =='train':
@@ -83,31 +93,36 @@ class GenerateData(BaseJob):
                     if info_df.empty == False:
                         self.df_lst.append(info_df)
 
-        if self.direction =='search':
+        if self.direction =='search first':
+            time_predict = time.time() - TimeConstants.DAYS_2
+            time_train = time_predict - self.timestamp
             cursor = self.importer.find({'flagged':{'$in':works}},{'_id':1,'interactedWallet':1})
             transact_lst = ['_id','interactedWallet']
             wallet_id_lst = []
-            info_df_lst = []
+            lst_train = []
+            lst_predict = []
+            logger.info('start to process value and frequency features')
             for dapps_users in cursor:
                 try:
                     dapps_transac = {key: dapps_users.get(key) for key in transact_lst}
                     wallet_id = dapps_transac['_id']
-                    transac_df_predict = get_df_v2(dapps_transac)
+                    prep_df = get_df_v2(data=dapps_transac, token_lst=self.token_lst)
+                    transac_df_predict = prep_df[prep_df['timestampHistory'].apply(int)>= time_predict - 2*TimeConstants.DAYS_31]
+                    lst_predict.append(transac_df_predict)
 
-                    transac_df_train = transac_df_predict[transac_df_predict['timestampHistory']. \
-                                            apply(int)<self.timestamp]
+                    transac_df_train = prep_df[(prep_df['timestampHistory']. \
+                                            apply(int)<=time_train) &((prep_df['timestampHistory']. \
+                                            apply(int)>=time_train - 2*TimeConstants.DAYS_31))]
                     
-                    value_df = get_only_value_features(transac_df)  #do not get token value, just avgUSD, totalUSD
-                    freq_df = get_freq_features(transac_df)
-                    sub_info_df = value_df.merge(freq_df, on='_id',how = 'inner')
                     wallet_id_lst.append(wallet_id)
-                    info_df_lst.append(sub_info_df)
+                    if transac_df_train.empty == False:
+                        lst_train.append(transac_df_train)
 
                 except Exception as e:
                     print(e)
-                    print(dapps_users)
                     continue
             
+            logger.info('start to process balance features')
 
             klg_cursor = self.klg._db.wallets.find({'_id':{'$in':wallet_id_lst}}, 
                                                             {'_id':1,'balanceInUSD':1,
@@ -117,63 +132,121 @@ class GenerateData(BaseJob):
                 cursor_balance_lst.append(klg_cur)
 
             dapps_balance = pd.DataFrame(cursor_balance_lst)
-            dapps_balance = dapps_balance.fillna(0)
-            balance_df = search_balance_feature(dapps_balance, self.timestamp)
-            info_df = pd.concat(info_df_lst)
-            info_df = info_df.merge(balance_df, on='_id', how='inner')
+            dapps_balance_predict = dapps_balance.fillna(0).copy()
 
-            if info_df.empty != None:
-                self.df_lst.append(info_df)
+            balance_df_predict = search_balance_feature(dapps_balance_predict, round_timestamp(time_predict))
 
 
-             #   except Exception as ex:
-            #        print(ex)
-                    # if info_df_lst != []:
-                    #     self.exporter.update_data(name=f'{self.chain_name}_{self.timestamp}', data=info_df_lst)
-            #        continue
-                # if info_df_lst != []:
-                #     self.exporter.update_data(name=f'{self.chain_name}_{self.timestamp}', data=info_df_lst)
+            info_predict = pd.concat(lst_predict)
+            value_df_predict = get_value_features(info_predict) 
+            freq_df_predict = get_freq_features(info_predict)
+            freq_value_predict = value_df_predict.merge(freq_df_predict, on='_id',how = 'inner')
+            df_predict = freq_value_predict.merge(balance_df_predict, on='_id', how='inner')
+            df_predict['batch'] = self.batch +1
+            df_predict['_id'] = df_predict['_id'] + '_' + df_predict['batch'].apply(lambda x: str(x))
+            update_predict = df_predict.to_dict(orient='records')
+            logger.info('start to update data')
+
+            self.exporter.update_data(name=self.name, data=update_predict)
+
+            if len(lst_train)>0:
+                dapps_balance_train = dapps_balance.fillna(0).copy()
+                balance_df_train = search_balance_feature(dapps_balance_train, round_timestamp(time_train))
+                
+                info_train = pd.concat(lst_train)
+                value_df_train = get_value_features(info_train) 
+                freq_df_train = get_freq_features(info_train)
+                freq_value_train = value_df_train.merge(freq_df_train, on='_id',how = 'inner')
+                df_train = freq_value_train.merge(balance_df_train, on='_id', how='inner')
+                df_train['batch'] = self.batch
+                df_train['_id'] = df_train['_id'] + '_' + df_train['batch'].apply(str)
+                update_train = df_train.to_dict(orient='records')
+                self.exporter.update_data(name=self.name, data=update_train)
+
+        if self.direction =='search continue':
+            time_predict = time.time() - TimeConstants.DAYS_2
+            cursor = self.importer.find({'flagged':{'$in':works}},{'_id':1,'interactedWallet':1})
+            transact_lst = ['_id','interactedWallet']
+            wallet_id_lst = []
+            lst_predict = []
+            for dapps_users in cursor:
+                try:
+                    dapps_transac = {key: dapps_users.get(key) for key in transact_lst}
+                    wallet_id = dapps_transac['_id']
+                    prep_df = get_df_v2(data=dapps_transac, token_lst=self.token_lst)
+                    transac_df_predict = prep_df[prep_df['timestampHistory'].apply(int)>= time_predict - 2*TimeConstants.DAYS_31]
+                    #transac_df_predict = get_df_v2(data=dapps_transac, token_lst=self.token_lst)
+                    lst_predict.append(transac_df_predict)
+                    wallet_id_lst.append(wallet_id)
+    
+                except Exception as e:
+                    print(e)
+                    continue
+            
+            klg_cursor = self.klg._db.wallets.find({'_id':{'$in':wallet_id_lst}}, 
+                                                            {'_id':1,'balanceInUSD':1,
+                                                            'balanceChangeLogs':1})
+            cursor_balance_lst =[]
+            for klg_cur in klg_cursor:
+                cursor_balance_lst.append(klg_cur)
+
+            dapps_balance = pd.DataFrame(cursor_balance_lst)
+            dapps_balance_predict = dapps_balance.fillna(0).copy()
+
+            balance_df_predict = search_balance_feature(dapps_balance_predict, round_timestamp(time_predict))
+
+
+            info_predict = pd.concat(lst_predict)
+            value_df_predict = get_value_features(info_predict) 
+            freq_df_predict = get_freq_features(info_predict)
+            freq_value_predict = value_df_predict.merge(freq_df_predict, on='_id',how = 'inner')
+            df_predict = freq_value_predict.merge(balance_df_predict, on='_id', how='inner')
+            df_predict['batch'] = self.batch +1
+            df_predict['_id'] = df_predict['_id'] + '_' + df_predict['batch'].apply(lambda x: str(x))
+            update_predict = df_predict.to_dict(orient='records')
+            logger.info('start to update data')
+            self.exporter.update_data(name=self.name, data=update_predict)
 
     def _end(self):
         super()._end()
-        if self.direction =='train':
-            logger.info("Start to training preprocess data ....")
-            # element_counts = Counter(self.token_interact)
-            # df_token = pd.DataFrame.from_dict(element_counts, orient='index').reset_index()
-            # df_token.columns = ['tokens', 'count']
-            # df_token = df_token.sort_values('count', ascending=False)
+        # if self.direction =='train':
+        #     logger.info("Start to training preprocess data ....")
+        #     # element_counts = Counter(self.token_interact)
+        #     # df_token = pd.DataFrame.from_dict(element_counts, orient='index').reset_index()
+        #     # df_token.columns = ['tokens', 'count']
+        #     # df_token = df_token.sort_values('count', ascending=False)
 
-            # num_chain = len(self.tokens) ## get number of chain that Dapps support
-            # num_tokens = 50*num_chain
-            # accept_tokens =  len(df_token.iloc[:num_tokens].tokens.unique().tolist())
-            # ignore_tokens = df_token.iloc[num_tokens:].tokens.unique().tolist()
+        #     # num_chain = len(self.tokens) ## get number of chain that Dapps support
+        #     # num_tokens = 50*num_chain
+        #     # accept_tokens =  len(df_token.iloc[:num_tokens].tokens.unique().tolist())
+        #     # ignore_tokens = df_token.iloc[num_tokens:].tokens.unique().tolist()
             
-            # preprocessed_df_lst = []
-            # for sub_df in self.df_lst:
-            #     with io.capture_output() as captured:  # not show warning
+        #     # preprocessed_df_lst = []
+        #     # for sub_df in self.df_lst:
+        #     #     with io.capture_output() as captured:  # not show warning
 
-            #         accepted_columns = set(df_token.iloc[:num_tokens].tokens.unique().tolist()) - set(sub_df.columns) ## accept tokens
-            #         columns_to_remove = sub_df.columns.intersection(ignore_tokens) ## invalid tokens
-            #         sub_df['other'] = sub_df[columns_to_remove].sum(axis=1)
-            #         sub_df = sub_df.drop(columns_to_remove, axis=1)
-            #         for accept_col in accepted_columns:
-            #             sub_df[accept_col] = 0
-            #         preprocessed_df_lst.append(sub_df)
+        #     #         accepted_columns = set(df_token.iloc[:num_tokens].tokens.unique().tolist()) - set(sub_df.columns) ## accept tokens
+        #     #         columns_to_remove = sub_df.columns.intersection(ignore_tokens) ## invalid tokens
+        #     #         sub_df['other'] = sub_df[columns_to_remove].sum(axis=1)
+        #     #         sub_df = sub_df.drop(columns_to_remove, axis=1)
+        #     #         for accept_col in accepted_columns:
+        #     #             sub_df[accept_col] = 0
+        #     #         preprocessed_df_lst.append(sub_df)
 
-            # logger.info(f"Successful preprocess dataframe with {accept_tokens} tokens")
-            df = pd.concat(self.df_lst).fillna(0)
-            df = df.reindex(sorted(df.columns), axis=1)
+        #     # logger.info(f"Successful preprocess dataframe with {accept_tokens} tokens")
+        #     df = pd.concat(self.df_lst).fillna(0)
+        #     df = df.reindex(sorted(df.columns), axis=1)
 
-            if not os.path.exists(f'data/modeling/{self.dapps_name}/train'):
-                os.makedirs(f'data/modeling/{self.dapps_name}/train')
-            df.to_parquet(f'data/modeling/{self.dapps_name}/train/train_{self.timestamp}.parquet')
+        #     if not os.path.exists(f'data/modeling/{self.dapps_name}/train'):
+        #         os.makedirs(f'data/modeling/{self.dapps_name}/train')
+        #     df.to_parquet(f'data/modeling/{self.dapps_name}/train/train_{self.timestamp}.parquet')
 
 
-        if self.direction =='search':
-            df = pd.concat(self.df_lst).fillna(0)
-            if not os.path.exists(f'data/modeling/search'):
-                os.makedirs(f'data/modeling/search')
-            df.to_parquet(f'data/modeling/search/search_{self.timestamp}.parquet')
+        # if self.direction =='search':
+        #     df = pd.concat(self.df_lst).fillna(0)
+        #     if not os.path.exists(f'data/modeling/search'):
+        #         os.makedirs(f'data/modeling/search')
+        #     df.to_parquet(f'data/modeling/search/search_{self.timestamp}.parquet')
 
 
 

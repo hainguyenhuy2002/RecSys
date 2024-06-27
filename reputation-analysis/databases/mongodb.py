@@ -145,3 +145,11 @@ class MongoDB:
         for cur in cursor:
             largest_flag = cur['flagged']
         return largest_flag
+    
+    def get_largest_batch(self, db):
+        query = {'batch':{"$exists":"True"}}
+        projection =  {'batch':1}
+        cursor = self._db[f'{db}'].find(query, projection=projection).sort('batch',pymongo.DESCENDING).limit(1)
+        for cur in cursor:
+            largest_batch = cur['batch']
+        return largest_batch

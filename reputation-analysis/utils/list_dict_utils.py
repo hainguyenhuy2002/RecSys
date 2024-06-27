@@ -182,3 +182,9 @@ def update_list_of_dict(list_of_dicts):
 
 def chunk_list(input_list, chunk_size):  # get sublist from list of list
     return [input_list[i:i+chunk_size] for i in range(0, len(input_list), chunk_size)]
+
+def have_common_tags(tag1, tag2):
+    set1 = set(tag1)
+    set2 = set(tag2)
+    common_elements = set1.intersection(set2)
+    return len(common_elements) > 0
