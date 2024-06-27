@@ -101,7 +101,7 @@ class GenerateData(BaseJob):
             wallet_id_lst = []
             lst_train = []
             lst_predict = []
-            logger.info('start to process value and frequency features')
+            #logger.info('start to process value and frequency features')
             for dapps_users in cursor:
                 try:
                     dapps_transac = {key: dapps_users.get(key) for key in transact_lst}
@@ -122,7 +122,7 @@ class GenerateData(BaseJob):
                     print(e)
                     continue
             
-            logger.info('start to process balance features')
+            #logger.info('start to process balance features')
 
             klg_cursor = self.klg._db.wallets.find({'_id':{'$in':wallet_id_lst}}, 
                                                             {'_id':1,'balanceInUSD':1,
@@ -145,7 +145,7 @@ class GenerateData(BaseJob):
             df_predict['batch'] = self.batch +1
             df_predict['_id'] = df_predict['_id'] + '_' + df_predict['batch'].apply(lambda x: str(x))
             update_predict = df_predict.to_dict(orient='records')
-            logger.info('start to update data')
+            #logger.info('start to update data')
 
             self.exporter.update_data(name=self.name, data=update_predict)
 
@@ -204,7 +204,7 @@ class GenerateData(BaseJob):
             df_predict['batch'] = self.batch +1
             df_predict['_id'] = df_predict['_id'] + '_' + df_predict['batch'].apply(lambda x: str(x))
             update_predict = df_predict.to_dict(orient='records')
-            logger.info('start to update data')
+         #   logger.info('start to update data')
             self.exporter.update_data(name=self.name, data=update_predict)
 
     def _end(self):

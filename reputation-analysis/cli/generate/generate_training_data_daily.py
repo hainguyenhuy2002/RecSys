@@ -117,7 +117,6 @@ def generate_training_data(searching_address, name, direction, timestamp, batch_
         logger = get_logger(f'Gen searching for multichain')
         largest_flag = mongodb.get_largest_flag(db='wallet_exchanges') +1
         flagged_lst = [i for i in range(1, largest_flag)]
-        flagged_lst =[1,2]
         num_flags = len(flagged_lst)
         logger.info(f"start to search with {num_flags} flags")
 
