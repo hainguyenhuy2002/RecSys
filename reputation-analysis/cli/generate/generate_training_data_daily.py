@@ -100,7 +100,7 @@ def generate_training_data(searching_address, name, direction, timestamp, batch_
             Dapps_user_addresses = []
             interacted_addresses = []
             training_cursor = address_searching.find({'lattestTags':{'$in':dapps_tags}})  
-            for cur in training_cursor[0:100]:
+            for cur in training_cursor:
                 Dapps_user_addresses.append(cur['_id'])
                 interacted_addresses.extend(list(cur['interactedWallet'].keys()))
             interacted_addresses = list(set(interacted_addresses))
@@ -131,6 +131,7 @@ def generate_training_data(searching_address, name, direction, timestamp, batch_
                             direction='train localization', 
                             index_lst=flagged_lst, 
                             interacted_addresses=interacted_addresses,
+                            tags=dapps_tags,
                             timestamp=timestamp, 
                             lending_tags=lending_tags,
                             name=name,

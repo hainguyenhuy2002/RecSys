@@ -336,7 +336,7 @@ def get_balance_features(dapps_name, lending_tags, dapps_balance, timestamp):
     #     profile_elite = profile_elite.replace('outdated', 0)
     #     profile_elite['reputationScore'] = (profile_elite['dappsBalance'] + profile_elite['dappsAvgDeposit']+ profile_elite['dappsAvgBorrow'])/3
 
-    Dapps_balance = profile_elite[['_id', 'dappsAvgDeposit', 'dappsAvgBorrow', 'dappsBalance', 'reputationScore']]
+    Dapps_balance = profile_elite[['_id', 'reputationScore']]
 
     return Dapps_balance
 

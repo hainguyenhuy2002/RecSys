@@ -56,7 +56,7 @@ class GenerateData(BaseJob):
                                                                                 'tokenChangeLogs':1,
                                                                                 'chainId':1,
                                                                                 'tags':1})
-            for cur in klg_cursor[0:5]:
+            for cur in klg_cursor:
                 balance_df = get_balance_features(
                     dapps_name=self.dapps_name,
                     lending_tags=self.lending_tags,
@@ -74,23 +74,23 @@ class GenerateData(BaseJob):
 
         if self.direction =='train localization':
             local_wallets = []
-            cursor = self.importer.find({'flagged':{'$in':works}},{'_id':1,'interactedWallet':1, 'lattestTags':{'$nin':self.tags}})
+            cursor = self.importer.find({'flagged':{'$in':works}, 'latestTags':{'$nin':self.tags}},{'_id':1,'interactedWallet':1})
 
-            for cur in cursor[0:100]:
-                for wallet in cur['interactedWallet'].items():
+            for cur in cursor:
+                for wallet, _ in cur['interactedWallet'].items():
                     if wallet in self.interacted_addresses:
                         local_wallets.append(cur['_id'])
+                        break
 
-
-            df_local_wallets = pd.DataFrame()
-            df_local_wallets['addressId'] = local_wallets
-            df_local_wallets['reputationSbalance_df'] = 0
-            df_local_wallets['batch'] = self.batch
-            balance_df['projectId'] = self.dapps_name
-            balance_df['_id'] = balance_df['_id'] + '_' + balance_df['projectId'] + balance_df['batch'].apply(str)
-            update_train = balance_df.to_dict(orient='records')
-
-            self.exporter.update_data(name=self.name, data=update_train)
+            if len(local_wallets) != 0:
+                df_local_wallets = pd.DataFrame()
+                df_local_wallets['addressId'] = local_wallets
+                df_local_wallets['reputationSbalance_df'] = 0
+                df_local_wallets['batch'] = self.batch
+                df_local_wallets['projectId'] = self.dapps_name
+                df_local_wallets['_id'] = df_local_wallets['addressId'] + '_' + df_local_wallets['projectId'] + df_local_wallets['batch'].apply(str)
+                update_train = df_local_wallets.to_dict(orient='records')
+                self.exporter.update_data(name=self.name, data=update_train)
 
 
 
