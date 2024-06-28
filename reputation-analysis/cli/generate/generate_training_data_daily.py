@@ -82,7 +82,7 @@ def generate_training_data(searching_address, name, direction, timestamp, batch_
     if direction == 'train':
         dapps_name_lst = Dapps().all_projects
         logger = get_logger('Generate data process')
-        logger.info(f'༼ つ ◕_◕ ༽つ ༼ つ ◕_◕ ༽つ  Gen training for {dapps_name_lst} ༼ つ ◕_◕ ༽つ ༼ つ ◕_◕ ༽つ ')
+        logger.info(f'Gen training for {dapps_name_lst}')
         for dapps_name in dapps_name_lst:
             logger.info(f"-------------------------------------------------------------------------------------")
             logger.info(f"training data for {dapps_name} ")
@@ -90,23 +90,25 @@ def generate_training_data(searching_address, name, direction, timestamp, batch_
             logger.info('start to generate training address')
             ## get lending tags - depositors, borrowers
             lending_tags = get_tags(dapps_tags)
-            print(lending_tags)
-            
-            Dapps_user_address = []
+            Dapps_user_addresses = []
+            interacted_addresses = []
             training_cursor = address_searching.find({'lattestTags':{'$in':dapps_tags}})  
-            for cur in training_cursor:
-                Dapps_user_address.append(cur)
-        
-            logger.info('Successful get training addresses ( ˵ •̀ ᴗ •́˵) ( ˵ •̀ ᴗ •́˵)')
-            logger.info('༼ つ ◕_◕ ༽つ ༼ つ ◕_◕ ༽つ start to get training data༼ つ ◕_◕ ༽つ ༼ つ ◕_◕ ༽つ')
+            for cur in training_cursor[0:100]:
+                Dapps_user_addresses.append(cur['_id'])
+                interacted_addresses.extend(list(cur['interactedWallet'].keys()))
+            interacted_addresses = list(set(interacted_addresses))
+            logger.info('Start to get training data')
             job =GenerateData(importer=address_searching, 
                             exporter=mongodb, 
                             klg=klg,
                             dapps_name=dapps_name, 
                             direction=direction, 
-                            index_lst=Dapps_user_address, 
+                            index_lst=Dapps_user_addresses, 
+                            interacted_addresses=interacted_addresses,
                             timestamp=timestamp, 
                             lending_tags=lending_tags,
+                            name=name,
+                            batch=0,
                             max_workers=max_workers, 
                             batch_size=batch_size)
             job.run()

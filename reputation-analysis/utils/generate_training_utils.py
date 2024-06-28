@@ -171,7 +171,22 @@ def get_borrow_features(row, timestamp, dapps_balance, lending_tags, dapps_tags)
     else:
         return 'outdated'
 
+def get_reputation_score(row):
+    if row['dappsBalance']==0:        
+        if (row['dappsAvgDeposit']=='outdated')&(row['dappsAvgBorrow']=='outdated'):
+            return 0 ## outdated data
 
+        elif (((row['dappsAvgDeposit'] in ['future data','outdated'])&(row['dappsAvgBorrow']=='future data'))|((row['dappsAvgBorrow'] in ['future data','outdated'])&(row['dappsAvgDeposit']=='future data'))):
+            return -1 ## future data
+        else:
+            row = row.replace('future data', 0)
+            row = row.replace('outdated', 0)
+            return (row['dappsBalance'] + row['dappsAvgDeposit']+ row['dappsAvgBorrow'])/3
+
+    else:
+        row = row.replace('future data', 0)
+        row = row.replace('outdated', 0)
+        return (row['dappsBalance'] + row['dappsAvgDeposit']+ row['dappsAvgBorrow'])/3
 
 ##  df process
 
@@ -275,12 +290,12 @@ def get_balance_features(dapps_name, lending_tags, dapps_balance, timestamp):
                                       row=row, 
                                       timestamp=timestamp), axis=1)    
     
-    profile_elite['overallBalance'] = profile_elite.apply(
-        lambda row: get_balance(row=row, 
-                                timestamp=timestamp, type='train'), axis=1)
+    # profile_elite['overallBalance'] = profile_elite.apply(
+    #     lambda row: get_balance(row=row, 
+    #                             timestamp=timestamp, type='train'), axis=1)
 
     #if have_common_tags(lending_tags[0], dapps_tags):
-    profile_elite['aaveAvgDeposit'] = profile_elite.apply(
+    profile_elite['dappsAvgDeposit'] = profile_elite.apply(
         lambda row: get_deposit_features(row=row, 
                                         timestamp=timestamp,
                                         lending_tags=lending_tags, 
@@ -289,34 +304,41 @@ def get_balance_features(dapps_name, lending_tags, dapps_balance, timestamp):
         )
 
     
-    profile_elite['aaveAvgBorrow'] = profile_elite.apply(
+    profile_elite['dappsAvgBorrow'] = profile_elite.apply(
         lambda row: get_borrow_features(row=row, 
                                          timestamp=timestamp,
                                          lending_tags=lending_tags,
                                          dapps_tags=dapps_tags,
                                          dapps_balance=dapps_balance), axis=1
         )
-    #profile_elite['aaveAvgBorrow'] = profile_elite['borrowChangeLogs'].apply(lambda row: average_value(row, timestamp))
-    if profile_elite['dappsBalance'].iloc[0] ==0:
+
+    profile_elite['reputationScore'] = profile_elite.apply(
+        lambda row: get_reputation_score(row=row), axis=1
+    )
+    
+
+
+
+    # if profile_elite['dappsBalance'].iloc[0] ==0:
         
-        if (profile_elite['aaveAvgDeposit'].iloc[0]=='outdated')&(profile_elite['aaveAvgBorrow'].iloc[0]=='outdated'):
-            profile_elite['reputationScore'] = 0
-            return  profile_elite[['_id','overallBalance','reputationScore']], 'outdated'
-        elif (((profile_elite['aaveAvgDeposit'].iloc[0] in ['future data','outdated'])&(profile_elite['aaveAvgBorrow'].iloc[0]=='future data'))|((profile_elite['aaveAvgBorrow'].iloc[0] in ['future data','outdated'])&(profile_elite['aaveAvgDeposit'].iloc[0]=='future data'))):
-            return pd.DataFrame(), 'future data'
-        else:
-            profile_elite = profile_elite.replace('future data', 0)
-            profile_elite = profile_elite.replace('outdated', 0)
-            profile_elite['reputationScore'] = (profile_elite['dappsBalance'] + profile_elite['aaveAvgDeposit']+ profile_elite['aaveAvgBorrow'])/3
+    #     if (profile_elite['dappsAvgDeposit'].iloc[0]=='outdated')&(profile_elite['dappsAvgBorrow'].iloc[0]=='outdated'):
+    #         profile_elite['reputationScore'] = 0
+    #         return  profile_elite[['_id','overallBalance','reputationScore']], 'outdated'
+    #     elif (((profile_elite['dappsAvgDeposit'].iloc[0] in ['future data','outdated'])&(profile_elite['dappsAvgBorrow'].iloc[0]=='future data'))|((profile_elite['dappsAvgBorrow'].iloc[0] in ['future data','outdated'])&(profile_elite['dappsAvgDeposit'].iloc[0]=='future data'))):
+    #         return pd.DataFrame(), 'future data'
+    #     else:
+    #         profile_elite = profile_elite.replace('future data', 0)
+    #         profile_elite = profile_elite.replace('outdated', 0)
+    #         profile_elite['reputationScore'] = (profile_elite['dappsBalance'] + profile_elite['dappsAvgDeposit']+ profile_elite['dappsAvgBorrow'])/3
 
-    else:
-        profile_elite = profile_elite.replace('future data', 0)
-        profile_elite = profile_elite.replace('outdated', 0)
-        profile_elite['reputationScore'] = (profile_elite['dappsBalance'] + profile_elite['aaveAvgDeposit']+ profile_elite['aaveAvgBorrow'])/3
+    # else:
+    #     profile_elite = profile_elite.replace('future data', 0)
+    #     profile_elite = profile_elite.replace('outdated', 0)
+    #     profile_elite['reputationScore'] = (profile_elite['dappsBalance'] + profile_elite['dappsAvgDeposit']+ profile_elite['dappsAvgBorrow'])/3
 
-    Dapps_balance = profile_elite[['_id','overallBalance','reputationScore']]
+    Dapps_balance = profile_elite[['_id', 'dappsAvgDeposit', 'dappsAvgBorrow', 'dappsBalance', 'reputationScore']]
 
-    return Dapps_balance, 'acceptable'
+    return Dapps_balance
 
 def search_balance_feature(dapps_balance, timestamp):
     if 'balanceChangeLogs' not in dapps_balance.columns:
