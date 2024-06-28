@@ -79,6 +79,13 @@ def generate_training_data(searching_address, name, direction, timestamp, batch_
     klg = MongoDBEntity()
     col_lst = mongodb._db.list_collection_names()
     address_searching = mongodb._db[f'{searching_address}']
+
+    largest_flag = mongodb.get_largest_flag(db='wallet_exchanges') +1
+    flagged_lst = [i for i in range(1, largest_flag)]
+    num_flags = len(flagged_lst)
+
+
+
     if direction == 'train':
         dapps_name_lst = Dapps().all_projects
         logger = get_logger('Generate data process')
@@ -98,7 +105,9 @@ def generate_training_data(searching_address, name, direction, timestamp, batch_
                 interacted_addresses.extend(list(cur['interactedWallet'].keys()))
             interacted_addresses = list(set(interacted_addresses))
             logger.info('Start to get training data')
-            job =GenerateData(importer=address_searching, 
+
+            ## get dapps users label
+            job1 = GenerateData(importer=address_searching, 
                             exporter=mongodb, 
                             klg=klg,
                             dapps_name=dapps_name, 
@@ -111,15 +120,36 @@ def generate_training_data(searching_address, name, direction, timestamp, batch_
                             batch=0,
                             max_workers=max_workers, 
                             batch_size=batch_size)
-            job.run()
+            job1.run()
+            
+            logger.info(f"start to localization with {num_flags} flags")
+            ## localiza†ion
+            job2 = GenerateData(importer=address_searching, 
+                            exporter=mongodb, 
+                            klg=klg,
+                            dapps_name=dapps_name, 
+                            direction='train localization', 
+                            index_lst=flagged_lst, 
+                            interacted_addresses=interacted_addresses,
+                            timestamp=timestamp, 
+                            lending_tags=lending_tags,
+                            name=name,
+                            batch=0,
+                            max_workers=max_workers, 
+                            batch_size=batch_size)
+            job2.run()
+
+
+
+
 
             logger.info('Done ( ๑ ˃̵ᴗ˂̵)و ♡ ( ๑ ˃̵ᴗ˂̵)و ♡')
 
     elif direction =='search':
         logger = get_logger(f'Gen searching for multichain')
-        largest_flag = mongodb.get_largest_flag(db='wallet_exchanges') +1
-        flagged_lst = [i for i in range(1, largest_flag)]
-        num_flags = len(flagged_lst)
+        # largest_flag = mongodb.get_largest_flag(db='wallet_exchanges') +1
+        # flagged_lst = [i for i in range(1, largest_flag)]
+        # num_flags = len(flagged_lst)
         logger.info(f"start to search with {num_flags} flags")
 
         if name not in col_lst:

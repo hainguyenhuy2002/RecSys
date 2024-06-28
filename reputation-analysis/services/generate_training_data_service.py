@@ -16,7 +16,7 @@ from utils.generate_training_utils import get_df_v2, get_balance_features, get_v
 logger = get_logger("Generate training data")
 
 class GenerateData(BaseJob):
-    def __init__(self, direction, importer, exporter, klg, index_lst, timestamp, name, batch, interacted_addresses=None, lending_tags =list(), dapps_name=None, max_workers= 4, batch_size=500):
+    def __init__(self, direction, importer, exporter, klg, index_lst, timestamp, name, batch, tags=None, interacted_addresses=None, lending_tags=list(), dapps_name=None, max_workers=4, batch_size=500):
         self.importer = importer
         self.exporter = exporter
         self.klg = klg 
@@ -33,6 +33,7 @@ class GenerateData(BaseJob):
         self.df_lst = []
         self.token_interact = []
         self.lending_tags = lending_tags
+        self.tags = tags
         super().__init__(work_iterable=index_lst,
                          max_workers=max_workers,
                          batch_size=batch_size)
@@ -63,65 +64,24 @@ class GenerateData(BaseJob):
                     )
                 
                 balance_df['batch'] = self.batch
+                balance_df['projectId'] = self.dapps_name
+                balance_df['wallet']  = balance_df['_id']
+                balance_df['_id'] = balance_df['_id'] + '_' + balance_df['projectId'] + balance_df['batch']
                 update_train = balance_df.to_dict(orient='records')
 
             self.exporter.update_data(name=self.name, data=update_train)
 
+        if self.direction =='train localization':
+            local_wallets = []
+            cursor = self.importer.find({'flagged':{'$in':works}},{'_id':1,'interactedWallet':1, 'lattestTags':{'$nin':self.tags}})
 
+            for cur in cursor[0:100]:
+                for wallet in cur['interactedWallet'].items():
+                    if wallet in self.interacted_addresses:
+                        local_wallets.append(cur['_id'])
 
-            # for dapps_users in works:
-            #     transact_lst = ['_id','interactedWallet']
-            #   #  info_df_lst = []
-            #     dapps_transac = {key: dapps_users.get(key) for key in transact_lst}
-            #     wallet_id = dapps_transac['_id']
+            df_local_wallets = pd.DataFrame()
 
-
-
-            #     klg_cursor = self.klg._db.wallets.find({'_id':f'{wallet_id}'},{'_id':1,
-            #                                                                     'tokens':1,
-            #                                                                     'balanceInUSD':1,
-            #                                                                     'depositInUSD':1,
-            #                                                                     'borrowInUSD':1,
-            #                                                                     'balanceChangeLogs':1,
-            #                                                                     'depositChangeLogs':1,
-            #                                                                     'borrowChangeLogs':1,
-            #                                                                     'tokenChangeLogs':1,
-            #                                                                     'chainId':1,
-            #                                                                     'tags':1})
-
-            #     dapps_balance = list(klg_cursor)[0]
-            #     transac_df = get_df_v2(dapps_transac)
-            #     transac_df = transac_df[transac_df['timestampHistory'].apply(int)<self.timestamp]
-            #     balance_df, text = get_balance_features(
-            #         dapps_name=self.dapps_name,
-            #         lending_tags=self.lending_tags,
-            #         dapps_balance=dapps_balance, 
-            #         timestamp=self.timestamp_str
-            #         )
-
-            #     if (transac_df.empty) &(text =='future data'):
-            #         write_file1(
-            #             folder_direction=f'train/{self.dapps_name}_train/{self.timestamp}/future_wallet',
-            #             name='future_addresses.json', 
-            #             file=dapps_users['_id']
-            #         )
-            #         continue
-
-            #     elif text =='future data':
-            #         write_file1(
-            #             folder_direction=f'train/{self.dapps_name}_train/{self.timestamp}/potential_wallet',
-            #             name='potential_addresses.json', 
-            #             file=dapps_users['_id']
-            #         )
-            #         continue
-
-                # elif (text == 'acceptable') |(text =='outdated'):
-                #     value_df = get_only_value_features(transac_df)
-                #     freq_df = get_freq_features(transac_df)
-                #     info_df = value_df.merge(freq_df, on='_id',how = 'inner')
-                #     info_df = info_df.merge(balance_df, on='_id', how='inner')
-                #     if info_df.empty == False:
-                #         self.df_lst.append(info_df)
 
         if self.direction =='search first':
             time_predict = time.time() - TimeConstants.DAYS_2
@@ -172,8 +132,9 @@ class GenerateData(BaseJob):
             freq_df_predict = get_freq_features(info_predict)
             freq_value_predict = value_df_predict.merge(freq_df_predict, on='_id',how = 'inner')
             df_predict = freq_value_predict.merge(balance_df_predict, on='_id', how='inner')
-            df_predict['batch'] = self.batch +1
-            df_predict['_id'] = df_predict['_id'] + '_' + df_predict['batch'].apply(lambda x: str(x))
+            df_train['batch'] = self.batch
+            df_train['addressId'] = df_train['_id']
+            df_train['_id'] = df_train['_id'] + '_' + df_train['batch'].apply(str)
             update_predict = df_predict.to_dict(orient='records')
             #logger.info('start to update data')
 
@@ -189,7 +150,7 @@ class GenerateData(BaseJob):
                 freq_value_train = value_df_train.merge(freq_df_train, on='_id',how = 'inner')
                 df_train = freq_value_train.merge(balance_df_train, on='_id', how='inner')
                 df_train['batch'] = self.batch
-                df_train['wallet'] = df_train['_id']
+                df_train['addressId'] = df_train['_id']
                 df_train['_id'] = df_train['_id'] + '_' + df_train['batch'].apply(str)
                 
                 update_train = df_train.to_dict(orient='records')
@@ -234,7 +195,7 @@ class GenerateData(BaseJob):
             freq_value_predict = value_df_predict.merge(freq_df_predict, on='_id',how = 'inner')
             df_predict = freq_value_predict.merge(balance_df_predict, on='_id', how='inner')
             df_predict['batch'] = self.batch +1
-            df_train['wallet'] = df_train['_id']
+            df_train['addressId'] = df_train['_id']
             df_train['_id'] = df_train['_id'] + '_' + df_train['batch'].apply(str)
             update_predict = df_predict.to_dict(orient='records')
          #   logger.info('start to update data')
@@ -242,7 +203,15 @@ class GenerateData(BaseJob):
 
     def _end(self):
         super()._end()
-        # if self.direction =='train':
+    
+
+
+
+
+
+
+
+
         #     logger.info("Start to training preprocess data ....")
         #     # element_counts = Counter(self.token_interact)
         #     # df_token = pd.DataFrame.from_dict(element_counts, orient='index').reset_index()
