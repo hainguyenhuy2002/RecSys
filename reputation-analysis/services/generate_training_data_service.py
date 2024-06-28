@@ -63,8 +63,9 @@ class GenerateData(BaseJob):
                     )
                 
                 balance_df['batch'] = self.batch
+                update_train = balance_df.to_dict(orient='records')
 
-            self.exporter.update_data(name=self.name, data=update_predict)
+            self.exporter.update_data(name=self.name, data=update_train)
 
 
 
@@ -233,7 +234,8 @@ class GenerateData(BaseJob):
             freq_value_predict = value_df_predict.merge(freq_df_predict, on='_id',how = 'inner')
             df_predict = freq_value_predict.merge(balance_df_predict, on='_id', how='inner')
             df_predict['batch'] = self.batch +1
-            df_predict['_id'] = df_predict['_id'] + '_' + df_predict['batch'].apply(lambda x: str(x))
+            df_train['wallet'] = df_train['_id']
+            df_train['_id'] = df_train['_id'] + '_' + df_train['batch'].apply(str)
             update_predict = df_predict.to_dict(orient='records')
          #   logger.info('start to update data')
             self.exporter.update_data(name=self.name, data=update_predict)
