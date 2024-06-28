@@ -16,7 +16,7 @@ from utils.generate_training_utils import get_df_v2, get_balance_features, get_v
 logger = get_logger("Generate training data")
 
 class GenerateData(BaseJob):
-    def __init__(self, direction, importer, exporter, klg, index_lst, interacted_addresses, timestamp, name, batch, lending_tags =list(), dapps_name=None, max_workers= 4, batch_size=500):
+    def __init__(self, direction, importer, exporter, klg, index_lst, timestamp, name, batch, interacted_addresses =None, lending_tags =list(), dapps_name=None, max_workers= 4, batch_size=500):
         self.importer = importer
         self.exporter = exporter
         self.klg = klg 
