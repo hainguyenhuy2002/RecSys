@@ -118,30 +118,10 @@ def generate_training_data(searching_address, name, direction, timestamp, batch_
                             batch=0,
                             max_workers=max_workers, 
                             batch_size=batch_size)
-            train_id = job1.run()
-            
-            training_cursor = address_searching.find({'_id':{'$in':train_id}})  
-            for cur in training_cursor:
-                interacted_addresses.extend(list(cur['interactedWallet'].keys()))
-            interacted_addresses = list(set(interacted_addresses))
-            logger.info(f"start to localization with {num_flags} flags")
-            ## localiza†ion
-            job2 = GenerateData(importer=address_searching, 
-                            exporter=mongodb, 
-                            klg=klg,
-                            dapps_name=dapps_name, 
-                            direction='train localization', 
-                            index_lst=flagged_lst, 
-                            interacted_addresses=interacted_addresses,
-                            tags=dapps_tags,
-                            timestamp=timestamp, 
-                            lending_tags=lending_tags,
-                            name=name,
-                            batch=0,
-                            max_workers=max_workers, 
-                            batch_size=batch_size)
-            job2.run()
+            job1.run()
 
+
+            
 
 
 

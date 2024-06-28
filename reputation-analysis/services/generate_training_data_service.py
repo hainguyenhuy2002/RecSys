@@ -25,6 +25,7 @@ class GenerateData(BaseJob):
         self.name = name #name of collection
         self.dapps_name = dapps_name #name of dapps to create train data
         self.batch = batch ## batch to upate in mongodb
+        self.max_workers = max_workers
         self.batch_size = batch_size
         if dapps_name != None:
            self.tokens = Dapps(dapps_name=dapps_name).tokens
@@ -69,7 +70,7 @@ class GenerateData(BaseJob):
                 balance_df['projectId'] = self.dapps_name
                 balance_df['addressId']  = balance_df['_id']
                 balance_df['_id'] = balance_df['_id'] + '_' + balance_df['projectId']+'_' + balance_df['batch'].apply(str)
-                id_lst = balance_df[balance_df['reputationScore']>0]._id.unique().tolist()
+                id_lst = balance_df[balance_df['reputationScore']>0].addressId.unique().tolist()
                 self.train_id.extend(id_lst)
 
                 update_train = balance_df.to_dict(orient='records')
@@ -218,7 +219,39 @@ class GenerateData(BaseJob):
 
     def _end(self):
         super()._end()
-        return self.train_id
+
+        if self.direction == 'train':
+            train_id =self.train_id
+            largest_flag = self.exporter.get_largest_flag(db='wallet_exchanges') +1
+            flagged_lst = [i for i in range(1, largest_flag)]
+            num_flags = len(flagged_lst)
+            dapps_tags = Dapps(dapps_name=self.dapps_name).tags
+
+
+            training_cursor = self.importer.find({'_id':{'$in':train_id}})  
+            interacted_addresses = []
+            for cur in training_cursor:
+
+                interacted_addresses.extend(list(cur['interactedWallet'].keys()))
+            interacted_addresses = list(set(interacted_addresses))
+
+            logger.info(f"start to localization with {num_flags} flags")
+            ## localiza†ion
+            job2 = GenerateData(importer=self.importer, 
+                            exporter=self.exporter, 
+                            klg=self.klg,
+                            dapps_name=self.dapps_name, 
+                            direction='train localization', 
+                            index_lst=flagged_lst, 
+                            interacted_addresses=interacted_addresses,
+                            tags=dapps_tags,
+                            timestamp=self.timestamp, 
+                            name=self.name,
+                            batch=self.batch,
+                            max_workers=self.max_workers, 
+                            batch_size=self.batch_size)
+            job2.run()
+
     
 
 
