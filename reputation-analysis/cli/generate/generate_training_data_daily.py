@@ -102,8 +102,7 @@ def generate_training_data(searching_address, name, direction, timestamp, batch_
             training_cursor = address_searching.find({'lattestTags':{'$in':dapps_tags}})  
             for cur in training_cursor:
                 Dapps_user_addresses.append(cur['_id'])
-                interacted_addresses.extend(list(cur['interactedWallet'].keys()))
-            interacted_addresses = list(set(interacted_addresses))
+            #    interacted_addresses.extend(list(cur['interactedWallet'].keys()))
             logger.info('Start to get training data')
 
             ## get dapps users label
@@ -113,7 +112,6 @@ def generate_training_data(searching_address, name, direction, timestamp, batch_
                             dapps_name=dapps_name, 
                             direction=direction, 
                             index_lst=Dapps_user_addresses, 
-                            interacted_addresses=interacted_addresses,
                             timestamp=timestamp, 
                             lending_tags=lending_tags,
                             name=name,
@@ -122,6 +120,11 @@ def generate_training_data(searching_address, name, direction, timestamp, batch_
                             batch_size=batch_size)
             job1.run()
             
+            training_cursor = MongoDB()._db[f'{name}'].find({'lattestTags':{'$in':dapps_tags}})  
+            for cur in training_cursor:
+                if cur['reputationScore']>0:
+                    interacted_addresses.extend(list(cur['interactedWallet'].keys()))
+            interacted_addresses = list(set(interacted_addresses))
             logger.info(f"start to localization with {num_flags} flags")
             ## localiza†ion
             job2 = GenerateData(importer=address_searching, 
