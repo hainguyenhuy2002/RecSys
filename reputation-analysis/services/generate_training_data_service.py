@@ -20,6 +20,7 @@ class GenerateData(BaseJob):
         self.importer = importer
         self.exporter = exporter
         self.klg = klg 
+        self.train_id = []
         self.interacted_addresses = interacted_addresses
         self.name = name #name of collection
         self.dapps_name = dapps_name #name of dapps to create train data
@@ -68,6 +69,9 @@ class GenerateData(BaseJob):
                 balance_df['projectId'] = self.dapps_name
                 balance_df['addressId']  = balance_df['_id']
                 balance_df['_id'] = balance_df['_id'] + '_' + balance_df['projectId']+'_' + balance_df['batch'].apply(str)
+                id_lst = balance_df[balance_df['reputationScore']>0]._id.unique().tolist()
+                self.train_id.extend(id_lst)
+
                 update_train = balance_df.to_dict(orient='records')
 
             self.exporter.update_data(name=self.name, data=update_train)
@@ -214,6 +218,7 @@ class GenerateData(BaseJob):
 
     def _end(self):
         super()._end()
+        return self.train_id
     
 
 

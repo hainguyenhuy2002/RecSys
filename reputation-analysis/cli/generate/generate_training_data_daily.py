@@ -118,12 +118,11 @@ def generate_training_data(searching_address, name, direction, timestamp, batch_
                             batch=0,
                             max_workers=max_workers, 
                             batch_size=batch_size)
-            job1.run()
+            train_id = job1.run()
             
-            training_cursor = MongoDB()._db[f'{name}'].find({'lattestTags':{'$in':dapps_tags}})  
+            training_cursor = address_searching.find({'_id':{'$in':train_id}})  
             for cur in training_cursor:
-                if cur['reputationScore']>0:
-                    interacted_addresses.extend(list(cur['interactedWallet'].keys()))
+                interacted_addresses.extend(list(cur['interactedWallet'].keys()))
             interacted_addresses = list(set(interacted_addresses))
             logger.info(f"start to localization with {num_flags} flags")
             ## localiza†ion
