@@ -67,7 +67,7 @@ class GenerateData(BaseJob):
                 balance_df['batch'] = self.batch
                 balance_df['projectId'] = self.dapps_name
                 balance_df['addressId']  = balance_df['_id']
-                balance_df['_id'] = balance_df['_id'] + '_' + balance_df['projectId'] + balance_df['batch'].apply(str)
+                balance_df['_id'] = balance_df['_id'] + '_' + balance_df['projectId']+'_' + balance_df['batch'].apply(str)
                 update_train = balance_df.to_dict(orient='records')
 
             self.exporter.update_data(name=self.name, data=update_train)
