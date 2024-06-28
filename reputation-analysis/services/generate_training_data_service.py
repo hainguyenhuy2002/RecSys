@@ -44,6 +44,7 @@ class GenerateData(BaseJob):
 
     def _execute_batch(self, works):
         if self.direction =='train':
+            timestamp_str = str(time.time())
             klg_cursor = self.klg._db.wallets.find({'_id':{'$in':works}},{'_id':1,
                                                                                 'tokens':1,
                                                                                 'balanceInUSD':1,
@@ -60,13 +61,13 @@ class GenerateData(BaseJob):
                     dapps_name=self.dapps_name,
                     lending_tags=self.lending_tags,
                     dapps_balance=cur, 
-                    timestamp=self.timestamp_str
+                    timestamp=timestamp_str
                     )
                 
                 balance_df['batch'] = self.batch
                 balance_df['projectId'] = self.dapps_name
-                balance_df['wallet']  = balance_df['_id']
-                balance_df['_id'] = balance_df['_id'] + '_' + balance_df['projectId'] + balance_df['batch']
+                balance_df['addressId']  = balance_df['_id']
+                balance_df['_id'] = balance_df['_id'] + '_' + balance_df['projectId'] + balance_df['batch'].apply(str)
                 update_train = balance_df.to_dict(orient='records')
 
             self.exporter.update_data(name=self.name, data=update_train)
@@ -80,7 +81,17 @@ class GenerateData(BaseJob):
                     if wallet in self.interacted_addresses:
                         local_wallets.append(cur['_id'])
 
+
             df_local_wallets = pd.DataFrame()
+            df_local_wallets['addressId'] = local_wallets
+            df_local_wallets['reputationSbalance_df'] = 0
+            df_local_wallets['batch'] = self.batch
+            balance_df['projectId'] = self.dapps_name
+            balance_df['_id'] = balance_df['_id'] + '_' + balance_df['projectId'] + balance_df['batch'].apply(str)
+            update_train = balance_df.to_dict(orient='records')
+
+            self.exporter.update_data(name=self.name, data=update_train)
+
 
 
         if self.direction =='search first':
@@ -132,9 +143,9 @@ class GenerateData(BaseJob):
             freq_df_predict = get_freq_features(info_predict)
             freq_value_predict = value_df_predict.merge(freq_df_predict, on='_id',how = 'inner')
             df_predict = freq_value_predict.merge(balance_df_predict, on='_id', how='inner')
-            df_train['batch'] = self.batch
-            df_train['addressId'] = df_train['_id']
-            df_train['_id'] = df_train['_id'] + '_' + df_train['batch'].apply(str)
+            df_predict['batch'] = self.batch
+            df_predict['addressId'] = df_predict['_id']
+            df_predict['_id'] = df_predict['_id'] + '_' + df_predict['batch'].apply(str)
             update_predict = df_predict.to_dict(orient='records')
             #logger.info('start to update data')
 
