@@ -77,25 +77,25 @@ class GenerateData(BaseJob):
 
             self.exporter.update_data(name=self.name, data=update_train)
 
-        if self.direction =='train localization':
-            local_wallets = []
-            cursor = self.importer.find({'flagged':{'$in':works}, 'latestTags':{'$nin':self.tags}},{'_id':1,'interactedWallet':1})
+        # if self.direction =='train localization':
+        #     local_wallets = []
+        #     cursor = self.importer.find({'flagged':{'$in':works}, 'latestTags':{'$nin':self.tags}},{'_id':1,'interactedWallet':1})
 
-            for cur in cursor:
-                for wallet, _ in cur['interactedWallet'].items():
-                    if wallet in self.interacted_addresses:
-                        local_wallets.append(cur['_id'])
-                        break
+        #     for cur in cursor:
+        #         for wallet, _ in cur['interactedWallet'].items():
+        #             if wallet in self.interacted_addresses:
+        #                 local_wallets.append(cur['_id'])
+        #                 break
 
-            if len(local_wallets) != 0:
-                df_local_wallets = pd.DataFrame()
-                df_local_wallets['addressId'] = local_wallets
-                df_local_wallets['reputationSbalance_df'] = 0
-                df_local_wallets['batch'] = self.batch
-                df_local_wallets['projectId'] = self.dapps_name
-                df_local_wallets['_id'] = df_local_wallets['addressId'] + '_' + df_local_wallets['projectId'] + df_local_wallets['batch'].apply(str)
-                update_train = df_local_wallets.to_dict(orient='records')
-                self.exporter.update_data(name=self.name, data=update_train)
+        #     if len(local_wallets) != 0:
+        #         df_local_wallets = pd.DataFrame()
+        #         df_local_wallets['addressId'] = local_wallets
+        #         df_local_wallets['reputationScore'] = 0
+        #         df_local_wallets['batch'] = self.batch
+        #         df_local_wallets['projectId'] = self.dapps_name
+        #         df_local_wallets['_id'] = df_local_wallets['addressId'] + '_' + df_local_wallets['projectId'] + df_local_wallets['batch'].apply(str)
+        #         update_train = df_local_wallets.to_dict(orient='records')
+        #         self.exporter.update_data(name=self.name, data=update_train)
 
 
 
@@ -219,38 +219,24 @@ class GenerateData(BaseJob):
 
     def _end(self):
         super()._end()
-
         if self.direction == 'train':
             train_id =self.train_id
-            largest_flag = self.exporter.get_largest_flag(db='wallet_exchanges') +1
-            flagged_lst = [i for i in range(1, largest_flag)]
-            num_flags = len(flagged_lst)
-            dapps_tags = Dapps(dapps_name=self.dapps_name).tags
+            #print(self.interacted_addresses)
+            local_addresses = list(set(self.interacted_addresses)- set(train_id))
+            #print(local_addresses)
+            local_wallets = []
+            local_cursor = self.importer.find({'_id':{'$in':local_addresses}})
+            for cur in local_cursor:
+                local_info = dict()
+                local_info['addressId'] = cur['_id']
+                local_info['projectId'] = self.dapps_name
+                local_info['batch'] = self.batch
+                local_info['reputationScore'] = 0
+                local_info['_id'] = local_info['addressId'] + '_' + local_info['projectId'] + str(local_info['batch'])
+                local_wallets.append(local_info)
 
+            self.exporter.update_data(name=self.name, data=local_wallets)
 
-            training_cursor = self.importer.find({'_id':{'$in':train_id}})  
-            interacted_addresses = []
-            for cur in training_cursor:
-
-                interacted_addresses.extend(list(cur['interactedWallet'].keys()))
-            interacted_addresses = list(set(interacted_addresses))
-
-            logger.info(f"start to localization with {num_flags} flags")
-            ## localiza†ion
-            job2 = GenerateData(importer=self.importer, 
-                            exporter=self.exporter, 
-                            klg=self.klg,
-                            dapps_name=self.dapps_name, 
-                            direction='train localization', 
-                            index_lst=flagged_lst, 
-                            interacted_addresses=interacted_addresses,
-                            tags=dapps_tags,
-                            timestamp=self.timestamp, 
-                            name=self.name,
-                            batch=self.batch,
-                            max_workers=self.max_workers, 
-                            batch_size=self.batch_size)
-            job2.run()
 
     
 

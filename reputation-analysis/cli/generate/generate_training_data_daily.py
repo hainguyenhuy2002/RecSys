@@ -87,6 +87,7 @@ def generate_training_data(searching_address, name, direction, timestamp, batch_
 
 
     if direction == 'train':
+        largest_batch = mongodb.get_largest_batch(db='potential_training_features')
         dapps_name_lst = Dapps().all_projects
         logger = get_logger('Generate data process')
         logger.info(f'Gen training for {dapps_name_lst}')
@@ -102,9 +103,10 @@ def generate_training_data(searching_address, name, direction, timestamp, batch_
             training_cursor = address_searching.find({'lattestTags':{'$in':dapps_tags}})  
             for cur in training_cursor:
                 Dapps_user_addresses.append(cur['_id'])
-                interacted_addresses.extend(list(cur['interactedWallet'].keys()))
+                wallet_interact_lst = cur['interactedWallet'].keys()
+                prefixed_list = list(map(lambda x: cur['chainId']+'_' + x, wallet_interact_lst))
+                interacted_addresses.extend(prefixed_list)
             logger.info('Start to get training data')
-
             ## get dapps users label
             job1 = GenerateData(importer=address_searching, 
                             exporter=mongodb, 
@@ -115,14 +117,11 @@ def generate_training_data(searching_address, name, direction, timestamp, batch_
                             timestamp=timestamp, 
                             lending_tags=lending_tags,
                             name=name,
-                            batch=0,
+                            batch=largest_batch-1,
+                            interacted_addresses=list(set(interacted_addresses)),
                             max_workers=max_workers, 
                             batch_size=batch_size)
             job1.run()
-
-
-            
-
 
 
 
