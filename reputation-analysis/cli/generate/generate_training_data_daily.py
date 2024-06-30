@@ -102,7 +102,7 @@ def generate_training_data(searching_address, name, direction, timestamp, batch_
             training_cursor = address_searching.find({'lattestTags':{'$in':dapps_tags}})  
             for cur in training_cursor:
                 Dapps_user_addresses.append(cur['_id'])
-            #    interacted_addresses.extend(list(cur['interactedWallet'].keys()))
+                interacted_addresses.extend(list(cur['interactedWallet'].keys()))
             logger.info('Start to get training data')
 
             ## get dapps users label

@@ -148,7 +148,7 @@ class GenerateData(BaseJob):
             freq_df_predict = get_freq_features(info_predict)
             freq_value_predict = value_df_predict.merge(freq_df_predict, on='_id',how = 'inner')
             df_predict = freq_value_predict.merge(balance_df_predict, on='_id', how='inner')
-            df_predict['batch'] = self.batch
+            df_predict['batch'] = self.batch +1
             df_predict['addressId'] = df_predict['_id']
             df_predict['_id'] = df_predict['_id'] + '_' + df_predict['batch'].apply(str)
             update_predict = df_predict.to_dict(orient='records')
@@ -211,8 +211,8 @@ class GenerateData(BaseJob):
             freq_value_predict = value_df_predict.merge(freq_df_predict, on='_id',how = 'inner')
             df_predict = freq_value_predict.merge(balance_df_predict, on='_id', how='inner')
             df_predict['batch'] = self.batch +1
-            df_train['addressId'] = df_train['_id']
-            df_train['_id'] = df_train['_id'] + '_' + df_train['batch'].apply(str)
+            df_predict['addressId'] = df_predict['_id']
+            df_predict['_id'] = df_predict['_id'] + '_' + df_predict['batch'].apply(str)
             update_predict = df_predict.to_dict(orient='records')
          #   logger.info('start to update data')
             self.exporter.update_data(name=self.name, data=update_predict)
