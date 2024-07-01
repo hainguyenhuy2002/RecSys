@@ -101,7 +101,7 @@ def generate_training_data(searching_address, name, direction, timestamp, batch_
             Dapps_user_addresses = []
             interacted_addresses = []
             training_cursor = address_searching.find({'lattestTags':{'$in':dapps_tags}})  
-            for cur in training_cursor:
+            for cur in training_cursor[0:200]:
                 Dapps_user_addresses.append(cur['_id'])
                 wallet_interact_lst = cur['interactedWallet'].keys()
                 prefixed_list = list(map(lambda x: cur['chainId']+'_' + x, wallet_interact_lst))

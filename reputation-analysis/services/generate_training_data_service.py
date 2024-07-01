@@ -226,7 +226,9 @@ class GenerateData(BaseJob):
             #print(local_addresses)
             local_wallets = []
             local_cursor = self.importer.find({'_id':{'$in':local_addresses}})
+            t = 0 
             for cur in local_cursor:
+                t+=1
                 local_info = dict()
                 local_info['addressId'] = cur['_id']
                 local_info['projectId'] = self.dapps_name
@@ -234,8 +236,12 @@ class GenerateData(BaseJob):
                 local_info['reputationScore'] = 0
                 local_info['_id'] = local_info['addressId'] + '_' + local_info['projectId'] + str(local_info['batch'])
                 local_wallets.append(local_info)
-
-            self.exporter.update_data(name=self.name, data=local_wallets)
+                if t%2000 == 0:
+                    self.exporter.update_data(name=self.name, data=local_wallets)
+                    local_wallets = []
+            
+            if len(local_wallets) > 0:
+                self.exporter.update_data(name=self.name, data=local_wallets)
 
 
     
